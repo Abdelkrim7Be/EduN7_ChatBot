@@ -1,6 +1,6 @@
 package com.abdelkrim.rag_impl.Document;
 
-import ma.enset.rag.Document.TextSegment;
+import com.abdelkrim.rag_impl.Document.TextSegment;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 

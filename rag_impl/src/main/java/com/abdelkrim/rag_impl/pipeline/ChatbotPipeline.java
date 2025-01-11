@@ -1,4 +1,7 @@
+package com.abdelkrim.rag_impl.pipeline;
+
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -15,10 +18,15 @@ public class ChatbotPipeline {
     }
 
     private void loadEnv() {
-        try (FileInputStream fis = new FileInputStream("../.env")) {
-            Properties env = new Properties();
-            env.load(fis);
-            System.setProperty("GROQ_API_KEY", env.getProperty("GROQ_API_KEY"));
+        try {
+            // Use an absolute path for the .env file
+            String envPath = new File("d:/Temp/GROQ Chatbot LLM Console/groqchat/.env").getAbsolutePath();
+            System.out.println("Loading .env file from: " + envPath); // Debugging statement
+            try (FileInputStream fis = new FileInputStream(envPath)) {
+                Properties env = new Properties();
+                env.load(fis);
+                System.setProperty("GROQ_API_KEY", env.getProperty("GROQ_API_KEY"));
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to load .env file", e);
         }
@@ -58,6 +66,9 @@ public class ChatbotPipeline {
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
+
+        // Debugging: Print the request being sent
+        System.out.println("Sending request: " + request);
 
         try (OutputStream os = connection.getOutputStream()) {
             byte[] input = request.getBytes("utf-8");

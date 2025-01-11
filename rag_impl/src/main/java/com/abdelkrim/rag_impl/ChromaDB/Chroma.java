@@ -5,7 +5,6 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
-import dev.langchain4j.model.embedding.onnx.AbstractInProcessEmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
@@ -47,7 +46,9 @@ public class Chroma {
         return embeddingStore.findRelevant(queryEmbedding, maxResults);
     }
 
-
+    public static void removeAll() {
+        embeddingStore.removeAll();
+    }
 
     public static void deleteDocuments(){
         embeddingStore.removeAll();

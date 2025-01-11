@@ -1,4 +1,4 @@
-package ma.enset.rag.Document;
+package com.abdelkrim.rag_impl.Document;
 
 import java.util.Map;
 
