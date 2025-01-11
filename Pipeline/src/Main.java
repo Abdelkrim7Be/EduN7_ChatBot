@@ -5,13 +5,21 @@ public class Main {
     public static void main(String[] args) {
         ChatbotPipeline pipeline = new ChatbotPipeline();
         List<String> chunks = Arrays.asList(
-            "This is the first chunk of text.",
-            "Here is the second chunk.",
-            "And this is the third chunk."
+            "The quick brown fox jumps over the lazy dog.",
+            "In a distant galaxy, far far away, there was a small planet inhabited by intelligent beings.",
+            "Artificial intelligence is transforming the world in unprecedented ways, impacting various industries."
         );
-        String userPrompt = "What can you tell me about these texts?";
+        String userPrompt = "Can you analyze the structure and content of these texts?";
 
         String response = pipeline.generateResponse(chunks, userPrompt);
-        System.out.println("Chatbot response: " + response);
+        System.out.println(formatResponse(response));
+    }
+
+    private static String formatResponse(String response) {
+        StringBuilder formattedResponse = new StringBuilder();
+        formattedResponse.append("\n=== Chatbot Response ===\n");
+        formattedResponse.append(response);
+        formattedResponse.append("\n========================\n");
+        return formattedResponse.toString();
     }
 }
