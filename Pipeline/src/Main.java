@@ -5,29 +5,13 @@ public class Main {
     public static void main(String[] args) {
         ChatbotPipeline pipeline = new ChatbotPipeline();
         List<String> chunks = Arrays.asList(
-            "Cloud computing provides scalable computing resources over the internet.",
-            "Machine learning algorithms can analyze vast amounts of data to identify patterns.",
-            "Cybersecurity measures are essential to protect sensitive information from unauthorized access."
+            "This is the first chunk of text.",
+            "Here is the second chunk.",
+            "And this is the third chunk."
         );
-
-        // Static part of the prompt
-        String staticPrompt = "Using the provided chunks as context, ";
-
-        // Dynamic part of the prompt
-        String dynamicPrompt = "create a cohesive narrative that integrates these concepts without explicitly mentioning them.";
-
-        // Combine the static and dynamic parts
-        String userPrompt = staticPrompt + dynamicPrompt;
+        String userPrompt = "What can you tell me about these texts?";
 
         String response = pipeline.generateResponse(chunks, userPrompt);
-        System.out.println(formatResponse(response));
-    }
-
-    private static String formatResponse(String response) {
-        StringBuilder formattedResponse = new StringBuilder();
-        formattedResponse.append("\n=== Chatbot Response ===\n");
-        formattedResponse.append(response);
-        formattedResponse.append("\n========================\n");
-        return formattedResponse.toString();
+        System.out.println("Chatbot response: " + response);
     }
 }
