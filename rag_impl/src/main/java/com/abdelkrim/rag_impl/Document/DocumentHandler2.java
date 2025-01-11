@@ -77,7 +77,7 @@ public class DocumentHandler2 {
 
     public static void main(String[] args) throws URISyntaxException, IOException {
         // Specify the path to the PDF document
-        String path = DocumentHandler2.class.getResource("/ma/enset/rag/Docs/JAVAFX.pdf").toURI().getPath();
+        String path = DocumentHandler2.class.getResource("/com/abdelkrim/rag_impl/Docs/JAVAFX.pdf").toURI().getPath();
         File documentFile = new File(path);
 
         // Create an instance of DocumentHandler2
