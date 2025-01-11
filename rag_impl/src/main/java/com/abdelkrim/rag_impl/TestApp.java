@@ -44,7 +44,7 @@ public class TestApp {
             System.out.println("Text segments stored as embeddings in ChromaDB!");
 
             // Step 4: Query ChromaDB for relevant answers
-            String query = "Talk to me about Ethical Considerations";
+            String query = "Talk to me about Ethical Considerations of AI";
             List<EmbeddingMatch<TextSegment>> results = Chroma.search(query, 5); // Get top 5 results
 
             // Debugging: Print the results
@@ -69,6 +69,7 @@ public class TestApp {
 
             // Step 6: Use the ChatbotPipeline to generate a response
             ChatbotPipeline pipeline = new ChatbotPipeline();
+            System.out.println("Using model: " + pipeline.getModelName());
             String response = pipeline.generateResponse(chunks, query);
 
             // Debugging: Print the chunks after passing to the pipeline

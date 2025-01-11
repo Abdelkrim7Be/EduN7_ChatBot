@@ -13,8 +13,11 @@ import java.io.FileInputStream;
 
 public class ChatbotPipeline {
 
+    private String modelName;
+
     public ChatbotPipeline() {
         loadEnv();
+        this.modelName = System.getProperty("GROQ_API_MODEL", "default-model");
     }
 
     private void loadEnv() {
@@ -26,10 +29,15 @@ public class ChatbotPipeline {
                 Properties env = new Properties();
                 env.load(fis);
                 System.setProperty("GROQ_API_KEY", env.getProperty("GROQ_API_KEY"));
+                System.setProperty("GROQ_API_MODEL", env.getProperty("GROQ_API_MODEL", "default-model"));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to load .env file", e);
         }
+    }
+
+    public String getModelName() {
+        return this.modelName;
     }
 
     public String generateResponse(List<String> chunks, String userPrompt) {
