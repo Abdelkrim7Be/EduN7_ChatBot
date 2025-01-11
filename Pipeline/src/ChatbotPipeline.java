@@ -73,10 +73,17 @@ public class ChatbotPipeline {
                 while ((responseLine = br.readLine()) != null) {
                     response.append(responseLine.trim());
                 }
-                return response.toString();
+                String formattedResponse = formatResponse(response.toString());
+                System.out.println("Formatted response: " + formattedResponse); // Debugging statement
+                return formattedResponse;
             }
         } else {
             return "Error: Received HTTP " + responseCode;
         }
+    }
+
+    private String formatResponse(String response) {
+        // Implement your response formatting logic here
+        return response;
     }
 }

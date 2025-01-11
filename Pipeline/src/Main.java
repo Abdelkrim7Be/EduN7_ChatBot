@@ -5,11 +5,19 @@ public class Main {
     public static void main(String[] args) {
         ChatbotPipeline pipeline = new ChatbotPipeline();
         List<String> chunks = Arrays.asList(
-            "The quick brown fox jumps over the lazy dog.",
-            "In a distant galaxy, far far away, there was a small planet inhabited by intelligent beings.",
-            "Artificial intelligence is transforming the world in unprecedented ways, impacting various industries."
+            "Cloud computing provides scalable computing resources over the internet.",
+            "Machine learning algorithms can analyze vast amounts of data to identify patterns.",
+            "Cybersecurity measures are essential to protect sensitive information from unauthorized access."
         );
-        String userPrompt = "Can you analyze the structure and content of these texts?";
+
+        // Static part of the prompt
+        String staticPrompt = "Using the provided chunks as context, ";
+
+        // Dynamic part of the prompt
+        String dynamicPrompt = "create a cohesive narrative that integrates these concepts without explicitly mentioning them.";
+
+        // Combine the static and dynamic parts
+        String userPrompt = staticPrompt + dynamicPrompt;
 
         String response = pipeline.generateResponse(chunks, userPrompt);
         System.out.println(formatResponse(response));
