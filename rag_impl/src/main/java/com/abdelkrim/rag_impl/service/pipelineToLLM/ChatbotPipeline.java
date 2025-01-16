@@ -23,7 +23,7 @@ public class ChatbotPipeline {
     private void loadEnv() {
         try {
             // Use an absolute path for the .env file
-            String envPath = new File("d:/Temp/GROQ Chatbot LLM Console/groqchat/.env").getAbsolutePath();
+            String envPath = new File("d:/Temp/GROQ Chatbot LLM Console/LLM/.env").getAbsolutePath();
             System.out.println("Loading .env file from: " + envPath); // Debugging statement
             try (FileInputStream fis = new FileInputStream(envPath)) {
                 Properties env = new Properties();
