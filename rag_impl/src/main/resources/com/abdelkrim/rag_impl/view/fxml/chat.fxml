@@ -3,6 +3,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.Insets?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.text.Text?>
 
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
@@ -18,7 +19,7 @@
     <StackPane VBox.vgrow="ALWAYS">
         <!-- Initial Upload State -->
         <VBox fx:id="uploadBox" styleClass="upload-container" alignment="CENTER" spacing="20">
-            <Label text="Upload" styleClass="upload-icon"/>
+            <FontIcon iconLiteral="fas-file-upload" styleClass="upload-icon"/>
             <Label text="Click to upload PDF file" styleClass="upload-text"/>
             <Button text="Upload File" styleClass="upload-button" onAction="#handleFileUpload"/>
         </VBox>
@@ -31,7 +32,10 @@
 
     <!-- Bottom Bar -->
     <HBox styleClass="bottom-bar" alignment="CENTER">
-        <Button text="Import" styleClass="import-button">
+        <Button styleClass="import-button">
+            <graphic>
+                <FontIcon iconLiteral="fas-file-import"/>
+            </graphic>
             <HBox.margin>
                 <Insets right="10"/>
             </HBox.margin>
@@ -40,7 +44,10 @@
         <TextField fx:id="messageInput" styleClass="message-input"
                    promptText="Start typing..." HBox.hgrow="ALWAYS"/>
 
-        <Button text="Send" styleClass="send-button" onAction="#handleSendMessage">
+        <Button styleClass="send-button" onAction="#handleSendMessage">
+            <graphic>
+                <FontIcon iconLiteral="fas-paper-plane"/>
+            </graphic>
             <HBox.margin>
                 <Insets left="10"/>
             </HBox.margin>
