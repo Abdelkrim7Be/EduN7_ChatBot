@@ -18,7 +18,7 @@ public class AppConsole {
     public static void main(String[] args) {
         try {
             // Step 1: Load the PDF document
-            String path = AppConsole.class.getResource("/com/abdelkrim/rag_impl/Docs/JAVAFX.pdf").toURI().getPath();
+            String path = AppConsole.class.getResource("/com/abdelkrim/rag_impl/view/Docs/AI.pdf").toURI().getPath();
             File documentFile = new File(path);
             DocumentHandler2 documentHandler = new DocumentHandler2(documentFile);
 
