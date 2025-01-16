@@ -12,7 +12,7 @@
 
     <!-- Header -->
     <HBox styleClass="header">
-        <Text styleClass="title-text" text="Chat with PDF"/>
+        <Text styleClass="title-text" text="Welcome to EduN7"/>
     </HBox>
 
     <!-- Main Content Area -->

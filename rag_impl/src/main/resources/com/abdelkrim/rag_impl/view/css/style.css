@@ -1,114 +1,186 @@
 .main-container {
-    -fx-background-color: #242424;
-    -fx-padding: 10;
+  -fx-background-color: #000000;
+  -fx-padding: 10;
 }
 
 .header {
-    -fx-padding: 15 20;
-    -fx-alignment: center;
-    -fx-background-color: #2d2d2d;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 2);
+  -fx-padding: 15 20;
+  -fx-alignment: center;
+
+  -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 2);
 }
 
 .title-text {
-    -fx-fill: white;
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
+  -fx-fill: white;
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
 }
 
 .upload-container {
-    -fx-background-color: #36353f;
-    -fx-background-radius: 10;
-    -fx-padding: 40;
-    -fx-spacing: 15;
-    -fx-max-width: 400;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 2);
+  -fx-background-radius: 10;
+  -fx-padding: 40;
+  -fx-spacing: 15;
+  -fx-max-width: 400;
+  -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 2);
 }
 
 .upload-icon {
-    -fx-icon-color: #5645ee;
-    -fx-icon-size: 48;
+  -fx-icon-color: #5645ee;
+  -fx-icon-size: 48;
 }
 
 .upload-text {
-    -fx-text-fill: white;
-    -fx-font-size: 16px;
+  -fx-text-fill: white;
+  -fx-font-size: 16px;
 }
 
 .upload-button {
-    -fx-background-color: #5645ee;
-    -fx-text-fill: white;
-    -fx-padding: 10 20;
-    -fx-background-radius: 20;
-    -fx-cursor: hand;
+  -fx-background-color: #5645ee;
+  -fx-text-fill: white;
+  -fx-padding: 10 20;
+  -fx-background-radius: 20;
+  -fx-cursor: hand;
 }
 
 .upload-button:hover {
-    -fx-background-color: #4535dd;
+  -fx-background-color: #4535dd;
 }
 
 .chat-scroll-pane {
-    -fx-background: #242424;
-    -fx-background-color: transparent;
+  -fx-background: #242424;
+  -fx-background-color: transparent;
 }
 
 .chat-scroll-pane > .viewport {
-    -fx-background-color: transparent;
+  -fx-background-color: transparent;
 }
 
 .message-container {
-    -fx-padding: 20;
-    -fx-spacing: 15;
+  -fx-padding: 20;
+  -fx-spacing: 15;
 }
 
 .message-bubble {
-    -fx-padding: 10 15;
-    -fx-background-radius: 15;
-    -fx-max-width: 80%;
+  -fx-padding: 10 15;
+  -fx-background-radius: 15;
+  -fx-max-width: 90%; /* Increase the max width */
 }
 
 .user-message {
-    -fx-background-color: #5645ee;
-    -fx-text-fill: white;
-    -fx-alignment: center-right;
+  -fx-background-color: #5645ee;
+  -fx-text-fill: white;
+  -fx-alignment: center-right;
 }
 
 .llm-message {
-    -fx-background-color: #36353f;
-    -fx-text-fill: white;
-    -fx-alignment: center-left;
+  -fx-background-color: #36353f;
+  -fx-text-fill: white;
+  -fx-alignment: center-left;
 }
 
 .bottom-bar {
-    -fx-background-color: #36353f;
-    -fx-padding: 10 15;
-    -fx-spacing: 10;
-    -fx-background-radius: 10;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 2);
+  -fx-background-color: #36353f;
+  -fx-padding: 10 15;
+  -fx-spacing: 10;
+  -fx-background-radius: 10;
+  -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 2);
 }
 
 .message-input {
-    -fx-background-color: transparent;
-    -fx-text-fill: white;
-    -fx-prompt-text-fill: #808080;
-    -fx-font-size: 14px;
+  -fx-background-color: transparent;
+  -fx-text-fill: white;
+  -fx-prompt-text-fill: #ffffff;
+  -fx-font-size: 14px;
 }
 
 .message-input:focused {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
 }
 
-.import-button, .send-button {
-    -fx-background-color: transparent;
-    -fx-cursor: hand;
+.import-button,
+.send-button {
+  -fx-background-color: transparent;
+  -fx-cursor: hand;
 }
 
-.import-button .ikonli-font-icon, .send-button .ikonli-font-icon {
-    -fx-icon-color: #5645ee;
-    -fx-icon-size: 18;
+.import-button .ikonli-font-icon,
+.send-button .ikonli-font-icon {
+  -fx-icon-color: #5645ee;
+  -fx-icon-size: 18;
 }
 
-.import-button:hover .ikonli-font-icon, .send-button:hover .ikonli-font-icon {
-    -fx-icon-color: #4535dd;
+.import-button:hover .ikonli-font-icon,
+.send-button:hover .ikonli-font-icon {
+  -fx-icon-color: #4535dd;
+}
+/* Message Container Base Styles */
+.message-container {
+  -fx-padding: 20;
+  -fx-spacing: 15;
+  -fx-background-color: transparent;
+  -fx-fill-width: true;
+}
+
+/* Individual Message Container Styles */
+.message-box {
+  -fx-padding: 10;
+  -fx-max-width: 80%;
+  -fx-min-width: 100;
+}
+/* Message Container Base Styles */
+.message-container {
+  -fx-padding: 20;
+  -fx-spacing: 15;
+  -fx-background-color: transparent;
+  -fx-fill-width: true;
+}
+
+/* Individual Message Container Styles */
+.message-box {
+  -fx-padding: 10;
+  -fx-pref-width: 15cm; /* Fixed width of 15cm */
+  -fx-max-width: 15cm; /* Ensure it doesn't grow beyond 15cm */
+  -fx-min-width: 15cm; /* Ensure it doesn't shrink below 15cm */
+}
+
+/* User Message Specific Styles */
+.user-message-box {
+  -fx-background-color: #5645ee;
+  -fx-background-radius: 15 15 0 15;
+}
+
+.user-message-container {
+  -fx-alignment: CENTER_RIGHT; /* Keep the box aligned right */
+}
+
+/* LLM Message Specific Styles */
+.llm-message-box {
+  -fx-background-color: #36353f;
+  -fx-background-radius: 15 15 15 0;
+}
+
+.llm-message-container {
+  -fx-alignment: CENTER_LEFT;
+}
+
+/* Message Text Styles */
+.message-text {
+  -fx-text-fill: white; /* Ensure text is white */
+  -fx-font-size: 14px;
+  -fx-wrap-text: true;
+  -fx-padding: 5;
+  -fx-line-spacing: 1.5;
+  -fx-alignment: CENTER_LEFT; /* Ensure text always starts from left */
+}
+
+/* ScrollPane Adjustments */
+.chat-scroll-pane {
+  -fx-background: transparent;
+  -fx-background-color: transparent;
+  -fx-fit-to-width: true;
+}
+
+.chat-scroll-pane > .viewport {
+  -fx-background-color: transparent;
 }
