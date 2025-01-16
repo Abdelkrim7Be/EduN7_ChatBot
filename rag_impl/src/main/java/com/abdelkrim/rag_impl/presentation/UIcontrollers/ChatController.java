@@ -9,6 +9,7 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.util.Duration;
 import javafx.animation.PauseTransition;
+import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 public class ChatController {
     @FXML private VBox uploadBox;
@@ -36,9 +38,12 @@ public class ChatController {
                 new FileChooser.ExtensionFilter("PDF Files", "*.pdf")
         );
 
-        File selectedFile = fileChooser.showOpenDialog(null);
-        if (selectedFile != null) {
-            processFile(selectedFile);
+        List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
+        if (selectedFiles != null && !selectedFiles.isEmpty()) {
+            for (File file : selectedFiles) {
+                processFile(file);
+            }
+            hideUploadBox();
         }
     }
 
@@ -54,8 +59,10 @@ public class ChatController {
         boolean success = false;
         if (db.hasFiles()) {
             success = true;
-            File file = db.getFiles().get(0);
-            processFile(file);
+            for (File file : db.getFiles()) {
+                processFile(file);
+            }
+            hideUploadBox();
         }
         event.setDropCompleted(success);
         event.consume();
@@ -68,20 +75,15 @@ public class ChatController {
             Path targetPath = targetDir.resolve(file.getName());
             Files.copy(file.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Hide upload box and show chat interface
-            uploadBox.setVisible(false);
-            uploadBox.setManaged(false);
-            chatScrollPane.setVisible(true);
-            chatScrollPane.setManaged(true);
-
-            // Add system message about uploaded file
-            addMessage("PDF uploaded: " + file.getName(), false);
-
-            // Show popup notification
-            showPopupNotification("Congratulations sir", "You've successfully uploaded the file!");
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void hideUploadBox() {
+        ((Pane) uploadBox.getParent()).getChildren().remove(uploadBox);
+        chatScrollPane.setVisible(true);
+        chatScrollPane.setManaged(true);
     }
 
     private void showPopupNotification(String title, String message) {
