@@ -1,0 +1,7 @@
+prompt_toolkit
+groq
+soundfile==0.12.1
+sounddevice==0.4.7
+SpeechRecognition
+psutil
+numpy==1.26.4
