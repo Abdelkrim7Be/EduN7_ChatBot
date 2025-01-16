@@ -18,10 +18,10 @@
     <!-- Main Content Area -->
     <StackPane VBox.vgrow="ALWAYS">
         <!-- Initial Upload State -->
-        <VBox fx:id="uploadBox" styleClass="upload-container" alignment="CENTER" spacing="20">
+        <VBox fx:id="uploadBox" styleClass="upload-container" alignment="CENTER" spacing="20" prefHeight="100" prefWidth="100">
             <FontIcon iconLiteral="fas-file-upload" styleClass="upload-icon"/>
-            <Label text="Click to upload PDF file" styleClass="upload-text"/>
-            <Button text="Upload File" styleClass="upload-button" onAction="#handleFileUpload"/>
+            <Label text="Click to upload PDF file(s)" styleClass="upload-text"/>
+            <Button text="Upload File(s)" styleClass="upload-button" onAction="#handleFileUpload"/>
         </VBox>
 
         <!-- Chat Messages Area (Initially Hidden) -->
