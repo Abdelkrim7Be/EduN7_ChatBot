@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DocumentHandler2 {
+public class DocumentHandler2 implements AutoCloseable {
 
     private String path;
     private File documentFile;
@@ -98,6 +98,13 @@ public class DocumentHandler2 {
             System.out.println("Segment Text: " + segment.getText());
             System.out.println("Metadata: " + segment.getMetadata());
             System.out.println("--------------------------------------------------");
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (doc != null) {
+            doc.close();
         }
     }
 

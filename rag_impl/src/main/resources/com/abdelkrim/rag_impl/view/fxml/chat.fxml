@@ -30,6 +30,9 @@
         </ScrollPane>
     </StackPane>
 
+    <!-- Hidden field to store the uploaded document path -->
+    <TextField fx:id="documentPath" visible="false" managed="false"/>
+
     <!-- Bottom Bar -->
     <HBox styleClass="bottom-bar" alignment="CENTER">
         <Button styleClass="import-button">

@@ -12,6 +12,7 @@ import org.apache.pdfbox.text.PDFTextStripper;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DocumentHandler implements AutoCloseable {
@@ -53,6 +54,37 @@ public class DocumentHandler implements AutoCloseable {
      */
     public List<TextSegment> splitByParagraph() throws IOException {
         return splitByParagraph(DEFAULT_MAX_SEGMENT_SIZE, DEFAULT_OVERLAP);
+    }
+
+    /**
+     * Splits text into segments with a maximum of 3 lines each
+     */
+    public List<TextSegment> splitByLines(int maxLines) throws IOException {
+        if (text == null) {
+            getPdfContent();
+        }
+        String[] lines = text.split("\r?\n");
+        List<TextSegment> segments = new ArrayList<>();
+        StringBuilder segmentBuilder = new StringBuilder();
+        int lineCount = 0;
+
+        for (String line : lines) {
+            if (lineCount < maxLines) {
+                segmentBuilder.append(line).append("\n");
+                lineCount++;
+            } else {
+                segments.add(TextSegment.from(segmentBuilder.toString().trim()));
+                segmentBuilder.setLength(0);
+                segmentBuilder.append(line).append("\n");
+                lineCount = 1;
+            }
+        }
+
+        if (segmentBuilder.length() > 0) {
+            segments.add(TextSegment.from(segmentBuilder.toString().trim()));
+        }
+
+        return segments;
     }
 
     /**

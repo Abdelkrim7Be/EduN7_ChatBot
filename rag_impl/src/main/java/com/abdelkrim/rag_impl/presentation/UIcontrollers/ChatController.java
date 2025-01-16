@@ -18,12 +18,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import com.abdelkrim.rag_impl.service.ChromaDB.Chroma;
+import com.abdelkrim.rag_impl.service.Document.DocumentHandler2;
+import com.abdelkrim.rag_impl.service.pipelineToLLM.ChatbotPipeline;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.store.embedding.EmbeddingMatch;
 
 public class ChatController {
     @FXML private VBox uploadBox;
     @FXML private ScrollPane chatScrollPane;
     @FXML private VBox messageContainer;
     @FXML private TextField messageInput;
+    @FXML private TextField documentPath;
+    private ChatbotPipeline chatbotPipeline = new ChatbotPipeline();
 
     @FXML
     private void initialize() {
@@ -74,7 +83,7 @@ public class ChatController {
             Files.createDirectories(targetDir);
             Path targetPath = targetDir.resolve(file.getName());
             Files.copy(file.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-
+            documentPath.setText(targetPath.toString()); // Store the document path
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -100,14 +109,82 @@ public class ChatController {
     }
 
     @FXML
-    private void handleSendMessage() {
+    private void handleSendMessage() throws Exception {
         String message = messageInput.getText().trim();
-        if (!message.isEmpty()) {
+        String document = documentPath.getText();
+        if (!message.isEmpty() && !document.isEmpty()) {
+            System.out.println("User Input: " + message); // Print user input
+            System.out.println("Document Path: " + document); // Print document path
+
             addMessage(message, true);
             messageInput.clear();
 
-            // Simulate LLM response (replace with actual implementation)
-            simulateLLMResponse();
+            // Extract text content from the document
+            try (DocumentHandler2 documentHandler = new DocumentHandler2(new File(document))) {
+                String pdfContent = documentHandler.getPdfContent();
+                System.out.println("PDF Content extracted successfully!");
+
+                // Split the content into segments and store as embeddings
+                String[] delimiters = { "\n" , ","}; // Delimiters for splitting text
+                int maxLength = 2000; // Maximum length for each text segment
+
+                List<com.abdelkrim.rag_impl.service.Document.TextSegment> segments = documentHandler.splitText(pdfContent, delimiters, maxLength);
+                for (com.abdelkrim.rag_impl.service.Document.TextSegment segment : segments) {
+                    String text = segment.getText().trim();
+                    if (!text.isEmpty()) {
+                        Chroma.addDocuments(text, new dev.langchain4j.data.document.Metadata());
+                        // Debugging: Print stored text segments
+                        System.out.println("Stored segment: " + text);
+                    }
+                }
+
+                System.out.println("Text segments stored as embeddings in ChromaDB!");
+
+                // Query ChromaDB for relevant answers
+                List<EmbeddingMatch<TextSegment>> results = Chroma.search(message, 5); // Get top 5 results
+
+                // Debugging: Print the results
+                System.out.println("Query results:");
+                for (EmbeddingMatch<TextSegment> result : results) {
+                    System.out.println("Match Text: " + result.embedded().text());
+                    System.out.println("Match Score: " + result.score());
+                    System.out.println("--------------------------------------------------");
+                }
+
+                // Retrieve the top chunk from the results
+                EmbeddingMatch<TextSegment> topResult = results.stream()
+                                                .sorted((r1, r2) -> Double.compare(r2.score(), r1.score())) // Sort by score in descending order
+                                                .findFirst() // Get the top result
+                                                .orElse(null);
+
+                if (topResult != null) {
+                    // Debugging: Print the top chunk before passing to the pipeline
+                    System.out.println("Top chunk before passing to the pipeline:");
+                    System.out.println("--------------------------------------------------");
+                    System.out.println("Chunk: " + topResult.embedded().text());
+                    System.out.println("Score: " + topResult.score());
+                    System.out.println("--------------------------------------------------");
+
+                    // Extract the text of the top chunk
+                    String topChunk = topResult.embedded().text();
+
+                    // Fetch response from pipeline
+                    String response = chatbotPipeline.generateResponse(List.of(topChunk), message);
+                    System.out.println("LLM Response: " + response); // Print LLM response
+
+                    // Display the question and response in the chat
+                    addMessage("You: " + message, true);
+                    addMessage("LLM: " + response, false);
+                } else {
+                    System.out.println("No relevant chunks found.");
+                }
+
+                // Clear all documents from ChromaDB
+                Chroma.removeAll();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
