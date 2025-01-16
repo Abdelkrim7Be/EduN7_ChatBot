@@ -1,4 +1,4 @@
-package com.abdelkrim.rag_impl.Document;
+package com.abdelkrim.rag_impl.service.Document;
 
 import java.util.Map;
 

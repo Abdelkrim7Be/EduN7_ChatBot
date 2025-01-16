@@ -1,4 +1,4 @@
-package com.abdelkrim.rag_impl.pipeline;
+package com.abdelkrim.rag_impl.service.pipelineToLLM;
 
 import java.io.BufferedReader;
 import java.io.File;

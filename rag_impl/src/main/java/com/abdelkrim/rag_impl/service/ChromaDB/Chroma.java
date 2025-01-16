@@ -1,4 +1,4 @@
-package com.abdelkrim.rag_impl.ChromaDB;
+package com.abdelkrim.rag_impl.service.ChromaDB;
 
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.embedding.Embedding;

@@ -1,11 +1,11 @@
-package com.abdelkrim.rag_impl;
+package com.abdelkrim.rag_impl.presentation;
 
-import com.abdelkrim.rag_impl.ChromaDB.Chroma;
-import com.abdelkrim.rag_impl.Document.DocumentHandler2;
+import com.abdelkrim.rag_impl.service.ChromaDB.Chroma;
+import com.abdelkrim.rag_impl.service.Document.DocumentHandler2;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.data.segment.TextSegment;
-import com.abdelkrim.rag_impl.pipeline.ChatbotPipeline;
+import com.abdelkrim.rag_impl.service.pipelineToLLM.ChatbotPipeline;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,12 +13,12 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TestApp {
+public class AppConsole {
 
     public static void main(String[] args) {
         try {
             // Step 1: Load the PDF document
-            String path = TestApp.class.getResource("/com/abdelkrim/rag_impl/Docs/JAVAFX.pdf").toURI().getPath();
+            String path = AppConsole.class.getResource("/com/abdelkrim/rag_impl/Docs/JAVAFX.pdf").toURI().getPath();
             File documentFile = new File(path);
             DocumentHandler2 documentHandler = new DocumentHandler2(documentFile);
 
@@ -31,8 +31,8 @@ public class TestApp {
             int maxLength = 2000; // Maximum length for each text segment
 
             // Uncomment the following lines if you need to store the segments in ChromaDB
-            List<com.abdelkrim.rag_impl.Document.TextSegment> segments = documentHandler.splitText(pdfContent, delimiters, maxLength);
-            for (com.abdelkrim.rag_impl.Document.TextSegment segment : segments) {
+            List<com.abdelkrim.rag_impl.service.Document.TextSegment> segments = documentHandler.splitText(pdfContent, delimiters, maxLength);
+            for (com.abdelkrim.rag_impl.service.Document.TextSegment segment : segments) {
                 String text = segment.getText().trim();
                 if (!text.isEmpty()) {
                     Chroma.addDocuments(text, new Metadata());

@@ -1,12 +1,10 @@
-package com.abdelkrim.rag_impl.Document;
+package com.abdelkrim.rag_impl.service.Document;
 
-import com.abdelkrim.rag_impl.Document.TextSegment;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;

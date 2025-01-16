@@ -9,5 +9,6 @@ module com.abdelkrim.rag_impl {
 
 
     opens com.abdelkrim.rag_impl to javafx.fxml;
+    opens com.abdelkrim.rag_impl.presentation to javafx.fxml;
 
 }
