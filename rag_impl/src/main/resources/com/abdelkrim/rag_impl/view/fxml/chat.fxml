@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.Insets?>
-<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.text.Text?>
 
-<?import javafx.scene.layout.VBox?>
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-
+      fx:controller="com.abdelkrim.rag_impl.presentation.UIcontrollers.ChatController"
       styleClass="main-container">
 
     <!-- Header -->
@@ -21,9 +18,9 @@
     <StackPane VBox.vgrow="ALWAYS">
         <!-- Initial Upload State -->
         <VBox fx:id="uploadBox" styleClass="upload-container" alignment="CENTER" spacing="20">
-            <FontIcon iconLiteral="fas-file-upload" styleClass="upload-icon"/>
+            <Label text="Upload" styleClass="upload-icon"/>
             <Label text="Click to upload PDF file" styleClass="upload-text"/>
-            <Button text="Upload File" styleClass="upload-button"/>
+            <Button text="Upload File" styleClass="upload-button" onAction="#handleFileUpload"/>
         </VBox>
 
         <!-- Chat Messages Area (Initially Hidden) -->
@@ -34,10 +31,7 @@
 
     <!-- Bottom Bar -->
     <HBox styleClass="bottom-bar" alignment="CENTER">
-        <Button styleClass="import-button">
-            <graphic>
-                <FontIcon iconLiteral="fas-file-import"/>
-            </graphic>
+        <Button text="Import" styleClass="import-button">
             <HBox.margin>
                 <Insets right="10"/>
             </HBox.margin>
@@ -46,10 +40,7 @@
         <TextField fx:id="messageInput" styleClass="message-input"
                    promptText="Start typing..." HBox.hgrow="ALWAYS"/>
 
-        <Button styleClass="send-button">
-            <graphic>
-                <FontIcon iconLiteral="fas-paper-plane"/>
-            </graphic>
+        <Button text="Send" styleClass="send-button" onAction="#handleSendMessage">
             <HBox.margin>
                 <Insets left="10"/>
             </HBox.margin>
