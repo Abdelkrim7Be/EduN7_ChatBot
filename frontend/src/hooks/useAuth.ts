@@ -6,7 +6,6 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount: validate existing token
   useEffect(() => {
     if (!hasToken()) {
       setLoading(false);
@@ -18,7 +17,6 @@ export function useAuth() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Listen for token-expiry events dispatched by apiFetch
   useEffect(() => {
     function handleExpired() {
       setUser(null);
