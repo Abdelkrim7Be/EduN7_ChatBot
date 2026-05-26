@@ -421,10 +421,7 @@ export default function App() {
               <Route path="users" element={<AdminUsers />} />
               <Route path="documents" element={<AdminDocuments />} />
               <Route path="conversations" element={<AdminConversations />} />
-              <Route
-                path="settings"
-                element={<AdminSettings />
-              />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
           )}
           {auth.isRole("professor", "admin") && (
