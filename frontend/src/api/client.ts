@@ -1,4 +1,13 @@
-import type { DocumentRecord, Provider, Conversation, StoredMessage, User, AdminUser, AdminStats, AdminDocument } from "../types";
+import type {
+  DocumentRecord,
+  Provider,
+  Conversation,
+  StoredMessage,
+  User,
+  AdminUser,
+  AdminStats,
+  AdminDocument,
+} from "../types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "edun7_token";
@@ -12,7 +21,10 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
+async function apiFetch(
+  url: string,
+  init: RequestInit = {},
+): Promise<Response> {
   const res = await fetch(`${BASE}${url}`, {
     ...init,
     headers: {
@@ -27,10 +39,9 @@ async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> 
   return res;
 }
 
-
 export async function loginWithEmail(
   email: string,
-  password: string
+  password: string,
 ): Promise<{ token: string; user: User }> {
   const res = await fetch(`${BASE}/api/auth/login`, {
     method: "POST",
@@ -47,7 +58,7 @@ export async function loginWithEmail(
 export async function registerWithEmail(
   email: string,
   name: string,
-  password: string
+  password: string,
 ): Promise<{ token: string; user: User }> {
   const res = await fetch(`${BASE}/api/auth/register`, {
     method: "POST",
@@ -55,7 +66,9 @@ export async function registerWithEmail(
     body: JSON.stringify({ email, name, password }),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: "Registration failed" }));
+    const err = await res
+      .json()
+      .catch(() => ({ error: "Registration failed" }));
     throw new Error(err.error ?? "Registration failed");
   }
   return res.json();
@@ -80,7 +93,6 @@ export function hasToken(): boolean {
   return !!getToken();
 }
 
-
 export async function createSession(): Promise<string> {
   const res = await apiFetch("/api/sessions", { method: "POST" });
   if (!res.ok) throw new Error("Failed to create session");
@@ -92,11 +104,10 @@ export async function deleteSession(sessionId: string): Promise<void> {
   await apiFetch(`/api/sessions/${sessionId}`, { method: "DELETE" });
 }
 
-
 export async function uploadDocuments(
   files: File[],
   sessionId: string,
-  scope: "private" | "shared" = "private"
+  scope: "private" | "shared" = "private",
 ): Promise<DocumentRecord[]> {
   const form = new FormData();
   files.forEach((f) => form.append("files[]", f));
@@ -128,14 +139,12 @@ export async function deleteDocument(docId: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete document");
 }
 
-
 export async function fetchProviders(): Promise<Provider[]> {
   const res = await apiFetch("/api/providers");
   if (!res.ok) throw new Error("Failed to fetch providers");
   const data = await res.json();
   return data.providers as Provider[];
 }
-
 
 export async function fetchConversations(): Promise<Conversation[]> {
   const res = await apiFetch("/api/conversations");
@@ -145,7 +154,7 @@ export async function fetchConversations(): Promise<Conversation[]> {
 }
 
 export async function fetchConversationMessages(
-  sessionId: string
+  sessionId: string,
 ): Promise<{ conversation: Conversation; messages: StoredMessage[] }> {
   const res = await apiFetch(`/api/conversations/${sessionId}`);
   if (!res.ok) throw new Error("Conversation not found");
@@ -154,7 +163,7 @@ export async function fetchConversationMessages(
 
 export async function updateConversationTitle(
   sessionId: string,
-  title: string
+  title: string,
 ): Promise<void> {
   await apiFetch(`/api/conversations/${sessionId}`, {
     method: "PUT",
@@ -167,7 +176,6 @@ export async function deleteConversationApi(sessionId: string): Promise<void> {
   await apiFetch(`/api/conversations/${sessionId}`, { method: "DELETE" });
 }
 
-
 export async function fetchAdminUsers(): Promise<AdminUser[]> {
   const res = await apiFetch("/api/admin/users");
   if (!res.ok) throw new Error("Failed to fetch users");
@@ -175,7 +183,10 @@ export async function fetchAdminUsers(): Promise<AdminUser[]> {
   return data.users as AdminUser[];
 }
 
-export async function updateUserRole(userId: string, role: string): Promise<void> {
+export async function updateUserRole(
+  userId: string,
+  role: string,
+): Promise<void> {
   const res = await apiFetch(`/api/admin/users/${userId}/role`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -184,7 +195,9 @@ export async function updateUserRole(userId: string, role: string): Promise<void
   if (!res.ok) throw new Error("Failed to update role");
 }
 
-export async function fetchAdminDocuments(scope?: "all" | "shared" | "private"): Promise<AdminDocument[]> {
+export async function fetchAdminDocuments(
+  scope?: "all" | "shared" | "private",
+): Promise<AdminDocument[]> {
   const qs = scope ? `?scope=${scope}` : "";
   const res = await apiFetch(`/api/admin/documents${qs}`);
   if (!res.ok) throw new Error("Failed to fetch documents");
@@ -193,7 +206,9 @@ export async function fetchAdminDocuments(scope?: "all" | "shared" | "private"):
 }
 
 export async function deleteAdminDocument(docId: string): Promise<void> {
-  const res = await apiFetch(`/api/admin/documents/${docId}`, { method: "DELETE" });
+  const res = await apiFetch(`/api/admin/documents/${docId}`, {
+    method: "DELETE",
+  });
   if (!res.ok) throw new Error("Failed to delete document");
 }
 
@@ -203,9 +218,87 @@ export async function fetchAdminStats(): Promise<AdminStats> {
   return res.json() as Promise<AdminStats>;
 }
 
+export interface AdminConversation {
+  session_id: string;
+  title: string;
+  created_at: number;
+  last_active: number;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  message_count: number;
+  last_message: string;
+}
+
+export interface AdminConversationMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export async function fetchAdminConversations(
+  search?: string,
+): Promise<AdminConversation[]> {
+  const qs = search ? `?search=${encodeURIComponent(search)}` : "";
+  const res = await apiFetch(`/api/admin/conversations${qs}`);
+  if (!res.ok) throw new Error("Failed to fetch conversations");
+  const data = await res.json();
+  return data.conversations as AdminConversation[];
+}
+
+export async function fetchAdminConversationMessages(
+  sessionId: string,
+): Promise<{
+  conversation: { title: string };
+  messages: AdminConversationMessage[];
+}> {
+  const res = await apiFetch(`/api/admin/conversations/${sessionId}`);
+  if (!res.ok) throw new Error("Failed to fetch conversation");
+  return res.json();
+}
+
+export async function deleteAdminConversation(
+  sessionId: string,
+): Promise<void> {
+  const res = await apiFetch(`/api/admin/conversations/${sessionId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete conversation");
+}
+
+export interface Setting {
+  key: string;
+  value: string;
+  label: string;
+  description: string;
+  kind: "text" | "number" | "boolean";
+  updated_at: number | null;
+  updated_by: string | null;
+}
+
+export async function fetchSettings(): Promise<Setting[]> {
+  const res = await apiFetch("/api/admin/settings");
+  if (!res.ok) throw new Error("Failed to fetch settings");
+  const data = await res.json();
+  return data.settings as Setting[];
+}
+
+export async function updateSetting(key: string, value: string): Promise<void> {
+  const res = await apiFetch(`/api/admin/settings/${key}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ value }),
+  });
+  if (!res.ok) throw new Error("Failed to update setting");
+}
 
 export interface StreamEvent {
-  type: "token" | "citations" | "done" | "error" | "heartbeat" | "provider_used";
+  type:
+    | "token"
+    | "citations"
+    | "done"
+    | "error"
+    | "heartbeat"
+    | "provider_used";
   content?: string;
   citations?: import("../types").Citation[];
   provider?: string;
