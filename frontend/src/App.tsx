@@ -18,6 +18,7 @@ import { AdminDashboard } from "./components/admin/AdminDashboard";
 import { AdminUsers } from "./components/admin/AdminUsers";
 import { AdminDocuments } from "./components/admin/AdminDocuments";
 import { AdminPlaceholder } from "./components/admin/AdminPlaceholder";
+import { LibraryPage } from "./components/LibraryPage";
 import {
   createSession,
   updateConversationTitle,
@@ -228,6 +229,7 @@ function ChatArea({ auth, providerState }: { auth: AuthState; providerState: Pro
 function AppHeader({ auth, providerState }: { auth: AuthState; providerState: ProviderState }) {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const isLibraryRoute = location.pathname === "/library";
 
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b border-brand-navy-border bg-brand-navy flex-shrink-0">
@@ -257,13 +259,25 @@ function AppHeader({ auth, providerState }: { auth: AuthState; providerState: Pr
           <Link
             to="/"
             className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
-              !isAdminRoute
+              !isAdminRoute && !isLibraryRoute
                 ? "bg-brand-blue text-white"
                 : "text-white/50 hover:text-white hover:bg-brand-navy-light"
             }`}
           >
             Chat
           </Link>
+          {auth.isRole("professor", "admin") && (
+            <Link
+              to="/library"
+              className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
+                isLibraryRoute
+                  ? "bg-brand-blue text-white"
+                  : "text-white/50 hover:text-white hover:bg-brand-navy-light"
+              }`}
+            >
+              Bibliothèque
+            </Link>
+          )}
           {auth.isRole("admin") && (
             <Link
               to="/admin/dashboard"
@@ -279,7 +293,7 @@ function AppHeader({ auth, providerState }: { auth: AuthState; providerState: Pr
         </nav>
 
         {/* Model selector — only in chat */}
-        {!isAdminRoute && (
+        {!isAdminRoute && !isLibraryRoute && (
           <ModelSelector
             providers={providerState.providers}
             selected={providerState.selected}
@@ -361,6 +375,9 @@ export default function App() {
                 />
               } />
             </Route>
+          )}
+          {auth.isRole("professor", "admin") && (
+            <Route path="/library" element={<LibraryPage user={auth.user!} isRole={auth.isRole} />} />
           )}
           <Route path="*" element={<ChatArea auth={auth} providerState={providerState} />} />
         </Routes>
