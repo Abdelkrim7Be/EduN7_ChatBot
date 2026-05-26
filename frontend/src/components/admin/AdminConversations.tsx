@@ -10,16 +10,6 @@ import {
 } from "../../api/client";
 import { useToast } from "../ToastProvider";
 
-function formatDate(ts: number): string {
-  return new Date(ts * 1000).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function timeAgo(ts: number): string {
   const diff = Math.floor((Date.now() / 1000 - ts) / 60);
   if (diff < 1) return "à l'instant";
