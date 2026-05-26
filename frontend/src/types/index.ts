@@ -14,6 +14,7 @@ export interface DocumentRecord {
   chunk_count: number;
   uploaded_at: string;
   scope?: "private" | "shared";
+  category?: string;
 }
 
 export interface Citation {
@@ -73,4 +74,23 @@ export interface Provider {
 export interface SelectedModel {
   provider: string;
   model: string;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: "student" | "professor" | "admin";
+  created_at: number;
+  last_seen: number;
+  conversation_count: number;
+  document_count: number;
+}
+
+export interface AdminStats {
+  user_count: number;
+  conversation_count: number;
+  message_count: number;
+  document_count: number;
+  shared_doc_count: number;
 }
