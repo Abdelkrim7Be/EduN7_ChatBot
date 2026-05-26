@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# LLM provider API keys — all optional; at least one must be set
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 CEREBRAS_API_KEY: str = os.getenv("CEREBRAS_API_KEY", "")
 GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
@@ -14,11 +13,9 @@ OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
 TOGETHER_API_KEY: str = os.getenv("TOGETHER_API_KEY", "")
 SAMBANOVA_API_KEY: str = os.getenv("SAMBANOVA_API_KEY", "")
 
-# Default provider — first available wins at startup
 DEFAULT_PROVIDER: str = os.getenv("DEFAULT_PROVIDER", "gemini")
 DEFAULT_MODEL: str = os.getenv("DEFAULT_MODEL", "gemini-2.0-flash")
 
-# Ollama
 OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
 LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", "8192"))
@@ -36,14 +33,11 @@ TOP_K_RESULTS: int = int(os.getenv("TOP_K_RESULTS", "5"))
 MAX_HISTORY_TURNS: int = int(os.getenv("MAX_HISTORY_TURNS", "6"))
 SESSION_TTL_SECONDS: int = int(os.getenv("SESSION_TTL_SECONDS", "3600"))
 
-# Auth
 JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-in-production")
 JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
 ADMIN_EMAILS: list[str] = [e.strip() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()]
-# Optional: restrict registration to these email domains (e.g. "enset.ma,gmail.com"). Empty = allow all.
 ALLOWED_EMAIL_DOMAINS: list[str] = [d.strip() for d in os.getenv("ALLOWED_EMAIL_DOMAINS", "").split(",") if d.strip()]
 
-# CORS & rate limiting
 ALLOWED_ORIGINS: list[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 RATE_LIMIT_CHAT: str = os.getenv("RATE_LIMIT_CHAT", "30 per hour")
 RATE_LIMIT_UPLOAD: str = os.getenv("RATE_LIMIT_UPLOAD", "20 per day")

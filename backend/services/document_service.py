@@ -1,4 +1,4 @@
-import os
+import re
 import time
 import uuid
 import logging
@@ -15,6 +15,23 @@ import database
 from models.document import DocumentRecord
 
 logger = logging.getLogger(__name__)
+
+_CATEGORY_RULES = [
+    ("Cours",        r"\b(cours|cm|chapitre|lecture|poly|polycopie|support)\b"),
+    ("TD / TP",      r"\b(td|tp|travaux|exercice|atelier|labo|pratique)\b"),
+    ("Examens",      r"\b(exam|examen|ds|controle|contrôle|qcm|epreuve|épreuve|partiel)\b"),
+    ("Projets",      r"\b(projet|rapport|pfe|memoire|mémoire|stage|these)\b"),
+    ("Corrections",  r"\b(correction|corrige|corrigé|solution|reponse|réponse)\b"),
+]
+
+
+def detect_category(filename: str) -> str:
+    normalized = re.sub(r"[_\-\s\.]+", " ", filename.lower())
+    for category, pattern in _CATEGORY_RULES:
+        if re.search(pattern, normalized):
+            return category
+    return "Autres"
+
 
 _embedding_fn = HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL)
 _splitter = RecursiveCharacterTextSplitter(
@@ -49,6 +66,7 @@ def ingest(file_path: str, original_filename: str, user_id: str, scope: str = "p
         client=_chroma_client(),
     )
 
+    category = detect_category(original_filename)
     record = DocumentRecord.create(
         doc_id=doc_id,
         name=original_filename,
@@ -56,17 +74,18 @@ def ingest(file_path: str, original_filename: str, user_id: str, scope: str = "p
         page_count=len(pages),
         chunk_count=len(chunks),
         scope=scope,
+        category=category,
     )
 
     with database.get_db() as conn:
         conn.execute(
             "INSERT INTO documents "
-            "(doc_id, user_id, name, original_filename, collection_name, page_count, chunk_count, scope, uploaded_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(doc_id, user_id, name, original_filename, collection_name, page_count, chunk_count, scope, category, uploaded_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 record.doc_id, user_id, record.name, record.original_filename,
                 record.collection_name, record.page_count, record.chunk_count,
-                record.scope, time.time(),
+                record.scope, record.category, time.time(),
             ),
         )
 
@@ -105,7 +124,7 @@ def delete(doc_id: str, user_id: str, role: str = "student") -> bool:
 def list_accessible(user_id: str) -> list[DocumentRecord]:
     with database.get_db() as conn:
         rows = conn.execute(
-            "SELECT doc_id, name, original_filename, collection_name, page_count, chunk_count, scope, uploaded_at "
+            "SELECT doc_id, name, original_filename, collection_name, page_count, chunk_count, scope, category, uploaded_at "
             "FROM documents WHERE user_id=? OR scope='shared' "
             "ORDER BY uploaded_at DESC",
             (user_id,),
@@ -120,6 +139,7 @@ def list_accessible(user_id: str) -> list[DocumentRecord]:
             chunk_count=r["chunk_count"],
             uploaded_at=str(r["uploaded_at"]),
             scope=r["scope"],
+            category=r["category"] or "Autres",
         )
         for r in rows
     ]
@@ -129,7 +149,7 @@ def get(doc_id: str, user_id: str | None = None) -> DocumentRecord | None:
     with database.get_db() as conn:
         row = conn.execute(
             "SELECT doc_id, user_id AS owner_id, name, original_filename, collection_name, "
-            "page_count, chunk_count, scope, uploaded_at FROM documents WHERE doc_id=?",
+            "page_count, chunk_count, scope, category, uploaded_at FROM documents WHERE doc_id=?",
             (doc_id,),
         ).fetchone()
     if row is None:
@@ -145,13 +165,14 @@ def get(doc_id: str, user_id: str | None = None) -> DocumentRecord | None:
         chunk_count=row["chunk_count"],
         uploaded_at=str(row["uploaded_at"]),
         scope=row["scope"],
+        category=row["category"] or "Autres",
     )
 
 
 def get_by_name(filename: str, user_id: str) -> DocumentRecord | None:
     with database.get_db() as conn:
         row = conn.execute(
-            "SELECT doc_id, name, original_filename, collection_name, page_count, chunk_count, scope, uploaded_at "
+            "SELECT doc_id, name, original_filename, collection_name, page_count, chunk_count, scope, category, uploaded_at "
             "FROM documents WHERE original_filename=? AND user_id=?",
             (filename, user_id),
         ).fetchone()
@@ -166,4 +187,5 @@ def get_by_name(filename: str, user_id: str) -> DocumentRecord | None:
         chunk_count=row["chunk_count"],
         uploaded_at=str(row["uploaded_at"]),
         scope=row["scope"],
+        category=row["category"] or "Autres",
     )

@@ -9,11 +9,10 @@ interface Props {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-5 px-6 text-center">
-      {/* Illustration */}
       <div className="relative">
-        <div className="w-20 h-20 rounded-2xl bg-brand-surface border border-brand-gray flex items-center justify-center">
+        <div className="w-20 h-20 rounded-2xl bg-brand-surface-muted border border-brand-gray flex items-center justify-center">
           <svg
-            className="w-10 h-10 text-brand-purple/70"
+            className="w-10 h-10 text-brand-blue/60"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -26,28 +25,26 @@ function EmptyState() {
             />
           </svg>
         </div>
-        {/* Decorative dots */}
-        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-brand-purple/40 border border-brand-purple/20" />
-        <span className="absolute -bottom-1 -left-1 w-2 h-2 rounded-full bg-cyan-500/30 border border-cyan-500/20" />
+        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-brand-blue/30 border border-brand-blue/20" />
+        <span className="absolute -bottom-1 -left-1 w-2 h-2 rounded-full bg-brand-gold/40 border border-brand-gold/20" />
       </div>
 
       <div>
-        <h3 className="text-white font-semibold text-base mb-1.5">Ask anything</h3>
-        <p className="text-gray-500 text-sm leading-relaxed max-w-xs">
-          Select a document from the sidebar, then ask any question about its content.
+        <h3 className="text-brand-navy font-semibold text-base mb-1.5">Posez votre question</h3>
+        <p className="text-brand-gray-text text-sm leading-relaxed max-w-xs">
+          Sélectionnez un document dans le panneau, puis interrogez son contenu.
         </p>
       </div>
 
-      {/* Suggestion pills */}
       <div className="flex flex-wrap justify-center gap-2 mt-1">
         {[
-          "Summarize this document",
-          "What are the main topics?",
-          "List key conclusions",
+          "Résumer ce document",
+          "Quels sont les points clés ?",
+          "Lister les conclusions",
         ].map((s) => (
           <span
             key={s}
-            className="px-3 py-1.5 rounded-full text-xs text-gray-400 border border-brand-gray bg-brand-surface/50"
+            className="px-3 py-1.5 rounded-full text-xs text-brand-gray-text border border-brand-gray bg-brand-surface-muted"
           >
             {s}
           </span>
@@ -65,7 +62,7 @@ export function ChatWindow({ messages }: Props) {
   }, [messages]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4">
+    <div className="flex-1 overflow-y-auto px-4 py-4 bg-white">
       {messages.length === 0 && <EmptyState />}
       {messages.map((msg) => (
         <MessageBubble key={msg.id} message={msg} />

@@ -8,7 +8,6 @@ export function useChat(sessionId: string) {
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<boolean>(false);
 
-  // Restore messages from DB whenever sessionId changes (covers page refresh + conversation switch)
   useEffect(() => {
     if (!sessionId) return;
     let cancelled = false;

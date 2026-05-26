@@ -1,4 +1,4 @@
-import type { DocumentRecord, Provider, Conversation, StoredMessage, User } from "../types";
+import type { DocumentRecord, Provider, Conversation, StoredMessage, User, AdminUser, AdminStats } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "edun7_token";
@@ -27,7 +27,6 @@ async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> 
   return res;
 }
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
 
 export async function loginWithEmail(
   email: string,
@@ -81,7 +80,6 @@ export function hasToken(): boolean {
   return !!getToken();
 }
 
-// ── Sessions ──────────────────────────────────────────────────────────────────
 
 export async function createSession(): Promise<string> {
   const res = await apiFetch("/api/sessions", { method: "POST" });
@@ -94,7 +92,6 @@ export async function deleteSession(sessionId: string): Promise<void> {
   await apiFetch(`/api/sessions/${sessionId}`, { method: "DELETE" });
 }
 
-// ── Documents ─────────────────────────────────────────────────────────────────
 
 export async function uploadDocuments(
   files: File[],
@@ -104,7 +101,7 @@ export async function uploadDocuments(
   files.forEach((f) => form.append("files[]", f));
   form.append("session_id", sessionId);
 
-  // FormData — do NOT set Content-Type (browser sets multipart boundary); apiFetch adds auth header
+  // don't set Content-Type — browser sets the multipart boundary automatically
   const res = await apiFetch("/api/documents/upload", {
     method: "POST",
     body: form,
@@ -129,7 +126,6 @@ export async function deleteDocument(docId: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete document");
 }
 
-// ── Providers ─────────────────────────────────────────────────────────────────
 
 export async function fetchProviders(): Promise<Provider[]> {
   const res = await apiFetch("/api/providers");
@@ -138,7 +134,6 @@ export async function fetchProviders(): Promise<Provider[]> {
   return data.providers as Provider[];
 }
 
-// ── Conversations ─────────────────────────────────────────────────────────────
 
 export async function fetchConversations(): Promise<Conversation[]> {
   const res = await apiFetch("/api/conversations");
@@ -170,7 +165,29 @@ export async function deleteConversationApi(sessionId: string): Promise<void> {
   await apiFetch(`/api/conversations/${sessionId}`, { method: "DELETE" });
 }
 
-// ── Chat stream ───────────────────────────────────────────────────────────────
+
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  const res = await apiFetch("/api/admin/users");
+  if (!res.ok) throw new Error("Failed to fetch users");
+  const data = await res.json();
+  return data.users as AdminUser[];
+}
+
+export async function updateUserRole(userId: string, role: string): Promise<void> {
+  const res = await apiFetch(`/api/admin/users/${userId}/role`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ role }),
+  });
+  if (!res.ok) throw new Error("Failed to update role");
+}
+
+export async function fetchAdminStats(): Promise<AdminStats> {
+  const res = await apiFetch("/api/admin/stats");
+  if (!res.ok) throw new Error("Failed to fetch stats");
+  return res.json() as Promise<AdminStats>;
+}
+
 
 export interface StreamEvent {
   type: "token" | "citations" | "done" | "error" | "heartbeat" | "provider_used";
