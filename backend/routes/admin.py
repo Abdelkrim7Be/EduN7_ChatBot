@@ -79,29 +79,51 @@ def stats():
 @admin_bp.get("/api/admin/documents")
 @require_auth
 @require_role("admin", "professor")
-def list_shared_documents():
+def list_admin_documents():
+    scope = request.args.get("scope", "all")
     with database.get_db() as conn:
-        rows = conn.execute("""
-            SELECT d.*, u.name AS uploader_name, u.email AS uploader_email
-            FROM documents d
-            JOIN users u ON u.id = d.user_id
-            WHERE d.scope = 'shared'
-            ORDER BY d.uploaded_at DESC
-        """).fetchall()
+        if scope in ("private", "shared"):
+            rows = conn.execute("""
+                SELECT d.*, u.name AS uploader_name, u.email AS uploader_email
+                FROM documents d
+                JOIN users u ON u.id = d.user_id
+                WHERE d.scope = ?
+                ORDER BY d.uploaded_at DESC
+            """, (scope,)).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT d.*, u.name AS uploader_name, u.email AS uploader_email
+                FROM documents d
+                JOIN users u ON u.id = d.user_id
+                ORDER BY d.uploaded_at DESC
+            """).fetchall()
     return jsonify({
         "documents": [
             {
-                "doc_id":           r["doc_id"],
-                "name":             r["name"],
+                "doc_id":            r["doc_id"],
+                "name":              r["name"],
                 "original_filename": r["original_filename"],
-                "collection_name":  r["collection_name"],
-                "page_count":       r["page_count"],
-                "chunk_count":      r["chunk_count"],
-                "scope":            r["scope"],
-                "uploaded_at":      r["uploaded_at"],
-                "uploader_name":    r["uploader_name"],
-                "uploader_email":   r["uploader_email"],
+                "collection_name":   r["collection_name"],
+                "page_count":        r["page_count"],
+                "chunk_count":       r["chunk_count"],
+                "scope":             r["scope"],
+                "category":          r["category"],
+                "uploaded_at":       r["uploaded_at"],
+                "uploader_name":     r["uploader_name"],
+                "uploader_email":    r["uploader_email"],
             }
             for r in rows
         ]
     }), 200
+
+
+@admin_bp.delete("/api/admin/documents/<doc_id>")
+@require_auth
+@require_role("admin")
+def delete_admin_document(doc_id: str):
+    from services import document_service
+    from flask import g
+    deleted = document_service.delete(doc_id, g.user.id, role="admin")
+    if not deleted:
+        return jsonify({"error": "Document not found"}), 404
+    return jsonify({"deleted": True}), 200
