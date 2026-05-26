@@ -95,11 +95,13 @@ export async function deleteSession(sessionId: string): Promise<void> {
 
 export async function uploadDocuments(
   files: File[],
-  sessionId: string
+  sessionId: string,
+  scope: "private" | "shared" = "private"
 ): Promise<DocumentRecord[]> {
   const form = new FormData();
   files.forEach((f) => form.append("files[]", f));
   form.append("session_id", sessionId);
+  form.append("scope", scope);
 
   // don't set Content-Type — browser sets the multipart boundary automatically
   const res = await apiFetch("/api/documents/upload", {

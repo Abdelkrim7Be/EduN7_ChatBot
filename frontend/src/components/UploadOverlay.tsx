@@ -2,10 +2,11 @@ import { useRef, useState, type DragEvent, type ChangeEvent } from "react";
 import type { UploadStage } from "../hooks/useDocuments";
 
 interface Props {
-  onUpload: (files: File[]) => void;
+  onUpload: (files: File[], scope: "private" | "shared") => void;
   isUploading: boolean;
   uploadStage: UploadStage;
   error: string | null;
+  isPrivileged?: boolean;
 }
 
 const STAGE_LABELS: Record<NonNullable<UploadStage>, string> = {
@@ -24,8 +25,9 @@ const STAGE_ORDER: NonNullable<UploadStage>[] = [
   "done",
 ];
 
-export function UploadOverlay({ onUpload, isUploading, uploadStage, error }: Props) {
+export function UploadOverlay({ onUpload, isUploading, uploadStage, error, isPrivileged }: Props) {
   const [isDragging, setIsDragging] = useState(false);
+  const [scope, setScope] = useState<"private" | "shared">("private");
   const inputRef = useRef<HTMLInputElement>(null);
 
   function handleDrop(e: DragEvent) {
@@ -34,12 +36,12 @@ export function UploadOverlay({ onUpload, isUploading, uploadStage, error }: Pro
     const files = Array.from(e.dataTransfer.files).filter((f) =>
       f.name.toLowerCase().endsWith(".pdf")
     );
-    if (files.length) onUpload(files);
+    if (files.length) onUpload(files, scope);
   }
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    if (files.length) onUpload(files);
+    if (files.length) onUpload(files, scope);
     e.target.value = "";
   }
 
@@ -64,6 +66,40 @@ export function UploadOverlay({ onUpload, isUploading, uploadStage, error }: Pro
             Importez vos documents PDF et posez vos questions grâce à l'IA
           </p>
         </div>
+
+        {/* Scope toggle — professors and admins only */}
+        {isPrivileged && !isUploading && (
+          <div className="flex items-center justify-center mb-6">
+            <div className="flex items-center gap-1 bg-brand-gray rounded-xl p-1">
+              <button
+                onClick={() => setScope("private")}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  scope === "private"
+                    ? "bg-white text-brand-navy shadow-sm"
+                    : "text-brand-gray-text hover:text-brand-navy"
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Privé
+              </button>
+              <button
+                onClick={() => setScope("shared")}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  scope === "shared"
+                    ? "bg-brand-gold text-brand-navy shadow-sm"
+                    : "text-brand-gray-text hover:text-brand-navy"
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Partagé avec tous
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Drop zone */}
         <div

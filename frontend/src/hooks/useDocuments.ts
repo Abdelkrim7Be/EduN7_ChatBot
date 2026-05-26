@@ -18,7 +18,7 @@ export function useDocuments(sessionId: string) {
   const [selectedDocIds, setSelectedDocIds] = useState<Set<string>>(new Set());
 
   const upload = useCallback(
-    async (files: File[]) => {
+    async (files: File[], scope: "private" | "shared" = "private") => {
       if (!sessionId) return;
       setIsUploading(true);
       setUploadError(null);
@@ -31,7 +31,7 @@ export function useDocuments(sessionId: string) {
       ];
 
       try {
-        const newDocs = await uploadDocuments(files, sessionId);
+        const newDocs = await uploadDocuments(files, sessionId, scope);
         timers.forEach(clearTimeout);
 
         setDocuments((prev) => {
