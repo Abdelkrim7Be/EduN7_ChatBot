@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 
@@ -12,6 +12,7 @@ class DocumentRecord:
     chunk_count: int
     uploaded_at: str
     scope: str = "private"
+    category: str = "Autres"
 
     def to_dict(self) -> dict:
         return {
@@ -23,6 +24,7 @@ class DocumentRecord:
             "chunk_count": self.chunk_count,
             "uploaded_at": self.uploaded_at,
             "scope": self.scope,
+            "category": self.category,
         }
 
     @staticmethod
@@ -33,6 +35,7 @@ class DocumentRecord:
         page_count: int,
         chunk_count: int,
         scope: str = "private",
+        category: str = "Autres",
     ) -> "DocumentRecord":
         return DocumentRecord(
             doc_id=doc_id,
@@ -43,4 +46,5 @@ class DocumentRecord:
             chunk_count=chunk_count,
             uploaded_at=datetime.now(timezone.utc).isoformat(),
             scope=scope,
+            category=category,
         )
