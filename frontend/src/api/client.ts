@@ -134,6 +134,32 @@ export async function listDocuments(): Promise<DocumentRecord[]> {
   return data.documents as DocumentRecord[];
 }
 
+export interface DocumentStatus {
+  doc_id: string;
+  status: "uploading" | "parsing" | "chunking" | "embedding" | "ready" | "failed";
+  error_message: string | null;
+  page_count: number;
+  chunk_count: number;
+}
+
+export async function fetchDocumentStatus(docId: string): Promise<DocumentStatus> {
+  const res = await apiFetch(`/api/documents/${docId}/status`);
+  if (!res.ok) throw new Error("Status check failed");
+  return res.json() as Promise<DocumentStatus>;
+}
+
+export interface DocumentPreview {
+  page: number;
+  total_pages: number;
+  text: string;
+}
+
+export async function fetchDocumentPreview(docId: string, page: number): Promise<DocumentPreview> {
+  const res = await apiFetch(`/api/documents/${docId}/preview?page=${page}`);
+  if (!res.ok) throw new Error("Preview not available");
+  return res.json() as Promise<DocumentPreview>;
+}
+
 export async function deleteDocument(docId: string): Promise<void> {
   const res = await apiFetch(`/api/documents/${docId}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete document");

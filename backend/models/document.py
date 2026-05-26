@@ -13,6 +13,8 @@ class DocumentRecord:
     uploaded_at: str
     scope: str = "private"
     category: str = "Autres"
+    status: str = "ready"
+    error_message: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -25,6 +27,7 @@ class DocumentRecord:
             "uploaded_at": self.uploaded_at,
             "scope": self.scope,
             "category": self.category,
+            "status": self.status,
         }
 
     @staticmethod
@@ -36,6 +39,7 @@ class DocumentRecord:
         chunk_count: int,
         scope: str = "private",
         category: str = "Autres",
+        status: str = "ready",
     ) -> "DocumentRecord":
         return DocumentRecord(
             doc_id=doc_id,
@@ -47,4 +51,5 @@ class DocumentRecord:
             uploaded_at=datetime.now(timezone.utc).isoformat(),
             scope=scope,
             category=category,
+            status=status,
         )
