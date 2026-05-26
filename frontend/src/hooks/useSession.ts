@@ -3,11 +3,15 @@ import { createSession } from "../api/client";
 
 const STORAGE_KEY = "edun7_session_id";
 
-export function useSession() {
+export function useSession(isAuthenticated: boolean) {
   const [sessionId, setSessionId] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       setSessionId(stored);
@@ -21,7 +25,7 @@ export function useSession() {
         .catch(console.error)
         .finally(() => setLoading(false));
     }
-  }, []);
+  }, [isAuthenticated]);
 
   function resetSession() {
     localStorage.removeItem(STORAGE_KEY);

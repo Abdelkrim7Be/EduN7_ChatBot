@@ -11,11 +11,11 @@ services:
       PERSIST_DIRECTORY: /chroma/chroma
       ANONYMIZED_TELEMETRY: "FALSE"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/heartbeat"]
+      test: ["CMD", "bash", "-c", "timeout 5 bash -c '</dev/tcp/localhost/8000'"]
       interval: 10s
-      timeout: 5s
+      timeout: 6s
       retries: 5
-      start_period: 10s
+      start_period: 15s
     restart: unless-stopped
 
   backend:
@@ -30,6 +30,8 @@ services:
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
       UPLOAD_DIR: /app/uploads
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
     depends_on:
       chromadb:
         condition: service_healthy

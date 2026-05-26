@@ -18,8 +18,6 @@ class AuthError(Exception):
         self.status = status
 
 
-# ── Password helpers ──────────────────────────────────────────────────────────
-
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
@@ -27,8 +25,6 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
-
-# ── Registration ──────────────────────────────────────────────────────────────
 
 def register_user(email: str, name: str, password: str) -> UserRecord:
     email = email.strip().lower()
@@ -39,7 +35,6 @@ def register_user(email: str, name: str, password: str) -> UserRecord:
     if len(password) < 8:
         raise AuthError("password must be at least 8 characters", 400)
 
-    # Optional domain restriction
     if config.ALLOWED_EMAIL_DOMAINS:
         domain = email.split("@")[-1] if "@" in email else ""
         if domain not in config.ALLOWED_EMAIL_DOMAINS:
@@ -66,8 +61,6 @@ def register_user(email: str, name: str, password: str) -> UserRecord:
     return UserRecord(id=user_id, email=email, name=name, role=role)
 
 
-# ── Login ─────────────────────────────────────────────────────────────────────
-
 def authenticate_user(email: str, password: str) -> UserRecord:
     email = email.strip().lower()
     with database.get_db() as conn:
@@ -84,8 +77,6 @@ def authenticate_user(email: str, password: str) -> UserRecord:
 
     return UserRecord(id=row["id"], email=row["email"], name=row["name"], role=row["role"])
 
-
-# ── JWT ───────────────────────────────────────────────────────────────────────
 
 def create_jwt(user: UserRecord) -> str:
     payload = {

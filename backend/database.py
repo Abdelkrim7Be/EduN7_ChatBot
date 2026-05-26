@@ -83,3 +83,8 @@ def init_db() -> None:
         if "password_hash" not in ucols:
             conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''")
         # Remove picture column data not needed for email/password auth (keep column for compat)
+
+        # Migrate: documents — add category column
+        dcols = [r[1] for r in conn.execute("PRAGMA table_info(documents)").fetchall()]
+        if "category" not in dcols:
+            conn.execute("ALTER TABLE documents ADD COLUMN category TEXT NOT NULL DEFAULT 'Autres'")
