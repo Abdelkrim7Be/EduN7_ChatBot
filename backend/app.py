@@ -1,0 +1,47 @@
+import logging
+import os
+from flask import Flask, jsonify
+from flask_cors import CORS
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+
+
+def create_app() -> Flask:
+    import config
+    import database
+    database.init_db()
+
+    app = Flask(__name__)
+    CORS(app, resources={r"/api/*": {"origins": config.ALLOWED_ORIGINS}})
+
+    from limiter_instance import limiter
+    limiter.init_app(app)
+
+    from routes.auth import auth_bp
+    from routes.documents import documents_bp
+    from routes.chat import chat_bp
+    from routes.providers import providers_bp
+    from routes.conversations import conversations_bp
+    from routes.admin import admin_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(documents_bp)
+    app.register_blueprint(chat_bp)
+    app.register_blueprint(providers_bp)
+    app.register_blueprint(conversations_bp)
+    app.register_blueprint(admin_bp)
+
+    @app.route("/api/health")
+    def health():
+        return jsonify({"status": "ok"}), 200
+
+    return app
+
+
+if __name__ == "__main__":
+    app = create_app()
+    port = int(os.getenv("PORT", 8080))
+    app.run(host="0.0.0.0", port=port, threaded=True, debug=False)
