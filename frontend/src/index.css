@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #FFFFFF;
+  color: #1E3A5F;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F0F7FF;
+}
+::-webkit-scrollbar-thumb {
+  background: #B8D0E8;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5B7FA6;
+}
+
+/* Message slide-in animation */
+@keyframes message-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-message-in {
+  animation: message-in 0.22s ease-out forwards;
+}
+
+/* Streaming cursor blink */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background-color: #0077B6;
+  border-radius: 1px;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursor-blink 0.75s step-end infinite;
+}
+
+/* Inline citation superscripts */
+.cite-ref {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62em;
+  line-height: 1;
+  padding: 1px 3px;
+  min-width: 1.3em;
+  height: 1.4em;
+  background-color: rgba(0, 119, 182, 0.15);
+  color: #0077B6;
+  border-radius: 3px;
+  font-weight: 700;
+  vertical-align: super;
+  margin: 0 1px;
+  user-select: none;
+  transition: background-color 0.15s;
+  font-style: normal;
+  font-family: system-ui, sans-serif;
+  cursor: default;
+}
+
+.cite-ref:hover {
+  background-color: rgba(0, 119, 182, 0.3);
+  color: #005F92;
+}
