@@ -5,7 +5,8 @@ from flask import Blueprint, request, jsonify, Response, stream_with_context, g
 import config
 from limiter_instance import limiter
 from middleware.auth import require_auth
-from services import session_service, chat_service, document_service
+from services import session_service, chat_service
+from services.access import accessible_doc_ids
 
 logger = logging.getLogger(__name__)
 chat_bp = Blueprint("chat", __name__)
@@ -51,11 +52,13 @@ def chat_stream():
     except PermissionError:
         return jsonify({"error": "Access denied"}), 403
 
-    # Verify access to all requested doc_ids
-    for doc_id in doc_ids:
-        doc = document_service.get(doc_id, g.user.id)
-        if doc is None:
-            return jsonify({"error": f"Document {doc_id} not found or access denied"}), 403
+    # Intersect client-supplied doc_ids with what this user can actually access.
+    # One DB query regardless of how many doc_ids the client sends.
+    if doc_ids:
+        allowed = accessible_doc_ids(g.user.id, g.user.role)
+        forbidden = [did for did in doc_ids if did not in allowed]
+        if forbidden:
+            return jsonify({"error": "Access denied to one or more documents"}), 403
 
     def generate():
         yield from chat_service.stream_response(session_id, message, doc_ids, provider, model)
