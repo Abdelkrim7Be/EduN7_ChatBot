@@ -84,10 +84,14 @@ def init_db() -> None:
             conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''")
         # Remove picture column data not needed for email/password auth (keep column for compat)
 
-        # Migrate: documents — add category column
+        # Migrate: documents — add category, status, error_message columns
         dcols = [r[1] for r in conn.execute("PRAGMA table_info(documents)").fetchall()]
         if "category" not in dcols:
             conn.execute("ALTER TABLE documents ADD COLUMN category TEXT NOT NULL DEFAULT 'Autres'")
+        if "status" not in dcols:
+            conn.execute("ALTER TABLE documents ADD COLUMN status TEXT NOT NULL DEFAULT 'ready'")
+        if "error_message" not in dcols:
+            conn.execute("ALTER TABLE documents ADD COLUMN error_message TEXT")
 
         # Settings table — runtime config editable by admins without redeploy
         conn.execute("""
