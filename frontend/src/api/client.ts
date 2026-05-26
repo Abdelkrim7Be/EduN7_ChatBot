@@ -1,4 +1,4 @@
-import type { DocumentRecord, Provider, Conversation, StoredMessage, User, AdminUser, AdminStats } from "../types";
+import type { DocumentRecord, Provider, Conversation, StoredMessage, User, AdminUser, AdminStats, AdminDocument } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
 const TOKEN_KEY = "edun7_token";
@@ -182,6 +182,19 @@ export async function updateUserRole(userId: string, role: string): Promise<void
     body: JSON.stringify({ role }),
   });
   if (!res.ok) throw new Error("Failed to update role");
+}
+
+export async function fetchAdminDocuments(scope?: "all" | "shared" | "private"): Promise<AdminDocument[]> {
+  const qs = scope ? `?scope=${scope}` : "";
+  const res = await apiFetch(`/api/admin/documents${qs}`);
+  if (!res.ok) throw new Error("Failed to fetch documents");
+  const data = await res.json();
+  return data.documents as AdminDocument[];
+}
+
+export async function deleteAdminDocument(docId: string): Promise<void> {
+  const res = await apiFetch(`/api/admin/documents/${docId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete document");
 }
 
 export async function fetchAdminStats(): Promise<AdminStats> {

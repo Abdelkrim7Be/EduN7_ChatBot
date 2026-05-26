@@ -94,3 +94,17 @@ export interface AdminStats {
   document_count: number;
   shared_doc_count: number;
 }
+
+export interface AdminDocument {
+  doc_id: string;
+  name: string;
+  original_filename: string;
+  collection_name: string;
+  page_count: number;
+  chunk_count: number;
+  scope: "private" | "shared";
+  category: string;
+  uploaded_at: string;
+  uploader_name: string;
+  uploader_email: string;
+}
