@@ -247,15 +247,15 @@ Bad: `"update stuff"` · `"fix"` · `"changes"` · `"wip"`
 - **Conversation search** — real-time filter in sidebar
 - **Mobile sidebar** — hamburger in header on small screens, overlay drawer with backdrop
 - **Message actions** — copy-to-clipboard + thumbs up/down on AI message hover
+- **react-router-dom routing** — `/` (chat), `/library` (professor/admin), `/admin/*` (admin panel) — state-based nav replaced
+- **Admin panel v2** — left nav layout at `/admin/*`; Dashboard (stats + activity), Users (searchable + role filter + inline role change), Documents (all docs + scope filter + admin delete)
+- **Professor library view** — `/library` for professor/admin roles; shared docs with card layout, search, delete for own uploads
 
 **Not yet built — GUI:**
-- Conversation history reload on session switch (messages disappear when switching — `fetchConversationMessages` exists but isn't wired to useChat on session change)
-- Shared document upload UI for professors (scope toggle on upload overlay — backend supports it, no UI)
-- Admin panel v2: full layout with left nav, Documents table, Conversations moderation view, Settings panel, Audit log
 - Real upload progress (current stages are simulated with timeouts — needs async backend pipeline + polling)
-- Professor library view (published docs separate from personal workspace)
 - Document preview (show extracted text per page before/after upload)
-- react-router-dom routing (currently state-based navigation — needed for proper /admin/* URL routing)
+- Admin panel v2 polish: Conversations moderation view, Settings panel, Audit log (placeholders exist at /admin/conversations and /admin/settings)
+- Professor library batch operations (currently single-delete only)
 
 **Not yet built — Backend/Infra:**
 - Async ingest pipeline (background worker + status field + polling endpoint)
