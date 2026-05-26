@@ -1,6 +1,5 @@
 import re
 import time
-import uuid
 import logging
 from pathlib import Path
 
