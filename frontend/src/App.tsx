@@ -236,9 +236,10 @@ export default function App() {
           <AdminPage />
         ) : !hasDocuments ? (
           <UploadOverlay
-            onUpload={upload}
+            onUpload={(files, scope) => upload(files, scope)}
             isUploading={isUploading}
             uploadStage={uploadStage}
+            isPrivileged={auth.isRole("professor", "admin")}
             error={uploadError}
           />
         ) : (
