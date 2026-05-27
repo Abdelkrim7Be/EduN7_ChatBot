@@ -18,10 +18,10 @@ export type UploadStage =
 // Backend status → frontend stage label
 const STATUS_STAGE: Record<string, UploadStage> = {
   uploading: "uploading",
-  parsing:   "extracting",
-  chunking:  "chunking",
+  parsing: "extracting",
+  chunking: "chunking",
   embedding: "embedding",
-  ready:     "done",
+  ready: "done",
 };
 
 const STAGE_ORDER: NonNullable<UploadStage>[] = [
@@ -32,27 +32,52 @@ const STAGE_ORDER: NonNullable<UploadStage>[] = [
   "done",
 ];
 
+interface PollResult {
+  succeeded: string[];
+  failed: { id: string; message: string }[];
+}
+
 async function pollUntilReady(
   docIds: string[],
   onStage: (s: UploadStage) => void,
-): Promise<void> {
-  while (true) {
-    const statuses = await Promise.all(docIds.map((id) => fetchDocumentStatus(id)));
+): Promise<PollResult> {
+  const pending = new Set(docIds);
+  const succeeded: string[] = [];
+  const failed: { id: string; message: string }[] = [];
 
-    const anyFailed = statuses.find((s) => s.status === "failed");
-    if (anyFailed) {
-      throw new Error(anyFailed.error_message ?? "Processing failed");
+  while (pending.size > 0) {
+    const results = await Promise.all(
+      [...pending].map(async (id) => ({
+        id,
+        ...(await fetchDocumentStatus(id)),
+      })),
+    );
+
+    for (const s of results) {
+      if (s.status === "failed") {
+        pending.delete(s.id);
+        failed.push({
+          id: s.id,
+          message: s.error_message ?? "Processing failed",
+        });
+      } else if (s.status === "ready") {
+        pending.delete(s.id);
+        succeeded.push(s.id);
+      }
     }
 
-    // Show the stage of whichever doc is furthest behind
-    const stages = statuses.map((s) => STATUS_STAGE[s.status] ?? "uploading");
-    const worstIdx = Math.min(...stages.map((s) => STAGE_ORDER.indexOf(s)));
-    onStage(STAGE_ORDER[Math.max(0, worstIdx)]);
-
-    if (statuses.every((s) => s.status === "ready")) return;
-
-    await new Promise((r) => setTimeout(r, 600));
+    if (pending.size > 0) {
+      const pendingStatuses = results.filter((s) => pending.has(s.id));
+      const stages = pendingStatuses.map(
+        (s) => STATUS_STAGE[s.status] ?? "uploading",
+      );
+      const worstIdx = Math.min(...stages.map((s) => STAGE_ORDER.indexOf(s)));
+      onStage(STAGE_ORDER[Math.max(0, worstIdx)]);
+      await new Promise((r) => setTimeout(r, 600));
+    }
   }
+
+  return { succeeded, failed };
 }
 
 export function useDocuments(sessionId: string) {
@@ -77,7 +102,10 @@ export function useDocuments(sessionId: string) {
         // Add pending records so they appear in the sidebar right away
         setDocuments((prev) => {
           const existingIds = new Set(prev.map((d) => d.doc_id));
-          return [...prev, ...pendingDocs.filter((d) => !existingIds.has(d.doc_id))];
+          return [
+            ...prev,
+            ...pendingDocs.filter((d) => !existingIds.has(d.doc_id)),
+          ];
         });
         setSelectedDocIds((prev) => {
           const next = new Set(prev);
@@ -85,12 +113,25 @@ export function useDocuments(sessionId: string) {
           return next;
         });
 
-        // Poll until all docs reach 'ready'
-        await pollUntilReady(docIds, setUploadStage);
+        // Poll until all docs settle (ready or failed individually)
+        const { succeeded, failed } = await pollUntilReady(
+          docIds,
+          setUploadStage,
+        );
 
-        // Refresh to get final page_count / chunk_count values
+        // Refresh and hide any failed docs (they have no usable content)
         const finalDocs = await listDocuments();
-        setDocuments(finalDocs);
+        setDocuments(finalDocs.filter((d) => d.status !== "failed"));
+
+        if (failed.length > 0 && succeeded.length === 0) {
+          setUploadError(
+            `${failed.length} fichier(s) n'ont pas pu être traités`,
+          );
+        } else if (failed.length > 0) {
+          setUploadError(
+            `${failed.length} fichier(s) ont échoué, ${succeeded.length} traité(s) avec succès`,
+          );
+        }
 
         setUploadStage("done");
         setTimeout(() => {

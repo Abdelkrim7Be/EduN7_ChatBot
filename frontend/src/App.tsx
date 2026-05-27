@@ -6,6 +6,7 @@ import { useChat } from "./hooks/useChat";
 import { useProviders } from "./hooks/useProviders";
 import { useConversations } from "./hooks/useConversations";
 import { useAuth } from "./hooks/useAuth";
+import { useTheme } from "./hooks/useTheme";
 import { UploadOverlay } from "./components/UploadOverlay";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { ChatWindow } from "./components/ChatWindow";
@@ -28,6 +29,11 @@ import {
 import type { Conversation, Provider, SelectedModel } from "./types";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+
+interface ThemeState {
+  theme: "dark" | "light";
+  toggle: () => void;
+}
 
 interface AuthState {
   user: { name: string; role: string } | null;
@@ -259,16 +265,19 @@ function ChatArea({
 function AppHeader({
   auth,
   providerState,
+  themeState,
 }: {
   auth: AuthState;
   providerState: ProviderState;
+  themeState: ThemeState;
 }) {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isLibraryRoute = location.pathname === "/library";
+  const isDark = themeState.theme === "dark";
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b border-brand-navy-border bg-brand-navy flex-shrink-0">
+    <header className="flex items-center justify-between px-4 py-3 border-b border-brand-gray dark:border-brand-navy-border bg-white dark:bg-brand-navy flex-shrink-0">
       <div className="flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-lg bg-brand-blue flex items-center justify-center shadow-sm shadow-brand-blue/50">
           <svg
@@ -288,7 +297,7 @@ function AppHeader({
         <div className="flex items-center gap-1.5">
           <Link
             to="/"
-            className="text-white font-bold text-sm tracking-tight hover:text-white/80 transition-colors"
+            className="text-brand-navy dark:text-white font-bold text-sm tracking-tight hover:text-brand-blue dark:hover:text-white/80 transition-colors"
           >
             ENSET AI
           </Link>
@@ -309,7 +318,7 @@ function AppHeader({
             className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
               !isAdminRoute && !isLibraryRoute
                 ? "bg-brand-blue text-white"
-                : "text-white/50 hover:text-white hover:bg-brand-navy-light"
+                : "text-brand-gray-text dark:text-white/50 hover:text-brand-navy dark:hover:text-white hover:bg-brand-surface-muted dark:hover:bg-brand-navy-light"
             }`}
           >
             Chat
@@ -320,7 +329,7 @@ function AppHeader({
               className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
                 isLibraryRoute
                   ? "bg-brand-blue text-white"
-                  : "text-white/50 hover:text-white hover:bg-brand-navy-light"
+                  : "text-brand-gray-text dark:text-white/50 hover:text-brand-navy dark:hover:text-white hover:bg-brand-surface-muted dark:hover:bg-brand-navy-light"
               }`}
             >
               Bibliothèque
@@ -332,7 +341,7 @@ function AppHeader({
               className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
                 isAdminRoute
                   ? "bg-brand-blue text-white"
-                  : "text-white/50 hover:text-white hover:bg-brand-navy-light"
+                  : "text-brand-gray-text dark:text-white/50 hover:text-brand-navy dark:hover:text-white hover:bg-brand-surface-muted dark:hover:bg-brand-navy-light"
               }`}
             >
               Admin
@@ -350,18 +359,56 @@ function AppHeader({
           />
         )}
 
-        {/* User */}
+        {/* User + theme toggle */}
         <div className="flex items-center gap-2 ml-1">
           <div className="w-7 h-7 rounded-full bg-brand-blue flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm">
             {auth.user!.name.charAt(0).toUpperCase()}
           </div>
-          <span className="text-xs text-white/60 hidden sm:block max-w-[120px] truncate">
+          <span className="text-xs text-brand-gray-text dark:text-white/60 hidden sm:block max-w-[120px] truncate">
             {auth.user!.name}
           </span>
+
+          {/* Theme toggle */}
+          <button
+            onClick={themeState.toggle}
+            title={isDark ? "Mode clair" : "Mode sombre"}
+            className="p-1 text-brand-gray-mid dark:text-white/40 hover:text-brand-navy dark:hover:text-white/80 transition-colors"
+          >
+            {isDark ? (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                />
+              </svg>
+            )}
+          </button>
+
           <button
             onClick={auth.logout}
             title="Se déconnecter"
-            className="p-1 text-white/40 hover:text-white/80 transition-colors"
+            className="p-1 text-brand-gray-mid dark:text-white/40 hover:text-brand-navy dark:hover:text-white/80 transition-colors"
           >
             <svg
               className="w-4 h-4"
@@ -388,6 +435,7 @@ function AppHeader({
 export default function App() {
   const auth = useAuth();
   const providerState = useProviders();
+  const themeState = useTheme();
 
   if (auth.loading) {
     return (
@@ -407,8 +455,12 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <div className="flex flex-col h-screen bg-brand-surface-muted">
-        <AppHeader auth={auth} providerState={providerState} />
+      <div className="flex flex-col h-screen bg-brand-surface-muted dark:bg-brand-surface-muted">
+        <AppHeader
+          auth={auth}
+          providerState={providerState}
+          themeState={themeState}
+        />
 
         <Routes>
           {auth.isRole("admin") && (
