@@ -30,10 +30,32 @@ export default {
           "0%": { opacity: "0", transform: "translateX(16px)" },
           "100%": { opacity: "1", transform: "translateX(0)" },
         },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "message-in": "message-in 0.2s ease-out",
         "slide-in": "slide-in 0.2s ease-out",
+        shimmer: "shimmer 1.6s linear infinite",
+      },
+      boxShadow: {
+        soft: "0 2px 8px -2px rgba(30, 58, 95, 0.08)",
+        elevated:
+          "0 8px 24px -6px rgba(30, 58, 95, 0.12), 0 2px 6px -1px rgba(30, 58, 95, 0.06)",
+        glow: "0 0 0 3px rgba(0, 119, 182, 0.15), 0 6px 20px -4px rgba(0, 119, 182, 0.35)",
+      },
+      transitionTimingFunction: {
+        spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+      },
+      fontFamily: {
+        display: [
+          "Inter Tight",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       typography: () => ({
         DEFAULT: {

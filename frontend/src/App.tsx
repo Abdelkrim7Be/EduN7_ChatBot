@@ -21,6 +21,7 @@ import { AdminDocuments } from "./components/admin/AdminDocuments";
 import { AdminConversations } from "./components/admin/AdminConversations";
 import { AdminSettings } from "./components/admin/AdminSettings";
 import { LibraryPage } from "./components/LibraryPage";
+import { PrimitivePlayground } from "./pages/PrimitivePlayground";
 import {
   createSession,
   updateConversationTitle,
@@ -481,6 +482,9 @@ export default function App() {
               path="/library"
               element={<LibraryPage user={auth.user!} isRole={auth.isRole} />}
             />
+          )}
+          {import.meta.env.DEV && (
+            <Route path="/dev/playground" element={<PrimitivePlayground />} />
           )}
           <Route
             path="*"
