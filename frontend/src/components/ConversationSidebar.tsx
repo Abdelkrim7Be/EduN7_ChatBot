@@ -339,7 +339,7 @@ export function ConversationSidebar({
 
   if (collapsed) {
     return (
-      <aside className="w-10 flex-shrink-0 bg-brand-surface-muted dark:bg-brand-navy border-r border-brand-gray dark:border-brand-navy-border flex flex-col items-center py-3 gap-3">
+      <aside className="w-10 h-full flex-shrink-0 bg-brand-surface-muted dark:bg-brand-navy border-r border-brand-gray dark:border-brand-navy-border flex flex-col items-center py-3 gap-3">
         <button
           onClick={onCollapseToggle}
           title="Afficher le panneau"
@@ -371,7 +371,7 @@ export function ConversationSidebar({
   const groups = groupByRecency(filteredConversations);
 
   return (
-    <aside className="w-72 flex-shrink-0 bg-brand-surface-muted dark:bg-brand-navy border-r border-brand-gray dark:border-brand-navy-border flex flex-col">
+    <aside className="w-72 h-full flex-shrink-0 bg-brand-surface-muted dark:bg-brand-navy border-r border-brand-gray dark:border-brand-navy-border flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-brand-gray dark:border-brand-navy-border flex-shrink-0">
         <span className="text-sm font-semibold text-brand-navy dark:text-white">
