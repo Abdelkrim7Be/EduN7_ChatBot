@@ -43,7 +43,9 @@ export function DocumentPreviewModal({ docId, docName, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-brand-gray flex-shrink-0">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-brand-navy truncate">{docName}</p>
+            <p className="text-sm font-semibold text-brand-navy truncate">
+              {docName}
+            </p>
             <p className="text-xs text-brand-gray-text mt-0.5">
               Prévisualisation du texte extrait
             </p>
@@ -52,8 +54,18 @@ export function DocumentPreviewModal({ docId, docName, onClose }: Props) {
             onClick={onClose}
             className="ml-3 flex-shrink-0 p-1.5 text-brand-gray-mid hover:text-brand-navy hover:bg-brand-surface-muted rounded-lg transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -66,7 +78,9 @@ export function DocumentPreviewModal({ docId, docName, onClose }: Props) {
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm font-medium text-brand-navy">Prévisualisation indisponible</p>
+              <p className="text-sm font-medium text-brand-navy">
+                Prévisualisation indisponible
+              </p>
               <p className="text-xs text-brand-gray-text mt-1">{error}</p>
             </div>
           ) : text.trim() === "" ? (
@@ -90,14 +104,25 @@ export function DocumentPreviewModal({ docId, docName, onClose }: Props) {
             disabled={page <= 1 || loading}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-brand-gray-text hover:text-brand-navy hover:bg-brand-surface-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             Précédente
           </button>
 
           <span className="text-xs text-brand-gray-text font-medium">
-            Page <span className="text-brand-navy font-semibold">{page}</span> / {totalPages}
+            Page <span className="text-brand-navy font-semibold">{page}</span> /{" "}
+            {totalPages}
           </span>
 
           <button
@@ -106,8 +131,18 @@ export function DocumentPreviewModal({ docId, docName, onClose }: Props) {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-brand-gray-text hover:text-brand-navy hover:bg-brand-surface-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Suivante
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>

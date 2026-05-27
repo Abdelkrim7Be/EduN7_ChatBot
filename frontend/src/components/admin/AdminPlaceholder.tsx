@@ -15,9 +15,12 @@ export function AdminPlaceholder({ title, description, icon }: Props) {
         <div className="w-16 h-16 rounded-2xl bg-brand-surface-muted border border-brand-gray flex items-center justify-center mb-4 text-brand-gray-mid">
           {icon}
         </div>
-        <p className="text-sm font-medium text-brand-navy">Bientôt disponible</p>
+        <p className="text-sm font-medium text-brand-navy">
+          Bientôt disponible
+        </p>
         <p className="text-xs text-brand-gray-text mt-1 max-w-xs">
-          Cette section est en cours de développement et sera disponible dans une prochaine version.
+          Cette section est en cours de développement et sera disponible dans
+          une prochaine version.
         </p>
       </div>
     </div>

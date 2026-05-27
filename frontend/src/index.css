@@ -8,9 +8,12 @@
 
 body {
   margin: 0;
-  background-color: #FFFFFF;
-  color: #1E3A5F;
-  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #ffffff;
+  color: #1e3a5f;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -25,20 +28,26 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F0F7FF;
+  background: #f0f7ff;
 }
 ::-webkit-scrollbar-thumb {
-  background: #B8D0E8;
+  background: #b8d0e8;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #5B7FA6;
+  background: #5b7fa6;
 }
 
 /* Message slide-in animation */
 @keyframes message-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-message-in {
@@ -47,15 +56,20 @@ body {
 
 /* Streaming cursor blink */
 @keyframes cursor-blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .streaming-cursor {
   display: inline-block;
   width: 2px;
   height: 14px;
-  background-color: #0077B6;
+  background-color: #0077b6;
   border-radius: 1px;
   margin-left: 2px;
   vertical-align: text-bottom;
@@ -73,7 +87,7 @@ body {
   min-width: 1.3em;
   height: 1.4em;
   background-color: rgba(0, 119, 182, 0.15);
-  color: #0077B6;
+  color: #0077b6;
   border-radius: 3px;
   font-weight: 700;
   vertical-align: super;
@@ -87,5 +101,5 @@ body {
 
 .cite-ref:hover {
   background-color: rgba(0, 119, 182, 0.3);
-  color: #005F92;
+  color: #005f92;
 }

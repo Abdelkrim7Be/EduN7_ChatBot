@@ -15,7 +15,13 @@ export interface DocumentRecord {
   uploaded_at: string;
   scope?: "private" | "shared";
   category?: string;
-  status?: "uploading" | "parsing" | "chunking" | "embedding" | "ready" | "failed";
+  status?:
+    | "uploading"
+    | "parsing"
+    | "chunking"
+    | "embedding"
+    | "ready"
+    | "failed";
 }
 
 export interface Citation {

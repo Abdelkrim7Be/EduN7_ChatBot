@@ -1,6 +1,13 @@
 import { useState, useCallback, useEffect } from "react";
 import type { User } from "../types";
-import { loginWithEmail, registerWithEmail, fetchMe, storeToken, clearToken, hasToken } from "../api/client";
+import {
+  loginWithEmail,
+  registerWithEmail,
+  fetchMe,
+  storeToken,
+  clearToken,
+  hasToken,
+} from "../api/client";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -31,11 +38,14 @@ export function useAuth() {
     setUser(u);
   }, []);
 
-  const register = useCallback(async (email: string, name: string, password: string) => {
-    const { token, user: u } = await registerWithEmail(email, name, password);
-    storeToken(token);
-    setUser(u);
-  }, []);
+  const register = useCallback(
+    async (email: string, name: string, password: string) => {
+      const { token, user: u } = await registerWithEmail(email, name, password);
+      storeToken(token);
+      setUser(u);
+    },
+    [],
+  );
 
   const logout = useCallback(() => {
     clearToken();
@@ -44,7 +54,7 @@ export function useAuth() {
 
   const isRole = useCallback(
     (...roles: User["role"][]) => !!user && roles.includes(user.role),
-    [user]
+    [user],
   );
 
   return {

@@ -30,7 +30,9 @@ function EmptyState() {
       </div>
 
       <div>
-        <h3 className="text-brand-navy font-semibold text-base mb-1.5">Posez votre question</h3>
+        <h3 className="text-brand-navy font-semibold text-base mb-1.5">
+          Posez votre question
+        </h3>
         <p className="text-brand-gray-text text-sm leading-relaxed max-w-xs">
           Sélectionnez un document dans le panneau, puis interrogez son contenu.
         </p>
