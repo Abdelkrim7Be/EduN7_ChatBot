@@ -63,7 +63,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-brand-gold/8 rounded-full" />
         <div className="absolute top-1/3 -left-10 w-32 h-32 bg-brand-blue/5 rounded-full" />
 
-        <div className="relative z-10 w-full max-w-[300px]">
+        <div className="relative z-10 w-full max-w-[300px] flex flex-col items-center text-center">
           {/* Icon */}
           <div className="w-16 h-16 rounded-2xl bg-brand-blue flex items-center justify-center mb-6 shadow-xl shadow-brand-blue/40">
             <svg
@@ -98,12 +98,12 @@ export function LoginPage({ onLogin, onRegister }: Props) {
 
           {/* Description */}
           <p className="text-white/65 text-sm leading-relaxed mb-7">
-            Interrogez vos cours, TD et examens directement. Des réponses
-            précises avec les sources citées.
+            Explorez vos documents, posez vos questions, votre assistant
+            pédagogique intelligent.
           </p>
 
           {/* Feature list */}
-          <ul className="space-y-2.5 mb-8">
+          <ul className="space-y-2.5 mb-8 text-left w-full">
             {[
               "Upload de PDF en quelques secondes",
               "Réponses ancrées dans vos documents",
