@@ -10,7 +10,7 @@ import type {
 } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
-const TOKEN_KEY = "edun7_token";
+const TOKEN_KEY = "ensetai_token";
 
 function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -136,13 +136,21 @@ export async function listDocuments(): Promise<DocumentRecord[]> {
 
 export interface DocumentStatus {
   doc_id: string;
-  status: "uploading" | "parsing" | "chunking" | "embedding" | "ready" | "failed";
+  status:
+    | "uploading"
+    | "parsing"
+    | "chunking"
+    | "embedding"
+    | "ready"
+    | "failed";
   error_message: string | null;
   page_count: number;
   chunk_count: number;
 }
 
-export async function fetchDocumentStatus(docId: string): Promise<DocumentStatus> {
+export async function fetchDocumentStatus(
+  docId: string,
+): Promise<DocumentStatus> {
   const res = await apiFetch(`/api/documents/${docId}/status`);
   if (!res.ok) throw new Error("Status check failed");
   return res.json() as Promise<DocumentStatus>;
@@ -154,7 +162,10 @@ export interface DocumentPreview {
   text: string;
 }
 
-export async function fetchDocumentPreview(docId: string, page: number): Promise<DocumentPreview> {
+export async function fetchDocumentPreview(
+  docId: string,
+  page: number,
+): Promise<DocumentPreview> {
   const res = await apiFetch(`/api/documents/${docId}/preview?page=${page}`);
   if (!res.ok) throw new Error("Preview not available");
   return res.json() as Promise<DocumentPreview>;

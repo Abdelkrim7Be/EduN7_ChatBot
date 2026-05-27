@@ -4,7 +4,7 @@ import pytest
 os.environ.setdefault("JWT_SECRET", "test-secret")
 os.environ.setdefault("CHROMA_HOST", "localhost")
 os.environ.setdefault("CHROMA_PORT", "8000")
-os.environ.setdefault("UPLOAD_DIR", "/tmp/edun7_test_uploads")
+os.environ.setdefault("UPLOAD_DIR", "/tmp/ensetai_test_uploads")
 
 
 @pytest.fixture

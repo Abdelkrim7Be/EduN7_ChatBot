@@ -59,13 +59,15 @@ export function LoginPage({ onLogin, onRegister }: Props) {
     <div className="min-h-screen flex">
       {/* LEFT — ENSET brand panel */}
       <div className="hidden lg:flex lg:w-5/12 bg-brand-navy flex-col items-center justify-center px-12 relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-brand-blue/10 rounded-full" />
-        <div className="absolute -bottom-20 -left-20 w-56 h-56 bg-brand-gold/10 rounded-full" />
+        <div className="absolute -top-32 -right-32 w-80 h-80 bg-brand-blue/8 rounded-full" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-brand-gold/8 rounded-full" />
+        <div className="absolute top-1/3 -left-10 w-32 h-32 bg-brand-blue/5 rounded-full" />
 
-        <div className="relative z-10 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-brand-blue flex items-center justify-center mx-auto mb-6 shadow-xl shadow-brand-blue/40">
+        <div className="relative z-10 w-full max-w-[300px]">
+          {/* Icon */}
+          <div className="w-16 h-16 rounded-2xl bg-brand-blue flex items-center justify-center mb-6 shadow-xl shadow-brand-blue/40">
             <svg
-              className="w-11 h-11 text-white"
+              className="w-9 h-9 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -73,39 +75,69 @@ export function LoginPage({ onLogin, onRegister }: Props) {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={1.8}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                strokeWidth={1.5}
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"
               />
             </svg>
           </div>
 
-          <h1 className="text-5xl font-bold text-white tracking-tight">
+          {/* Title + school */}
+          <h1 className="text-4xl font-bold text-white tracking-tight mb-1">
             ENSET AI
           </h1>
+          <p className="text-brand-blue-light text-sm font-normal mb-6">
+            École Normale Supérieure de l'Enseignement Technique
+          </p>
 
-          <div className="flex items-center justify-center gap-3 my-5">
-            <div className="h-px w-10 bg-white/20" />
-            <div className="w-12 h-1 bg-brand-gold rounded-full" />
-            <div className="h-px w-10 bg-white/20" />
+          {/* Divider */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-px flex-1 bg-white/10" />
+            <div className="w-1.5 h-1.5 rounded-full bg-brand-gold" />
+            <div className="h-px flex-1 bg-white/10" />
           </div>
 
-          <p className="text-brand-blue-light text-xs font-semibold uppercase tracking-widest mb-1">
-            École Normale Supérieure
-          </p>
-          <p className="text-brand-blue-light text-xs font-semibold uppercase tracking-widest mb-8">
-            de l'Enseignement Technique · Mohammedia
-          </p>
-
-          <p className="text-white/60 text-sm leading-relaxed max-w-[260px] mx-auto">
-            Explorez vos documents et posez vos questions. Votre assistant
-            pédagogique, disponible à tout moment.
+          {/* Description */}
+          <p className="text-white/65 text-sm leading-relaxed mb-7">
+            Interrogez vos cours, TD et examens directement. Des réponses
+            précises avec les sources citées.
           </p>
 
-          <div className="mt-12 flex items-center justify-center gap-2 text-xs text-white/25 uppercase tracking-wider">
-            <span>Université Hassan II</span>
-            <span>·</span>
-            <span>Casablanca</span>
+          {/* Feature list */}
+          <ul className="space-y-2.5 mb-8">
+            {[
+              "Upload de PDF en quelques secondes",
+              "Réponses ancrées dans vos documents",
+              "Historique et sessions multiples",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-2.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-brand-gold flex-shrink-0" />
+                <span className="text-white/55 text-xs">{item}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* CTA hint */}
+          <div className="flex items-center gap-2 text-white/30 text-xs">
+            <span>Connectez-vous via le formulaire</span>
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 8l4 4m0 0l-4 4m4-4H3"
+              />
+            </svg>
           </div>
+
+          {/* Footer */}
+          <p className="text-white/20 text-xs mt-10">
+            Université Hassan II · Mohammedia
+          </p>
         </div>
       </div>
 

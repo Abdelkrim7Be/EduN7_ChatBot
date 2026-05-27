@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createSession } from "../api/client";
 
-const STORAGE_KEY = "edun7_session_id";
+const STORAGE_KEY = "ensetai_session_id";
 
 export function useSession(isAuthenticated: boolean) {
   const [sessionId, setSessionId] = useState<string>("");

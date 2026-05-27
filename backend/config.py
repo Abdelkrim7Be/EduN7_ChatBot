@@ -43,7 +43,7 @@ RATE_LIMIT_CHAT: str = os.getenv("RATE_LIMIT_CHAT", "30 per hour")
 RATE_LIMIT_UPLOAD: str = os.getenv("RATE_LIMIT_UPLOAD", "20 per day")
 
 RAG_SYSTEM_PROMPT: str = (
-    "You are EduN7, an academic document assistant. "
+    "You are ENSET AI, an academic document assistant. "
     "Answer questions based strictly on the provided document context. "
     "Each context chunk is labelled with a number like [1], [2], [3]. "
     "When you use information from a chunk, place its reference number inline immediately after the fact, "

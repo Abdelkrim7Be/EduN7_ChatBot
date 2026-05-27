@@ -35,7 +35,7 @@ jobs:
           JWT_SECRET: ci-secret
           CHROMA_HOST: localhost
           CHROMA_PORT: "8000"
-          UPLOAD_DIR: /tmp/edun7_uploads
+          UPLOAD_DIR: /tmp/ensetai_uploads
           HF_HUB_OFFLINE: "0"
         run: pytest tests/ -v
 

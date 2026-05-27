@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Provider, SelectedModel } from "../types";
 import { fetchProviders } from "../api/client";
 
-const STORAGE_KEY = "edun7_selected_model";
+const STORAGE_KEY = "ensetai_selected_model";
 
 function loadStored(): SelectedModel | null {
   try {
@@ -36,7 +36,7 @@ export function useProviders() {
             (p) =>
               p.id === stored.provider &&
               p.available &&
-              p.models.some((m) => m.id === stored.model)
+              p.models.some((m) => m.id === stored.model),
           ));
 
       if (stillValid && stored) {
@@ -63,9 +63,18 @@ export function useProviders() {
     saveStored(sel);
   }
 
-  const currentProvider = providers.find((p) => p.id === selected?.provider) ?? null;
+  const currentProvider =
+    providers.find((p) => p.id === selected?.provider) ?? null;
   const currentModel =
     currentProvider?.models.find((m) => m.id === selected?.model) ?? null;
 
-  return { providers, selected, loading, select, currentProvider, currentModel, refresh };
+  return {
+    providers,
+    selected,
+    loading,
+    select,
+    currentProvider,
+    currentModel,
+    refresh,
+  };
 }
