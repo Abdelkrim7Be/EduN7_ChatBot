@@ -22,7 +22,12 @@ export function CitationCard({ citations }: Props) {
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5l7 7-7 7"
+          />
         </svg>
         {citations.length} {citations.length === 1 ? "source" : "sources"}
       </button>
@@ -36,10 +41,16 @@ export function CitationCard({ citations }: Props) {
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="cite-ref flex-shrink-0">{i + 1}</span>
-                <span className="font-semibold text-brand-blue truncate">{c.doc_name}</span>
-                <span className="text-brand-gray-text flex-shrink-0 ml-auto">p.{c.page_number}</span>
+                <span className="font-semibold text-brand-blue truncate">
+                  {c.doc_name}
+                </span>
+                <span className="text-brand-gray-text flex-shrink-0 ml-auto">
+                  p.{c.page_number}
+                </span>
               </div>
-              <p className="text-brand-navy/70 leading-relaxed line-clamp-3">{c.excerpt}</p>
+              <p className="text-brand-navy/70 leading-relaxed line-clamp-3">
+                {c.excerpt}
+              </p>
             </div>
           ))}
         </div>

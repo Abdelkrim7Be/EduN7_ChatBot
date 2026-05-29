@@ -6,6 +6,7 @@ import { useChat } from "./hooks/useChat";
 import { useProviders } from "./hooks/useProviders";
 import { useConversations } from "./hooks/useConversations";
 import { useAuth } from "./hooks/useAuth";
+import { useTheme } from "./hooks/useTheme";
 import { UploadOverlay } from "./components/UploadOverlay";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { ChatWindow } from "./components/ChatWindow";
@@ -17,8 +18,10 @@ import { AdminLayout } from "./components/admin/AdminLayout";
 import { AdminDashboard } from "./components/admin/AdminDashboard";
 import { AdminUsers } from "./components/admin/AdminUsers";
 import { AdminDocuments } from "./components/admin/AdminDocuments";
-import { AdminPlaceholder } from "./components/admin/AdminPlaceholder";
+import { AdminConversations } from "./components/admin/AdminConversations";
+import { AdminSettings } from "./components/admin/AdminSettings";
 import { LibraryPage } from "./components/LibraryPage";
+import { PrimitivePlayground } from "./pages/PrimitivePlayground";
 import {
   createSession,
   updateConversationTitle,
@@ -27,6 +30,11 @@ import {
 import type { Conversation, Provider, SelectedModel } from "./types";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+
+interface ThemeState {
+  theme: "dark" | "light";
+  toggle: () => void;
+}
 
 interface AuthState {
   user: { name: string; role: string } | null;
@@ -47,8 +55,18 @@ interface ProviderState {
 
 // ─── Chat area ───────────────────────────────────────────────────────────────
 
-function ChatArea({ auth, providerState }: { auth: AuthState; providerState: ProviderState }) {
-  const { sessionId, loading: sessionLoading, switchSession } = useSession(auth.isAuthenticated);
+function ChatArea({
+  auth,
+  providerState,
+}: {
+  auth: AuthState;
+  providerState: ProviderState;
+}) {
+  const {
+    sessionId,
+    loading: sessionLoading,
+    switchSession,
+  } = useSession(auth.isAuthenticated);
   const {
     documents,
     isUploading,
@@ -60,7 +78,8 @@ function ChatArea({ auth, providerState }: { auth: AuthState; providerState: Pro
     toggleSelection,
     setSelection,
   } = useDocuments(sessionId);
-  const { messages, isStreaming, sendMessage, clearMessages } = useChat(sessionId);
+  const { messages, isStreaming, sendMessage, clearMessages } =
+    useChat(sessionId);
   const { conversations, refresh: refreshConvos } = useConversations();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -156,17 +175,25 @@ function ChatArea({ auth, providerState }: { auth: AuthState; providerState: Pro
       )}
 
       {/* Sidebar */}
-      <div className={`
+      <div
+        className={`
         fixed inset-y-0 left-0 z-40
         md:relative md:inset-auto md:z-auto md:flex-shrink-0
         transition-transform duration-200
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-      `}>
+      `}
+      >
         <ConversationSidebar
           conversations={conversations}
           currentSessionId={sessionId}
-          onNewConversation={() => { handleNewConversation(); setSidebarOpen(false); }}
-          onSwitchConversation={(conv) => { handleSwitchConversation(conv); setSidebarOpen(false); }}
+          onNewConversation={() => {
+            handleNewConversation();
+            setSidebarOpen(false);
+          }}
+          onSwitchConversation={(conv) => {
+            handleSwitchConversation(conv);
+            setSidebarOpen(false);
+          }}
           onDeleteConversation={handleDeleteConversation}
           onRenameConversation={handleRenameConversation}
           documents={documents}
@@ -205,8 +232,18 @@ function ChatArea({ auth, providerState }: { auth: AuthState; providerState: Pro
           className="md:hidden fixed bottom-20 left-3 z-50 p-2 bg-brand-navy rounded-full shadow-lg text-white/60 hover:text-white transition-colors"
           title="Menu"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
           </svg>
         </button>
       )}
@@ -226,22 +263,43 @@ function ChatArea({ auth, providerState }: { auth: AuthState; providerState: Pro
 
 // ─── Header ──────────────────────────────────────────────────────────────────
 
-function AppHeader({ auth, providerState }: { auth: AuthState; providerState: ProviderState }) {
+function AppHeader({
+  auth,
+  providerState,
+  themeState,
+}: {
+  auth: AuthState;
+  providerState: ProviderState;
+  themeState: ThemeState;
+}) {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isLibraryRoute = location.pathname === "/library";
+  const isDark = themeState.theme === "dark";
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b border-brand-navy-border bg-brand-navy flex-shrink-0">
+    <header className="flex items-center justify-between px-4 py-3 border-b border-brand-gray dark:border-brand-navy-border bg-white dark:bg-brand-navy flex-shrink-0">
       <div className="flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-lg bg-brand-blue flex items-center justify-center shadow-sm shadow-brand-blue/50">
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          <svg
+            className="w-4 h-4 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+            />
           </svg>
         </div>
         <div className="flex items-center gap-1.5">
-          <Link to="/" className="text-white font-bold text-sm tracking-tight hover:text-white/80 transition-colors">
+          <Link
+            to="/"
+            className="text-brand-navy dark:text-white font-bold text-sm tracking-tight hover:text-brand-blue dark:hover:text-white/80 transition-colors"
+          >
             ENSET AI
           </Link>
           <div className="w-1.5 h-1.5 rounded-full bg-brand-gold" />
@@ -261,7 +319,7 @@ function AppHeader({ auth, providerState }: { auth: AuthState; providerState: Pr
             className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
               !isAdminRoute && !isLibraryRoute
                 ? "bg-brand-blue text-white"
-                : "text-white/50 hover:text-white hover:bg-brand-navy-light"
+                : "text-brand-gray-text dark:text-white/50 hover:text-brand-navy dark:hover:text-white hover:bg-brand-surface-muted dark:hover:bg-brand-navy-light"
             }`}
           >
             Chat
@@ -272,7 +330,7 @@ function AppHeader({ auth, providerState }: { auth: AuthState; providerState: Pr
               className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
                 isLibraryRoute
                   ? "bg-brand-blue text-white"
-                  : "text-white/50 hover:text-white hover:bg-brand-navy-light"
+                  : "text-brand-gray-text dark:text-white/50 hover:text-brand-navy dark:hover:text-white hover:bg-brand-surface-muted dark:hover:bg-brand-navy-light"
               }`}
             >
               Bibliothèque
@@ -284,7 +342,7 @@ function AppHeader({ auth, providerState }: { auth: AuthState; providerState: Pr
               className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
                 isAdminRoute
                   ? "bg-brand-blue text-white"
-                  : "text-white/50 hover:text-white hover:bg-brand-navy-light"
+                  : "text-brand-gray-text dark:text-white/50 hover:text-brand-navy dark:hover:text-white hover:bg-brand-surface-muted dark:hover:bg-brand-navy-light"
               }`}
             >
               Admin
@@ -302,22 +360,69 @@ function AppHeader({ auth, providerState }: { auth: AuthState; providerState: Pr
           />
         )}
 
-        {/* User */}
+        {/* User + theme toggle */}
         <div className="flex items-center gap-2 ml-1">
           <div className="w-7 h-7 rounded-full bg-brand-blue flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm">
             {auth.user!.name.charAt(0).toUpperCase()}
           </div>
-          <span className="text-xs text-white/60 hidden sm:block max-w-[120px] truncate">
+          <span className="text-xs text-brand-gray-text dark:text-white/60 hidden sm:block max-w-[120px] truncate">
             {auth.user!.name}
           </span>
+
+          {/* Theme toggle */}
+          <button
+            onClick={themeState.toggle}
+            title={isDark ? "Mode clair" : "Mode sombre"}
+            className="p-1 text-brand-gray-mid dark:text-white/40 hover:text-brand-navy dark:hover:text-white/80 transition-colors"
+          >
+            {isDark ? (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                />
+              </svg>
+            )}
+          </button>
+
           <button
             onClick={auth.logout}
             title="Se déconnecter"
-            className="p-1 text-white/40 hover:text-white/80 transition-colors"
+            className="p-1 text-brand-gray-mid dark:text-white/40 hover:text-brand-navy dark:hover:text-white/80 transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
             </svg>
           </button>
         </div>
@@ -331,6 +436,7 @@ function AppHeader({ auth, providerState }: { auth: AuthState; providerState: Pr
 export default function App() {
   const auth = useAuth();
   const providerState = useProviders();
+  const themeState = useTheme();
 
   if (auth.loading) {
     return (
@@ -350,36 +456,40 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <div className="flex flex-col h-screen bg-brand-surface-muted">
-        <AppHeader auth={auth} providerState={providerState} />
+      <div className="flex flex-col h-screen bg-brand-surface-muted dark:bg-brand-surface-muted">
+        <AppHeader
+          auth={auth}
+          providerState={providerState}
+          themeState={themeState}
+        />
 
         <Routes>
           {auth.isRole("admin") && (
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Navigate to="/admin/dashboard" replace />} />
+              <Route
+                index
+                element={<Navigate to="/admin/dashboard" replace />}
+              />
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="documents" element={<AdminDocuments />} />
-              <Route path="conversations" element={
-                <AdminPlaceholder
-                  title="Conversations"
-                  description="Modération et supervision des conversations"
-                  icon={<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>}
-                />
-              } />
-              <Route path="settings" element={
-                <AdminPlaceholder
-                  title="Paramètres"
-                  description="Configuration runtime de la plateforme"
-                  icon={<svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-                />
-              } />
+              <Route path="conversations" element={<AdminConversations />} />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
           )}
           {auth.isRole("professor", "admin") && (
-            <Route path="/library" element={<LibraryPage user={auth.user!} isRole={auth.isRole} />} />
+            <Route
+              path="/library"
+              element={<LibraryPage user={auth.user!} isRole={auth.isRole} />}
+            />
           )}
-          <Route path="*" element={<ChatArea auth={auth} providerState={providerState} />} />
+          {import.meta.env.DEV && (
+            <Route path="/dev/playground" element={<PrimitivePlayground />} />
+          )}
+          <Route
+            path="*"
+            element={<ChatArea auth={auth} providerState={providerState} />}
+          />
         </Routes>
       </div>
     </ToastProvider>

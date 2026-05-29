@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, feat/**]
+    branches: [main, develop, feat/**, fix/**, refactor/**]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   backend:
@@ -35,7 +35,8 @@ jobs:
           JWT_SECRET: ci-secret
           CHROMA_HOST: localhost
           CHROMA_PORT: "8000"
-          UPLOAD_DIR: /tmp/edun7_uploads
+          UPLOAD_DIR: /tmp/ensetai_uploads
+          HF_HUB_OFFLINE: "0"
         run: pytest tests/ -v
 
   frontend:

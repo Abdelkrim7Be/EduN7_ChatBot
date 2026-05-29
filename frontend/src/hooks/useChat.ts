@@ -23,7 +23,7 @@ export function useChat(sessionId: string) {
             citations: m.citations ?? undefined,
             actualProvider: m.actual_provider ?? undefined,
             actualModel: m.actual_model ?? undefined,
-          }))
+          })),
         );
       })
       .catch(() => {
@@ -85,8 +85,8 @@ export function useChat(sessionId: string) {
             const snap = fullContent;
             setMessages((prev) =>
               prev.map((m) =>
-                m.id === assistantId ? { ...m, content: snap } : m
-              )
+                m.id === assistantId ? { ...m, content: snap } : m,
+              ),
             );
           } else if (event.type === "citations") {
             citations = event.citations;
@@ -97,8 +97,8 @@ export function useChat(sessionId: string) {
             fullContent = `⚠️ ${event.content}`;
             setMessages((prev) =>
               prev.map((m) =>
-                m.id === assistantId ? { ...m, content: fullContent } : m
-              )
+                m.id === assistantId ? { ...m, content: fullContent } : m,
+              ),
             );
           }
         }
@@ -106,9 +106,16 @@ export function useChat(sessionId: string) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
-              ? { ...m, content: fullContent, citations, isStreaming: false, actualProvider, actualModel }
-              : m
-          )
+              ? {
+                  ...m,
+                  content: fullContent,
+                  citations,
+                  isStreaming: false,
+                  actualProvider,
+                  actualModel,
+                }
+              : m,
+          ),
         );
       } catch (e) {
         const errMsg = e instanceof Error ? e.message : "An error occurred";
@@ -116,14 +123,14 @@ export function useChat(sessionId: string) {
           prev.map((m) =>
             m.id === assistantId
               ? { ...m, content: `Error: ${errMsg}`, isStreaming: false }
-              : m
-          )
+              : m,
+          ),
         );
       } finally {
         setIsStreaming(false);
       }
     },
-    [sessionId, isStreaming]
+    [sessionId, isStreaming],
   );
 
   const clearMessages = useCallback(() => {

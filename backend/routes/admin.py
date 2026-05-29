@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify
+import time
+
+from flask import Blueprint, request, jsonify, g
 
 import database
 from middleware.auth import require_auth, require_role
@@ -122,8 +124,151 @@ def list_admin_documents():
 @require_role("admin")
 def delete_admin_document(doc_id: str):
     from services import document_service
-    from flask import g
     deleted = document_service.delete(doc_id, g.user.id, role="admin")
     if not deleted:
         return jsonify({"error": "Document not found"}), 404
     return jsonify({"deleted": True}), 200
+
+
+# ── Admin conversations ───────────────────────────────────────────────────────
+
+@admin_bp.get("/api/admin/conversations")
+@require_auth
+@require_role("admin")
+def list_all_conversations():
+    search = request.args.get("search", "").strip()
+    with database.get_db() as conn:
+        if search:
+            like = f"%{search}%"
+            rows = conn.execute("""
+                SELECT c.session_id, c.title, c.created_at, c.last_active, c.user_id,
+                       u.name AS user_name, u.email AS user_email,
+                       COUNT(m.id) AS message_count,
+                       (SELECT content FROM messages
+                        WHERE session_id = c.session_id ORDER BY created_at DESC LIMIT 1
+                       ) AS last_message
+                FROM conversations c
+                LEFT JOIN users u ON u.id = c.user_id
+                LEFT JOIN messages m ON m.session_id = c.session_id
+                WHERE u.name LIKE ? OR u.email LIKE ? OR c.title LIKE ?
+                GROUP BY c.session_id
+                ORDER BY c.last_active DESC
+                LIMIT 300
+            """, (like, like, like)).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT c.session_id, c.title, c.created_at, c.last_active, c.user_id,
+                       u.name AS user_name, u.email AS user_email,
+                       COUNT(m.id) AS message_count,
+                       (SELECT content FROM messages
+                        WHERE session_id = c.session_id ORDER BY created_at DESC LIMIT 1
+                       ) AS last_message
+                FROM conversations c
+                LEFT JOIN users u ON u.id = c.user_id
+                LEFT JOIN messages m ON m.session_id = c.session_id
+                GROUP BY c.session_id
+                ORDER BY c.last_active DESC
+                LIMIT 300
+            """).fetchall()
+    return jsonify({
+        "conversations": [
+            {
+                "session_id":    r["session_id"],
+                "title":         r["title"],
+                "created_at":    r["created_at"],
+                "last_active":   r["last_active"],
+                "user_id":       r["user_id"],
+                "user_name":     r["user_name"] or "Anonyme",
+                "user_email":    r["user_email"] or "",
+                "message_count": r["message_count"],
+                "last_message":  (r["last_message"] or "")[:140],
+            }
+            for r in rows
+        ]
+    }), 200
+
+
+@admin_bp.get("/api/admin/conversations/<session_id>")
+@require_auth
+@require_role("admin")
+def get_admin_conversation(session_id: str):
+    import json as _json
+    with database.get_db() as conn:
+        conv = conn.execute(
+            "SELECT session_id, title, doc_ids, created_at, last_active, user_id "
+            "FROM conversations WHERE session_id=?",
+            (session_id,),
+        ).fetchone()
+        if conv is None:
+            return jsonify({"error": "Not found"}), 404
+        msgs = conn.execute(
+            "SELECT role, content, citations, actual_provider, actual_model "
+            "FROM messages WHERE session_id=? ORDER BY created_at",
+            (session_id,),
+        ).fetchall()
+    return jsonify({
+        "conversation": {
+            "session_id":  conv["session_id"],
+            "title":       conv["title"],
+            "doc_ids":     _json.loads(conv["doc_ids"]),
+            "created_at":  conv["created_at"],
+            "last_active": conv["last_active"],
+        },
+        "messages": [
+            {
+                "role":    m["role"],
+                "content": m["content"],
+            }
+            for m in msgs
+        ],
+    }), 200
+
+
+@admin_bp.delete("/api/admin/conversations/<session_id>")
+@require_auth
+@require_role("admin")
+def delete_admin_conversation(session_id: str):
+    from services import session_service
+    session_service.delete(session_id)
+    return jsonify({"deleted": True}), 200
+
+
+# ── Settings ──────────────────────────────────────────────────────────────────
+
+@admin_bp.get("/api/admin/settings")
+@require_auth
+@require_role("admin")
+def get_settings():
+    with database.get_db() as conn:
+        rows = conn.execute("SELECT * FROM settings ORDER BY key").fetchall()
+    return jsonify({
+        "settings": [
+            {
+                "key":         r["key"],
+                "value":       r["value"],
+                "label":       r["label"],
+                "description": r["description"],
+                "kind":        r["kind"],
+                "updated_at":  r["updated_at"],
+                "updated_by":  r["updated_by"],
+            }
+            for r in rows
+        ]
+    }), 200
+
+
+@admin_bp.put("/api/admin/settings/<key>")
+@require_auth
+@require_role("admin")
+def update_setting(key: str):
+    data = request.get_json(silent=True) or {}
+    value = str(data.get("value", "")).strip()
+    with database.get_db() as conn:
+        exists = conn.execute("SELECT key FROM settings WHERE key=?", (key,)).fetchone()
+        if not exists:
+            return jsonify({"error": "Setting not found"}), 404
+        conn.execute(
+            "UPDATE settings SET value=?, updated_at=?, updated_by=? WHERE key=?",
+            (value, time.time(), g.user.id, key),
+        )
+    return jsonify({"updated": True}), 200
