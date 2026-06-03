@@ -16,6 +16,11 @@ services:
       - RATE_LIMIT_UPLOAD=${RATE_LIMIT_UPLOAD:-20 per day}
 
   frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
     restart: always
     ports:
       - "80:80"

@@ -21,7 +21,6 @@ PROVIDER_CATALOG = {
         "models": [
             {"id": "qwen-3-235b-a22b-instruct-2507", "name": "Qwen 3 235B",   "description": "Newest · Largest"},
             {"id": "gpt-oss-120b",                   "name": "GPT-OSS 120B",  "description": "High quality · Fast"},
-            {"id": "llama3.1-8b",                    "name": "Llama 3.1 8B",  "description": "Fastest · Lightweight"},
         ],
     },
     "groq": {
@@ -83,7 +82,7 @@ PROVIDER_CATALOG = {
 BADGE_PRIORITY = ["Free", "Fastest", "Fast", "Powerful", "Standard", "Private"]
 
 AUTO_FALLBACK_ORDER = [
-    ("cerebras",   "llama3.1-8b"),
+    ("cerebras",   "gpt-oss-120b"),
     ("sambanova",  "Meta-Llama-3.3-70B-Instruct"),
     ("groq",       "llama-3.3-70b-versatile"),
     ("mistral",    "mistral-small-latest"),

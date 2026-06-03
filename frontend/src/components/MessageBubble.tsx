@@ -1,13 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import type { Citation, Message } from "../types";
 import { CitationCard } from "./CitationCard";
+import { CodeBlock } from "./CodeBlock";
 import { StreamingIndicator } from "./StreamingIndicator";
 
 interface Props {
   message: Message;
+  isLastAssistant?: boolean;
+  canInteract?: boolean;
+  onRegenerate?: () => void;
+  onEdit?: (id: string, text: string) => void;
 }
 
 function renderWithCitations(
@@ -36,8 +43,10 @@ function renderWithCitations(
 
 type MdP = React.ComponentProps<"p"> & { node?: unknown };
 type MdLi = React.ComponentProps<"li"> & { node?: unknown };
+type MdCode = React.ComponentProps<"code"> & { node?: unknown };
+type MdPre = React.ComponentProps<"pre"> & { node?: unknown };
 
-function makeCited(citations?: Citation[]) {
+function makeComponents(citations?: Citation[]) {
   return {
     p({ children, node: _n, ...rest }: MdP) {
       return (
@@ -61,22 +70,84 @@ function makeCited(citations?: Citation[]) {
         </li>
       );
     },
+    // Unwrap <pre> — CodeBlock renders its own container.
+    pre({ children }: MdPre) {
+      return <>{children}</>;
+    },
+    code({ className, children, node: _n, ...rest }: MdCode) {
+      const match = /language-(\w+)/.exec(className ?? "");
+      const raw = String(children ?? "");
+      const isBlock = !!match || raw.includes("\n");
+      if (isBlock) {
+        return (
+          <CodeBlock code={raw.replace(/\n$/, "")} lang={match?.[1] ?? ""} />
+        );
+      }
+      return (
+        <code
+          className="rounded bg-brand-blue/10 dark:bg-brand-blue/20 px-1.5 py-0.5 text-[0.85em] font-mono text-brand-blue dark:text-brand-blue-light"
+          {...rest}
+        >
+          {children}
+        </code>
+      );
+    },
   };
 }
 
-export function MessageBubble({ message }: Props) {
+const SANITIZE_SCHEMA = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    "*": ["className"],
+  },
+};
+
+export function MessageBubble({
+  message,
+  isLastAssistant,
+  canInteract = true,
+  onRegenerate,
+  onEdit,
+}: Props) {
   const isUser = message.role === "user";
   const showCursor = !isUser && !!message.isStreaming && !!message.content;
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(message.content);
+  const editRef = useRef<HTMLTextAreaElement>(null);
 
   const displayContent = showCursor ? message.content + "▌" : message.content;
+
+  useEffect(() => {
+    if (editing && editRef.current) {
+      const el = editRef.current;
+      el.focus();
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+      el.setSelectionRange(el.value.length, el.value.length);
+    }
+  }, [editing]);
 
   function handleCopy() {
     navigator.clipboard.writeText(message.content).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  function startEdit() {
+    setDraft(message.content);
+    setEditing(true);
+  }
+
+  function saveEdit() {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== message.content) {
+      onEdit?.(message.id, trimmed);
+    }
+    setEditing(false);
   }
 
   return (
@@ -93,6 +164,7 @@ export function MessageBubble({ message }: Props) {
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -107,44 +179,103 @@ export function MessageBubble({ message }: Props) {
       <div
         className={`max-w-[75%] ${isUser ? "items-end" : "items-start"} flex flex-col group/msg`}
       >
-        <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-            isUser
-              ? "bg-brand-blue text-white rounded-br-sm shadow-sm shadow-brand-blue/20"
-              : "bg-brand-surface-muted text-brand-navy rounded-bl-sm border border-brand-gray"
-          }`}
-        >
-          {isUser ? (
-            <p className="whitespace-pre-wrap">{message.content}</p>
-          ) : message.isStreaming && !message.content ? (
-            <StreamingIndicator />
-          ) : (
-            <div className="prose prose-sm max-w-none">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[
-                  [
-                    rehypeSanitize,
-                    {
-                      ...defaultSchema,
-                      attributes: {
-                        ...defaultSchema.attributes,
-                        "*": ["className"],
-                      },
-                    },
-                  ],
-                ]}
-                components={
-                  makeCited(message.citations) as Parameters<
-                    typeof ReactMarkdown
-                  >[0]["components"]
+        {editing ? (
+          <div className="w-full min-w-[260px] rounded-2xl bg-white dark:bg-brand-navy-light border border-brand-blue/40 p-2 shadow-soft">
+            <textarea
+              ref={editRef}
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                const el = e.target;
+                el.style.height = "auto";
+                el.style.height = `${el.scrollHeight}px`;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  saveEdit();
+                } else if (e.key === "Escape") {
+                  setEditing(false);
                 }
+              }}
+              className="w-full resize-none bg-transparent text-sm text-brand-navy dark:text-white/90 outline-none leading-relaxed max-h-60"
+              rows={1}
+            />
+            <div className="flex items-center justify-end gap-2 mt-2">
+              <button
+                onClick={() => setEditing(false)}
+                className="text-xs px-2.5 py-1 rounded-lg text-brand-gray-text hover:text-brand-navy dark:hover:text-white transition-colors"
               >
-                {displayContent}
-              </ReactMarkdown>
+                Annuler
+              </button>
+              <button
+                onClick={saveEdit}
+                className="text-xs px-3 py-1 rounded-lg bg-brand-blue text-white font-medium hover:bg-brand-blue-dark transition-colors"
+              >
+                Envoyer
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div
+            className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              isUser
+                ? "bg-brand-blue text-white rounded-br-sm shadow-sm shadow-brand-blue/20"
+                : "bg-brand-surface-muted dark:bg-brand-navy-light text-brand-navy dark:text-white/90 rounded-bl-sm border border-brand-gray dark:border-brand-navy-border"
+            }`}
+          >
+            {isUser ? (
+              <p className="whitespace-pre-wrap">{message.content}</p>
+            ) : message.isStreaming && !message.content ? (
+              <StreamingIndicator />
+            ) : (
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[
+                    [rehypeSanitize, SANITIZE_SCHEMA],
+                    rehypeKatex,
+                  ]}
+                  components={
+                    makeComponents(message.citations) as Parameters<
+                      typeof ReactMarkdown
+                    >[0]["components"]
+                  }
+                >
+                  {displayContent}
+                </ReactMarkdown>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* User message actions — edit */}
+        {isUser && !editing && canInteract && onEdit && (
+          <div className="flex items-center gap-1 px-1 mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+            <button
+              onClick={startEdit}
+              title="Modifier le message"
+              aria-label="Modifier le message"
+              className="flex items-center gap-1 text-[10px] text-brand-gray-text hover:text-brand-blue transition-colors px-1.5 py-0.5 rounded hover:bg-brand-gray dark:hover:bg-brand-navy-light"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
+              </svg>
+              Modifier
+            </button>
+          </div>
+        )}
 
         {/* AI message actions */}
         {!isUser && !message.isStreaming && message.content && (
@@ -152,7 +283,8 @@ export function MessageBubble({ message }: Props) {
             <button
               onClick={handleCopy}
               title={copied ? "Copié !" : "Copier la réponse"}
-              className="flex items-center gap-1 text-[10px] text-brand-gray-text hover:text-brand-blue transition-colors px-1.5 py-0.5 rounded hover:bg-brand-gray"
+              aria-label={copied ? "Réponse copiée" : "Copier la réponse"}
+              className="flex items-center gap-1 text-[10px] text-brand-gray-text hover:text-brand-blue transition-colors px-1.5 py-0.5 rounded hover:bg-brand-gray dark:hover:bg-brand-navy-light"
             >
               {copied ? (
                 <svg
@@ -160,6 +292,7 @@ export function MessageBubble({ message }: Props) {
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -174,6 +307,7 @@ export function MessageBubble({ message }: Props) {
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -185,9 +319,38 @@ export function MessageBubble({ message }: Props) {
               )}
               {copied ? "Copié" : "Copier"}
             </button>
+
+            {isLastAssistant && onRegenerate && (
+              <button
+                onClick={onRegenerate}
+                disabled={!canInteract}
+                title="Régénérer la réponse"
+                aria-label="Régénérer la réponse"
+                className="flex items-center gap-1 text-[10px] text-brand-gray-text hover:text-brand-blue transition-colors px-1.5 py-0.5 rounded hover:bg-brand-gray dark:hover:bg-brand-navy-light disabled:opacity-40"
+              >
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                Régénérer
+              </button>
+            )}
+
             <button
               onClick={() => setFeedback(feedback === "up" ? null : "up")}
               title="Bonne réponse"
+              aria-label="Bonne réponse"
+              aria-pressed={feedback === "up"}
               className={`p-0.5 rounded transition-colors ${feedback === "up" ? "text-green-500" : "text-brand-gray-text hover:text-green-500"}`}
             >
               <svg
@@ -195,6 +358,7 @@ export function MessageBubble({ message }: Props) {
                 fill={feedback === "up" ? "currentColor" : "none"}
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -207,6 +371,8 @@ export function MessageBubble({ message }: Props) {
             <button
               onClick={() => setFeedback(feedback === "down" ? null : "down")}
               title="Mauvaise réponse"
+              aria-label="Mauvaise réponse"
+              aria-pressed={feedback === "down"}
               className={`p-0.5 rounded transition-colors ${feedback === "down" ? "text-red-400" : "text-brand-gray-text hover:text-red-400"}`}
             >
               <svg
@@ -214,6 +380,7 @@ export function MessageBubble({ message }: Props) {
                 fill={feedback === "down" ? "currentColor" : "none"}
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -227,7 +394,7 @@ export function MessageBubble({ message }: Props) {
         )}
 
         {!isUser && message.actualProvider && (
-          <p className="text-[10px] text-brand-gray-text px-1 mt-0.5">
+          <p className="text-[10px] text-brand-gray-text dark:text-white/40 px-1 mt-0.5">
             ✦ via {message.actualProvider} · {message.actualModel}
           </p>
         )}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import type { AdminDocument, User } from "../types";
 import { fetchAdminDocuments, deleteAdminDocument } from "../api/client";
 import { useToast } from "./ToastProvider";
@@ -142,6 +143,35 @@ export function LibraryPage({ user, isRole }: Props) {
     <>
       <div className="flex-1 overflow-y-auto bg-brand-surface-muted p-6">
         <div className="max-w-5xl mx-auto space-y-6">
+          {/* Info banner */}
+          <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-brand-blue/8 border border-brand-blue/20 text-sm text-brand-blue">
+            <svg
+              className="w-4 h-4 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p>
+              Les documents partagés sont automatiquement disponibles dans le
+              panneau latéral du{" "}
+              <Link
+                to="/"
+                className="font-semibold underline underline-offset-2 hover:text-brand-blue-dark"
+              >
+                Chat
+              </Link>
+              . Sélectionnez-les dans la section «&nbsp;Documents&nbsp;» pour
+              les interroger.
+            </p>
+          </div>
+
           {/* Header */}
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>

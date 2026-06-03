@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { DocumentRecord } from "../types";
 import {
   uploadDocuments,
@@ -86,6 +86,26 @@ export function useDocuments(sessionId: string) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadStage, setUploadStage] = useState<UploadStage>(null);
   const [selectedDocIds, setSelectedDocIds] = useState<Set<string>>(new Set());
+
+  // Load all accessible docs (own + shared) on mount so sidebar is populated
+  // and selectedDocIds is non-empty, which enables the send button.
+  useEffect(() => {
+    if (!sessionId) return;
+    listDocuments()
+      .then((docs) => {
+        const available = docs.filter((d) => d.status !== "failed");
+        setDocuments(available);
+        setSelectedDocIds((prev) => {
+          if (prev.size > 0) return prev;
+          return new Set(
+            available
+              .filter((d) => !d.status || d.status === "ready")
+              .map((d) => d.doc_id),
+          );
+        });
+      })
+      .catch(() => {});
+  }, [sessionId]);
 
   const upload = useCallback(
     async (files: File[], scope: "private" | "shared" = "private") => {

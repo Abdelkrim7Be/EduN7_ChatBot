@@ -478,10 +478,39 @@ export function ConversationSidebar({
 
       {/* Context / Documents */}
       <div className="border-t border-brand-gray dark:border-brand-navy-border flex-shrink-0">
-        <div className="flex items-center justify-between px-4 py-2.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-gray-text dark:text-white/40">
+        <div className="flex items-center gap-2 px-4 py-2.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-gray-text dark:text-white/40 flex-1">
             Documents
           </span>
+          {(() => {
+            const allReadyDocs = documents.filter(
+              (d) => !d.status || d.status === "ready",
+            );
+            const allSelected =
+              allReadyDocs.length > 0 &&
+              allReadyDocs.every((d) => selectedDocIds.has(d.doc_id));
+            if (allReadyDocs.length === 0) return null;
+            return (
+              <button
+                onClick={() =>
+                  allReadyDocs.forEach((d) => {
+                    if (
+                      allSelected
+                        ? selectedDocIds.has(d.doc_id)
+                        : !selectedDocIds.has(d.doc_id)
+                    )
+                      onToggleDoc(d.doc_id);
+                  })
+                }
+                title={
+                  allSelected ? "Tout désélectionner" : "Tout sélectionner"
+                }
+                className="text-[10px] text-brand-gray-mid dark:text-white/30 hover:text-brand-blue dark:hover:text-white/60 transition-colors font-medium"
+              >
+                {allSelected ? "Aucun" : "Tous"}
+              </button>
+            );
+          })()}
           <button
             onClick={onAddMore}
             className="text-[10px] text-brand-gold hover:text-brand-gold-dark transition-colors flex items-center gap-1 font-medium"
@@ -631,6 +660,30 @@ export function ConversationSidebar({
             })
           )}
         </div>
+      </div>
+
+      {/* Bottom collapse button */}
+      <div className="border-t border-brand-gray dark:border-brand-navy-border flex-shrink-0 px-3 py-2 flex justify-end">
+        <button
+          onClick={onCollapseToggle}
+          title="Réduire le panneau"
+          className="flex items-center gap-1.5 text-[10px] text-brand-gray-mid dark:text-white/30 hover:text-brand-navy dark:hover:text-white/60 transition-colors"
+        >
+          <svg
+            className="w-3.5 h-3.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          Réduire
+        </button>
       </div>
     </aside>
   );

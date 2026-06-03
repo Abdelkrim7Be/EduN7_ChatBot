@@ -50,12 +50,7 @@ export default {
         spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
       },
       fontFamily: {
-        display: [
-          "Inter Tight",
-          "ui-sans-serif",
-          "system-ui",
-          "sans-serif",
-        ],
+        display: ["Inter Tight", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       typography: () => ({
         DEFAULT: {

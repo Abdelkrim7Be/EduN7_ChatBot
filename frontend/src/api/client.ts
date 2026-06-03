@@ -348,6 +348,7 @@ export async function* streamChat(
   docIds: string[],
   provider: string,
   model: string,
+  signal?: AbortSignal,
 ): AsyncGenerator<StreamEvent> {
   const res = await fetch(`${BASE}/api/chat/stream`, {
     method: "POST",
@@ -362,6 +363,7 @@ export async function* streamChat(
       provider,
       model,
     }),
+    signal,
   });
 
   if (!res.ok || !res.body) {

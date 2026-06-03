@@ -7,7 +7,6 @@ import { useProviders } from "./hooks/useProviders";
 import { useConversations } from "./hooks/useConversations";
 import { useAuth } from "./hooks/useAuth";
 import { useTheme } from "./hooks/useTheme";
-import { UploadOverlay } from "./components/UploadOverlay";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { ChatWindow } from "./components/ChatWindow";
 import { MessageInput } from "./components/MessageInput";
@@ -21,6 +20,7 @@ import { AdminDocuments } from "./components/admin/AdminDocuments";
 import { AdminConversations } from "./components/admin/AdminConversations";
 import { AdminSettings } from "./components/admin/AdminSettings";
 import { LibraryPage } from "./components/LibraryPage";
+import { LandingPage } from "./pages/LandingPage";
 import { PrimitivePlayground } from "./pages/PrimitivePlayground";
 import {
   createSession,
@@ -78,14 +78,21 @@ function ChatArea({
     toggleSelection,
     setSelection,
   } = useDocuments(sessionId);
-  const { messages, isStreaming, sendMessage, clearMessages } =
-    useChat(sessionId);
+  const {
+    messages,
+    isStreaming,
+    sendMessage,
+    regenerate,
+    editMessage,
+    stop,
+    clearMessages,
+  } = useChat(sessionId);
   const { conversations, refresh: refreshConvos } = useConversations();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [inputValue, setInputValue] = useState("");
 
   const { selected } = providerState;
-  const hasDocuments = documents.length > 0;
 
   const citedDocIds = useMemo(() => {
     const ids = new Set<string>();
@@ -100,6 +107,16 @@ function ChatArea({
   function handleSend(text: string) {
     if (!selected) return;
     sendMessage(text, Array.from(selectedDocIds), selected);
+  }
+
+  function handleRegenerate() {
+    if (!selected) return;
+    regenerate(selected);
+  }
+
+  function handleEditMessage(id: string, text: string) {
+    if (!selected) return;
+    editMessage(id, text, Array.from(selectedDocIds), selected);
   }
 
   function handleAttach() {
@@ -152,18 +169,6 @@ function ChatArea({
     );
   }
 
-  if (!hasDocuments) {
-    return (
-      <UploadOverlay
-        onUpload={(files, scope) => upload(files, scope)}
-        isUploading={isUploading}
-        uploadStage={uploadStage}
-        isPrivileged={auth.isRole("professor", "admin")}
-        error={uploadError}
-      />
-    );
-  }
-
   return (
     <div className="flex flex-1 overflow-hidden relative">
       {/* Mobile backdrop */}
@@ -208,11 +213,25 @@ function ChatArea({
       </div>
 
       <div className="flex flex-col flex-1 overflow-hidden bg-white">
-        <ChatWindow messages={messages} />
+        <ChatWindow
+          messages={messages}
+          userName={auth.user!.name}
+          onSuggestion={setInputValue}
+          documents={documents}
+          onUpload={handleAttach}
+          onDropFiles={(files) => upload(files, "private")}
+          isStreaming={isStreaming}
+          onRegenerate={handleRegenerate}
+          onEditMessage={handleEditMessage}
+        />
         <MessageInput
           onSend={handleSend}
           onAttach={handleAttach}
           disabled={isStreaming || selectedDocIds.size === 0 || !selected}
+          value={inputValue}
+          onChange={setInputValue}
+          isStreaming={isStreaming}
+          onStop={stop}
         />
       </div>
 
@@ -449,7 +468,15 @@ export default function App() {
   if (!auth.isAuthenticated) {
     return (
       <ToastProvider>
-        <LoginPage onLogin={auth.login} onRegister={auth.register} />
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <LoginPage onLogin={auth.login} onRegister={auth.register} />
+            }
+          />
+          <Route path="*" element={<LandingPage />} />
+        </Routes>
       </ToastProvider>
     );
   }

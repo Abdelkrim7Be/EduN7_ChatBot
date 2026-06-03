@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 interface Props {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -8,7 +9,10 @@ interface Props {
 type Tab = "login" | "register";
 
 export function LoginPage({ onLogin, onRegister }: Props) {
-  const [tab, setTab] = useState<Tab>("login");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(
+    searchParams.get("tab") === "register" ? "register" : "login",
+  );
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -58,12 +62,18 @@ export function LoginPage({ onLogin, onRegister }: Props) {
   return (
     <div className="min-h-screen flex">
       {/* LEFT — ENSET brand panel */}
-      <div className="hidden lg:flex lg:w-5/12 bg-brand-navy flex-col items-center justify-center px-12 relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-brand-blue/10 rounded-full" />
-        <div className="absolute -bottom-20 -left-20 w-56 h-56 bg-brand-gold/10 rounded-full" />
+      <div className="hidden lg:flex lg:w-5/12 flex-col items-center justify-center px-12 relative overflow-hidden">
+        {/* Background image */}
+        <img
+          src="/images/school-scene.png"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
+        {/* Dark navy overlay */}
+        <div className="absolute inset-0 bg-brand-navy/80" />
 
         <div className="relative z-10 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-brand-blue flex items-center justify-center mx-auto mb-6 shadow-xl shadow-brand-blue/40">
+          <div className="w-20 h-20 rounded-2xl bg-brand-blue flex items-center justify-center mx-auto mb-6 shadow-xl shadow-brand-blue/60 ring-4 ring-brand-blue/25">
             <svg
               className="w-11 h-11 text-white"
               fill="none"
