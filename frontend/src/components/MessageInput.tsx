@@ -51,17 +51,17 @@ export function MessageInput({
   const canSend = !disabled && !!text.trim();
 
   return (
-    <div className="border-t border-brand-gray dark:border-brand-navy-border bg-white dark:bg-brand-navy px-4 py-3">
-      {/* Outer shell — double-bezel */}
+    <div className="border-t border-hairline bg-canvas px-4 py-3">
+      {/* Floating glass capsule */}
       <div className="max-w-4xl mx-auto">
-        <div className="p-1 rounded-2xl bg-brand-surface-muted dark:bg-brand-navy-light border border-brand-gray dark:border-brand-navy-border shadow-soft focus-within:border-brand-blue/50 dark:focus-within:border-brand-blue/40 focus-within:shadow-glow transition-all duration-200">
+        <div className="p-1 rounded-2xl glass border border-hairline shadow-soft focus-within:border-accent/50 focus-within:shadow-glow transition-all duration-200">
           {/* Inner row */}
           <div className="flex items-end gap-1 px-1">
             <button
               onClick={onAttach}
               title="Joindre un PDF"
               aria-label="Joindre un PDF"
-              className="flex-shrink-0 p-2 rounded-xl text-brand-gray-text dark:text-white/40 hover:text-brand-blue dark:hover:text-brand-blue-light hover:bg-white dark:hover:bg-brand-navy transition-colors"
+              className="flex-shrink-0 p-2 rounded-xl text-fg-muted hover:text-accent hover:bg-surface-3 transition-colors"
             >
               <svg
                 className="w-4 h-4"
@@ -88,7 +88,7 @@ export function MessageInput({
               disabled={disabled}
               rows={1}
               aria-label="Message"
-              className="flex-1 resize-none bg-transparent text-sm text-brand-navy dark:text-white/90 placeholder-brand-gray-text dark:placeholder-white/30 outline-none py-2.5 leading-relaxed disabled:opacity-50"
+              className="flex-1 resize-none bg-transparent text-sm text-fg placeholder-fg-muted outline-none py-2.5 leading-relaxed disabled:opacity-50"
             />
 
             {isStreaming && onStop ? (
@@ -96,10 +96,10 @@ export function MessageInput({
                 onClick={onStop}
                 title="Arrêter la génération"
                 aria-label="Arrêter la génération"
-                className="flex-shrink-0 mb-0.5 p-2 rounded-xl bg-brand-navy dark:bg-white/10 hover:opacity-80 active:scale-95 transition-all"
+                className="flex-shrink-0 mb-0.5 p-2 rounded-xl bg-surface-3 text-fg hover:bg-surface-3/70 active:scale-95 transition-all"
               >
                 <svg
-                  className="w-4 h-4 text-white"
+                  className="w-4 h-4"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -112,10 +112,10 @@ export function MessageInput({
                 disabled={!canSend}
                 title="Envoyer"
                 aria-label="Envoyer le message"
-                className="flex-shrink-0 mb-0.5 p-2 rounded-xl bg-brand-blue hover:bg-brand-blue-dark disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all shadow-sm shadow-brand-blue/25"
+                className="flex-shrink-0 mb-0.5 p-2 rounded-xl bg-accent text-accent-contrast hover:bg-accent-hover disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all shadow-glow"
               >
                 <svg
-                  className="w-4 h-4 text-white"
+                  className="w-4 h-4"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
@@ -127,7 +127,7 @@ export function MessageInput({
           </div>
         </div>
 
-        <p className="text-center text-[10px] text-brand-gray-text/60 dark:text-white/20 mt-1.5">
+        <p className="text-center text-[10px] text-fg-muted mt-1.5">
           Entrée pour envoyer · Maj+Entrée pour un saut de ligne
         </p>
       </div>

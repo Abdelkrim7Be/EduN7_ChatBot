@@ -39,7 +39,7 @@ const CATEGORY_ORDER = [
 
 const CATEGORY_STYLE: Record<string, { color: string; icon: ReactNode }> = {
   Cours: {
-    color: "text-brand-blue",
+    color: "text-accent",
     icon: (
       <svg
         className="w-3 h-3"
@@ -75,7 +75,7 @@ const CATEGORY_STYLE: Record<string, { color: string; icon: ReactNode }> = {
     ),
   },
   Examens: {
-    color: "text-brand-gold",
+    color: "text-gold",
     icon: (
       <svg
         className="w-3 h-3"
@@ -129,7 +129,7 @@ const CATEGORY_STYLE: Record<string, { color: string; icon: ReactNode }> = {
     ),
   },
   Autres: {
-    color: "text-brand-gray-mid dark:text-white/40",
+    color: "text-fg-muted",
     icon: (
       <svg
         className="w-3 h-3"
@@ -211,7 +211,7 @@ function RenameInput({
         if (e.key === "Enter") value.trim() ? onSave(value.trim()) : onCancel();
         if (e.key === "Escape") onCancel();
       }}
-      className="w-full bg-transparent border-b border-brand-gold text-brand-navy dark:text-white text-xs outline-none py-0.5"
+      className="w-full bg-transparent border-b border-accent text-fg text-xs outline-none py-0.5"
       onClick={(e) => e.stopPropagation()}
     />
   );
@@ -239,10 +239,10 @@ function ConvItem({
         e.preventDefault();
         setRenaming(true);
       }}
-      className={`group relative flex items-start gap-2 px-3 py-2 rounded-xl cursor-pointer transition-colors duration-150 ${
+      className={`group relative flex items-start gap-2 px-3 py-2 rounded-xl cursor-pointer transition-colors duration-150 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-0.5 before:rounded-full before:bg-accent before:transition-opacity ${
         isActive
-          ? "bg-brand-blue/15 dark:bg-brand-blue/20 ring-1 ring-brand-blue/20 dark:ring-brand-blue/30"
-          : "hover:bg-brand-gray dark:hover:bg-brand-navy-light"
+          ? "bg-accent-soft ring-1 ring-accent/30 before:opacity-100 before:shadow-glow"
+          : "hover:bg-surface-3 before:opacity-0"
       }`}
     >
       <div className="flex-1 min-w-0">
@@ -259,14 +259,14 @@ function ConvItem({
           <p
             className={`text-xs font-medium truncate leading-snug ${
               isActive
-                ? "text-brand-navy dark:text-white"
-                : "text-brand-navy/80 dark:text-white/80"
+                ? "text-fg"
+                : "text-fg-secondary"
             }`}
           >
             {conv.title}
           </p>
         )}
-        <p className="text-[10px] text-brand-gray-mid dark:text-white/30 mt-0.5 leading-none">
+        <p className="text-[10px] text-fg-muted mt-0.5 leading-none">
           {relativeTime(conv.last_active)}
           {conv.message_count > 0 && ` · ${conv.message_count} msgs`}
         </p>
@@ -277,7 +277,7 @@ function ConvItem({
           onDelete();
         }}
         title="Supprimer"
-        className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-0.5 text-brand-gray-mid dark:text-white/30 hover:text-red-500 transition-all mt-0.5"
+        className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-0.5 text-fg-muted hover:text-danger transition-all mt-0.5"
       >
         <svg
           className="w-3 h-3"
@@ -303,14 +303,14 @@ function DocStatusIcon({ status }: { status?: string }) {
     return (
       <span
         title="Échec du traitement"
-        className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400"
+        className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-danger"
       />
     );
   }
   return (
     <span
       title="Traitement en cours…"
-      className="flex-shrink-0 w-3 h-3 border-[1.5px] border-brand-blue dark:border-brand-blue-light border-t-transparent rounded-full animate-spin"
+      className="flex-shrink-0 w-3 h-3 border-[1.5px] border-accent border-t-transparent rounded-full animate-spin"
     />
   );
 }
@@ -340,11 +340,11 @@ export function ConversationSidebar({
 
   if (collapsed) {
     return (
-      <aside className="w-10 h-full flex-shrink-0 bg-brand-surface-muted dark:bg-brand-navy border-r border-brand-gray dark:border-brand-navy-border flex flex-col items-center py-3 gap-3">
+      <aside className="w-10 h-full flex-shrink-0 bg-surface-1 border-r border-hairline flex flex-col items-center py-3 gap-3">
         <button
           onClick={onCollapseToggle}
           title="Afficher le panneau"
-          className="p-1.5 rounded-lg hover:bg-brand-gray dark:hover:bg-brand-navy-light text-brand-gray-mid dark:text-white/40 hover:text-brand-navy dark:hover:text-white transition-colors"
+          className="p-1.5 rounded-lg hover:bg-surface-3 text-fg-muted hover:text-fg transition-colors"
         >
           <svg
             className="w-4 h-4"
@@ -361,7 +361,7 @@ export function ConversationSidebar({
           </svg>
         </button>
         {conversations.length > 0 && (
-          <span className="text-[10px] font-bold text-brand-gray-mid dark:text-white/25">
+          <span className="text-[10px] font-bold text-fg-muted">
             {conversations.length}
           </span>
         )}
@@ -372,16 +372,16 @@ export function ConversationSidebar({
   const groups = groupByRecency(filteredConversations);
 
   return (
-    <aside className="w-72 h-full flex-shrink-0 bg-brand-surface-muted dark:bg-brand-navy border-r border-brand-gray dark:border-brand-navy-border flex flex-col">
+    <aside className="w-72 h-full flex-shrink-0 bg-surface-1 border-r border-hairline flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-brand-gray dark:border-brand-navy-border flex-shrink-0">
-        <span className="text-sm font-semibold text-brand-navy dark:text-white">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-hairline flex-shrink-0">
+        <span className="text-sm font-semibold text-fg">
           Conversations
         </span>
         <button
           onClick={onCollapseToggle}
           title="Réduire le panneau"
-          className="p-1 rounded hover:bg-brand-gray dark:hover:bg-brand-navy-light text-brand-gray-mid dark:text-white/30 hover:text-brand-navy dark:hover:text-white/80 transition-colors"
+          className="p-1 rounded hover:bg-surface-3 text-fg-muted hover:text-fg transition-colors"
         >
           <svg
             className="w-3.5 h-3.5"
@@ -403,7 +403,7 @@ export function ConversationSidebar({
       <div className="px-3 pt-2 flex-shrink-0">
         <div className="relative">
           <svg
-            className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-brand-gray-mid dark:text-white/25"
+            className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-muted"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -420,7 +420,7 @@ export function ConversationSidebar({
             placeholder="Rechercher..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white dark:bg-brand-navy-light border border-brand-gray dark:border-brand-navy-border text-brand-navy dark:text-white text-xs placeholder-brand-gray-text dark:placeholder-white/25 rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-blue/40"
+            className="w-full bg-surface-2 border border-hairline text-fg text-xs placeholder-fg-muted rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50 focus:border-accent/50 transition-colors"
           />
         </div>
       </div>
@@ -429,7 +429,7 @@ export function ConversationSidebar({
       <div className="px-3 pt-2 pb-2 flex-shrink-0">
         <button
           onClick={onNewConversation}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-brand-navy bg-brand-gold hover:bg-brand-gold-dark transition-colors shadow-sm shadow-brand-gold/30"
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-accent-contrast bg-accent hover:bg-accent-hover transition-colors shadow-glow"
         >
           <svg
             className="w-3.5 h-3.5"
@@ -451,13 +451,13 @@ export function ConversationSidebar({
       {/* Conversations list */}
       <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 min-h-0">
         {conversations.length === 0 ? (
-          <p className="text-xs text-brand-gray-text dark:text-white/30 text-center pt-6 px-4">
+          <p className="text-xs text-fg-muted text-center pt-6 px-4">
             Aucune conversation. Démarrez un nouveau chat !
           </p>
         ) : (
           groups.map(({ label, items }) => (
             <div key={label} className="mb-1">
-              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-gray-text dark:text-white/25">
+              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
                 {label}
               </p>
               {items.map((conv, idx) => (
@@ -488,9 +488,9 @@ export function ConversationSidebar({
       </div>
 
       {/* Context / Documents */}
-      <div className="border-t border-brand-gray dark:border-brand-navy-border flex-shrink-0">
+      <div className="border-t border-hairline flex-shrink-0">
         <div className="flex items-center gap-2 px-4 py-2.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-gray-text dark:text-white/40 flex-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-secondary flex-1">
             Documents
           </span>
           {(() => {
@@ -516,7 +516,7 @@ export function ConversationSidebar({
                 title={
                   allSelected ? "Tout désélectionner" : "Tout sélectionner"
                 }
-                className="text-[10px] text-brand-gray-mid dark:text-white/30 hover:text-brand-blue dark:hover:text-white/60 transition-colors font-medium"
+                className="text-[10px] text-fg-muted hover:text-accent transition-colors font-medium"
               >
                 {allSelected ? "Aucun" : "Tous"}
               </button>
@@ -524,7 +524,7 @@ export function ConversationSidebar({
           })()}
           <button
             onClick={onAddMore}
-            className="text-[10px] text-brand-gold hover:text-brand-gold-dark transition-colors flex items-center gap-1 font-medium"
+            className="text-[10px] text-accent hover:text-accent-hover transition-colors flex items-center gap-1 font-medium"
           >
             <svg
               className="w-3 h-3"
@@ -545,7 +545,7 @@ export function ConversationSidebar({
 
         <div className="max-h-64 overflow-y-auto px-2 pb-3 space-y-2">
           {documents.length === 0 ? (
-            <p className="text-xs text-brand-gray-text dark:text-white/25 text-center py-3">
+            <p className="text-xs text-fg-muted text-center py-3">
               Aucun document — importez un PDF
             </p>
           ) : (
@@ -575,7 +575,7 @@ export function ConversationSidebar({
                           onToggleDoc(d.doc_id);
                       })
                     }
-                    className="w-full flex items-center gap-1.5 px-1 py-1 rounded hover:bg-brand-gray dark:hover:bg-brand-navy-light transition-colors group/cat"
+                    className="w-full flex items-center gap-1.5 px-1 py-1 rounded hover:bg-surface-3 transition-colors group/cat"
                     title={
                       allSelected ? "Tout désélectionner" : "Tout sélectionner"
                     }
@@ -586,12 +586,12 @@ export function ConversationSidebar({
                     >
                       {category}
                     </span>
-                    <span className="text-[10px] text-brand-gray-mid dark:text-white/20 ml-auto">
+                    <span className="text-[10px] text-fg-muted ml-auto">
                       {someSelected
                         ? `${readyDocs.filter((d) => selectedDocIds.has(d.doc_id)).length}/${docs.length}`
                         : docs.length}
                     </span>
-                    <span className="text-[10px] text-brand-gray-mid dark:text-white/20 opacity-0 group-hover/cat:opacity-100 transition-opacity">
+                    <span className="text-[10px] text-fg-muted opacity-0 group-hover/cat:opacity-100 transition-opacity">
                       {allSelected ? "−" : "+"}
                     </span>
                   </button>
@@ -603,37 +603,37 @@ export function ConversationSidebar({
                       return (
                         <div
                           key={doc.doc_id}
-                          className="flex items-start gap-2 p-1.5 rounded-lg hover:bg-brand-gray dark:hover:bg-brand-navy-light group"
+                          className="flex items-start gap-2 p-1.5 rounded-lg hover:bg-surface-3 group"
                         >
                           <input
                             type="checkbox"
                             checked={selectedDocIds.has(doc.doc_id)}
                             onChange={() => isReady && onToggleDoc(doc.doc_id)}
                             disabled={!isReady}
-                            className="mt-0.5 accent-brand-gold cursor-pointer flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="mt-0.5 accent-accent cursor-pointer flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1 min-w-0">
                               <p
-                                className="text-xs text-brand-navy/80 dark:text-white/80 font-medium truncate"
+                                className="text-xs text-fg-secondary font-medium truncate"
                                 title={doc.name}
                               >
                                 {doc.name}
                               </p>
                               <DocStatusIcon status={doc.status} />
                               {doc.scope === "shared" && (
-                                <span className="flex-shrink-0 text-[9px] font-semibold px-1 py-0 rounded bg-brand-gold/20 text-brand-gold border border-brand-gold/30 leading-4">
+                                <span className="flex-shrink-0 text-[9px] font-semibold px-1 py-0 rounded bg-gold/15 text-gold border border-gold/30 leading-4">
                                   Partagé
                                 </span>
                               )}
                               {citedDocIds.has(doc.doc_id) && (
                                 <span
                                   title="Cité dans cette conversation"
-                                  className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse"
+                                  className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent shadow-glow animate-pulse"
                                 />
                               )}
                             </div>
-                            <p className="text-[10px] text-brand-gray-text dark:text-white/25">
+                            <p className="text-[10px] text-fg-muted">
                               {isReady
                                 ? `${doc.page_count}p · ${doc.chunk_count} segments`
                                 : doc.status === "failed"
@@ -645,7 +645,7 @@ export function ConversationSidebar({
                             <button
                               onClick={() => onDeleteDoc(doc.doc_id)}
                               title="Supprimer"
-                              className="opacity-0 group-hover:opacity-100 p-0.5 text-brand-gray-mid dark:text-white/30 hover:text-red-500 transition-all flex-shrink-0 mt-0.5"
+                              className="opacity-0 group-hover:opacity-100 p-0.5 text-fg-muted hover:text-danger transition-all flex-shrink-0 mt-0.5"
                             >
                               <svg
                                 className="w-3 h-3"
@@ -674,11 +674,11 @@ export function ConversationSidebar({
       </div>
 
       {/* Bottom collapse button */}
-      <div className="border-t border-brand-gray dark:border-brand-navy-border flex-shrink-0 px-3 py-2 flex justify-end">
+      <div className="border-t border-hairline flex-shrink-0 px-3 py-2 flex justify-end">
         <button
           onClick={onCollapseToggle}
           title="Réduire le panneau"
-          className="flex items-center gap-1.5 text-[10px] text-brand-gray-mid dark:text-white/30 hover:text-brand-navy dark:hover:text-white/60 transition-colors"
+          className="flex items-center gap-1.5 text-[10px] text-fg-muted hover:text-fg transition-colors"
         >
           <svg
             className="w-3.5 h-3.5"
