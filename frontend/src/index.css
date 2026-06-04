@@ -2,19 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENSET AI — Design tokens (Dark AI Product)
+   Semantic CSS variables flip on `.dark`. Components reference Tailwind
+   semantic colors (bg-canvas, bg-surface-1, text-fg, border-hairline,
+   text-accent …) with NO `dark:` prefix — they resolve per theme here.
+   Dark is the hero; light is a clean inversion.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Light theme */
+  --canvas: #f7f8fa;
+  --surface-1: #ffffff;
+  --surface-2: #f3f5f9;
+  --surface-3: #e9edf4;
+  --border: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.14);
+
+  --fg: #0e1525;
+  --fg-secondary: #4a5567;
+  --fg-muted: #8a93a3;
+
+  --accent: #2d6bff;
+  --accent-hover: #1f5af0;
+  --accent-contrast: #ffffff;
+  --accent-soft: rgba(45, 107, 255, 0.1);
+  --accent-glow: rgba(45, 107, 255, 0.28);
+
+  --gold: #e0a400;
+  --success: #1aa566;
+  --warn: #c98410;
+  --danger: #e03e3e;
+
+  --shadow-soft:
+    0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
+  --shadow-elevated:
+    0 12px 32px -8px rgba(16, 24, 40, 0.16),
+    0 2px 6px -2px rgba(16, 24, 40, 0.06);
+  --shadow-glow:
+    0 0 0 3px var(--accent-soft), 0 6px 20px -4px var(--accent-glow);
+
+  --scrollbar-thumb: #c7d0de;
+  --scrollbar-thumb-hover: #9aa6b8;
+
+  color-scheme: light;
+}
+
+.dark {
+  /* Dark theme — the hero */
+  --canvas: #0a0b0f;
+  --surface-1: #101218;
+  --surface-2: #16181f;
+  --surface-3: #1c1f28;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --fg: #e7e9ee;
+  --fg-secondary: #9ba1ae;
+  --fg-muted: #646b7a;
+
+  --accent: #5b8cff;
+  --accent-hover: #7aa0ff;
+  --accent-contrast: #08090d;
+  --accent-soft: rgba(91, 140, 255, 0.14);
+  --accent-glow: rgba(91, 140, 255, 0.35);
+
+  --gold: #ffc53d;
+  --success: #3dd68c;
+  --warn: #f5b544;
+  --danger: #ff5c5c;
+
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-elevated:
+    0 12px 40px -8px rgba(0, 0, 0, 0.6), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 0 1px var(--accent), 0 0 24px -2px var(--accent-glow);
+
+  --scrollbar-thumb: #2a2e3a;
+  --scrollbar-thumb-hover: #3a3f4d;
+
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
 
+html {
+  background-color: var(--canvas);
+}
+
 body {
   margin: 0;
-  background-color: #ffffff;
-  color: #1e3a5f;
+  background-color: var(--canvas);
+  color: var(--fg);
   font-family:
+    "Inter",
+    "Inter Tight",
     system-ui,
     -apple-system,
     sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 #root {
@@ -23,33 +115,42 @@ body {
   flex-direction: column;
 }
 
-/* Custom scrollbar — light */
+::selection {
+  background-color: var(--accent-soft);
+  color: var(--fg);
+}
+
+/* ── Scrollbars — thin, theme-aware ──────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f0f7ff;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #b8d0e8;
-  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #5b7fa6;
+  background: var(--scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
-/* Custom scrollbar — dark */
-.dark ::-webkit-scrollbar-track {
-  background: #1e3a5f;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: #2d5080;
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #4ba3d3;
+/* ── Glass surface utility ───────────────────────────────────────────────── */
+.glass {
+  background-color: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
 
-/* Message slide-in animation */
+/* ── Message enter ───────────────────────────────────────────────────────── */
 @keyframes message-in {
   from {
     opacity: 0;
@@ -60,12 +161,11 @@ body {
     transform: translateY(0);
   }
 }
-
 .animate-message-in {
-  animation: message-in 0.22s ease-out forwards;
+  animation: message-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Streaming cursor blink */
+/* ── Streaming cursor ────────────────────────────────────────────────────── */
 @keyframes cursor-blink {
   0%,
   100% {
@@ -75,19 +175,19 @@ body {
     opacity: 0;
   }
 }
-
 .streaming-cursor {
   display: inline-block;
   width: 2px;
-  height: 14px;
-  background-color: #0077b6;
+  height: 1em;
+  background-color: var(--accent);
   border-radius: 1px;
   margin-left: 2px;
   vertical-align: text-bottom;
+  box-shadow: 0 0 8px var(--accent-glow);
   animation: cursor-blink 0.75s step-end infinite;
 }
 
-/* Inline citation superscripts */
+/* ── Inline citation superscripts ────────────────────────────────────────── */
 .cite-ref {
   display: inline-flex;
   align-items: center;
@@ -97,41 +197,35 @@ body {
   padding: 1px 3px;
   min-width: 1.3em;
   height: 1.4em;
-  background-color: rgba(0, 119, 182, 0.15);
-  color: #0077b6;
-  border-radius: 3px;
+  background-color: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 4px;
   font-weight: 700;
   vertical-align: super;
   margin: 0 1px;
   user-select: none;
-  transition: background-color 0.15s;
+  transition:
+    background-color 0.15s,
+    box-shadow 0.15s;
   font-style: normal;
-  font-family: system-ui, sans-serif;
-  cursor: default;
+  font-family: "Inter", system-ui, sans-serif;
+  cursor: pointer;
 }
-
 .cite-ref:hover {
-  background-color: rgba(0, 119, 182, 0.3);
-  color: #005f92;
+  background-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  box-shadow: 0 0 0 1px var(--accent-glow);
 }
 
-.dark .cite-ref {
-  background-color: rgba(75, 163, 211, 0.2);
-  color: #4ba3d3;
-}
-
-.dark .cite-ref:hover {
-  background-color: rgba(75, 163, 211, 0.35);
-  color: #7fc6e8;
-}
-
-/* Respect reduced motion */
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .animate-message-in {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
   .streaming-cursor {
-    animation: none;
     opacity: 1;
   }
 }

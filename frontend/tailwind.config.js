@@ -5,6 +5,35 @@ export default {
   theme: {
     extend: {
       colors: {
+        // ── Semantic tokens (flip on `.dark` via CSS vars in index.css) ──
+        canvas: "var(--canvas)",
+        surface: {
+          1: "var(--surface-1)",
+          2: "var(--surface-2)",
+          3: "var(--surface-3)",
+        },
+        hairline: {
+          DEFAULT: "var(--border)",
+          strong: "var(--border-strong)",
+        },
+        fg: {
+          DEFAULT: "var(--fg)",
+          secondary: "var(--fg-secondary)",
+          muted: "var(--fg-muted)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          hover: "var(--accent-hover)",
+          contrast: "var(--accent-contrast)",
+          soft: "var(--accent-soft)",
+          glow: "var(--accent-glow)",
+        },
+        gold: "var(--gold)",
+        success: "var(--success)",
+        warn: "var(--warn)",
+        danger: "var(--danger)",
+
+        // ── Legacy brand palette — retained during migration, retire per-file ──
         brand: {
           blue: "#0077B6",
           "blue-dark": "#005F92",
@@ -20,6 +49,15 @@ export default {
           "gray-mid": "#B8D0E8",
           "gray-text": "#5B7FA6",
         },
+      },
+      borderColor: {
+        DEFAULT: "var(--border)",
+      },
+      borderRadius: {
+        md: "0.625rem",
+        lg: "0.875rem",
+        xl: "1.125rem",
+        "2xl": "1.25rem",
       },
       keyframes: {
         "message-in": {
@@ -38,58 +76,67 @@ export default {
           "0%, 60%, 100%": { opacity: "0.25", transform: "scale(0.85)" },
           "30%": { opacity: "1", transform: "scale(1)" },
         },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 0 0 var(--accent-glow)" },
+          "50%": { boxShadow: "0 0 14px 2px var(--accent-glow)" },
+        },
       },
       animation: {
         "message-in": "message-in 0.2s ease-out",
         "slide-in": "slide-in 0.2s ease-out",
         shimmer: "shimmer 1.6s linear infinite",
         "dot-pulse": "dot-pulse 1.4s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
       },
       boxShadow: {
-        soft: "0 2px 8px -2px rgba(30, 58, 95, 0.08)",
-        elevated:
-          "0 8px 24px -6px rgba(30, 58, 95, 0.12), 0 2px 6px -1px rgba(30, 58, 95, 0.06)",
-        glow: "0 0 0 3px rgba(0, 119, 182, 0.15), 0 6px 20px -4px rgba(0, 119, 182, 0.35)",
+        soft: "var(--shadow-soft)",
+        elevated: "var(--shadow-elevated)",
+        glow: "var(--shadow-glow)",
       },
       transitionTimingFunction: {
         spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "out-expo": "cubic-bezier(0.22, 1, 0.36, 1)",
       },
       fontFamily: {
-        display: ["Inter Tight", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Inter", "Inter Tight", "system-ui", "sans-serif"],
+        display: ["Inter Tight", "Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       typography: () => ({
+        // Prose tokens reference semantic CSS vars → flip with theme automatically
         DEFAULT: {
           css: {
-            "--tw-prose-body": "#1E3A5F",
-            "--tw-prose-headings": "#1E3A5F",
-            "--tw-prose-bold": "#1E3A5F",
-            "--tw-prose-code": "#0077B6",
-            "--tw-prose-links": "#0077B6",
-            "--tw-prose-bullets": "#4BA3D3",
-            "--tw-prose-counters": "#4BA3D3",
-            "--tw-prose-hr": "#E2EEF7",
-            "--tw-prose-quotes": "#1E3A5F",
-            "--tw-prose-quote-borders": "#0077B6",
-            "--tw-prose-captions": "#5B7FA6",
-            "--tw-prose-th-borders": "#E2EEF7",
-            "--tw-prose-td-borders": "#E2EEF7",
+            "--tw-prose-body": "var(--fg)",
+            "--tw-prose-headings": "var(--fg)",
+            "--tw-prose-bold": "var(--fg)",
+            "--tw-prose-code": "var(--accent)",
+            "--tw-prose-links": "var(--accent)",
+            "--tw-prose-bullets": "var(--fg-muted)",
+            "--tw-prose-counters": "var(--fg-muted)",
+            "--tw-prose-hr": "var(--border)",
+            "--tw-prose-quotes": "var(--fg-secondary)",
+            "--tw-prose-quote-borders": "var(--accent)",
+            "--tw-prose-captions": "var(--fg-muted)",
+            "--tw-prose-th-borders": "var(--border)",
+            "--tw-prose-td-borders": "var(--border)",
+            "--tw-prose-pre-bg": "var(--surface-2)",
           },
         },
         invert: {
           css: {
-            "--tw-prose-body": "rgba(255,255,255,0.85)",
-            "--tw-prose-headings": "#ffffff",
-            "--tw-prose-bold": "#ffffff",
-            "--tw-prose-code": "#4BA3D3",
-            "--tw-prose-links": "#4BA3D3",
-            "--tw-prose-bullets": "#4BA3D3",
-            "--tw-prose-counters": "#4BA3D3",
-            "--tw-prose-hr": "#2D5080",
-            "--tw-prose-quotes": "rgba(255,255,255,0.85)",
-            "--tw-prose-quote-borders": "#0077B6",
-            "--tw-prose-captions": "rgba(255,255,255,0.5)",
-            "--tw-prose-th-borders": "#2D5080",
-            "--tw-prose-td-borders": "#2D5080",
+            "--tw-prose-body": "var(--fg)",
+            "--tw-prose-headings": "var(--fg)",
+            "--tw-prose-bold": "var(--fg)",
+            "--tw-prose-code": "var(--accent)",
+            "--tw-prose-links": "var(--accent)",
+            "--tw-prose-bullets": "var(--fg-muted)",
+            "--tw-prose-counters": "var(--fg-muted)",
+            "--tw-prose-hr": "var(--border)",
+            "--tw-prose-quotes": "var(--fg-secondary)",
+            "--tw-prose-quote-borders": "var(--accent)",
+            "--tw-prose-captions": "var(--fg-muted)",
+            "--tw-prose-th-borders": "var(--border)",
+            "--tw-prose-td-borders": "var(--border)",
             "--tw-prose-pre-bg": "#0d1117",
           },
         },
