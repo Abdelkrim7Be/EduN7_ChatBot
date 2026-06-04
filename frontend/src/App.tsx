@@ -328,7 +328,7 @@ function AppHeader({
           >
             ENSET AI
           </Link>
-          <div className="w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_8px_var(--gold)]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_8px_rgb(var(--gold))]" />
         </div>
         {auth.isRole("admin", "professor") && (
           <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-accent-soft text-accent border border-accent/30">

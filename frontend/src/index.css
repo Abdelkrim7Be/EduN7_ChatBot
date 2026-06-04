@@ -4,43 +4,40 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ENSET AI — Design tokens (Dark AI Product)
-   Semantic CSS variables flip on `.dark`. Components reference Tailwind
-   semantic colors (bg-canvas, bg-surface-1, text-fg, border-hairline,
-   text-accent …) with NO `dark:` prefix — they resolve per theme here.
-   Dark is the hero; light is a clean inversion.
+   Solid colors are stored as RGB channel triplets so Tailwind opacity
+   modifiers work (bg-accent/20, border-accent/30 …). Semantic colors flip on
+   `.dark`. Components use bg-canvas / bg-surface-1 / text-fg / text-accent with
+   NO `dark:` prefix — they resolve per theme here. Dark is the hero.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
   /* Light theme */
-  --canvas: #f7f8fa;
-  --surface-1: #ffffff;
-  --surface-2: #f3f5f9;
-  --surface-3: #e9edf4;
+  --canvas: 247 248 250;
+  --surface-1: 255 255 255;
+  --surface-2: 243 245 249;
+  --surface-3: 233 237 244;
   --border: rgba(15, 23, 42, 0.08);
   --border-strong: rgba(15, 23, 42, 0.14);
 
-  --fg: #0e1525;
-  --fg-secondary: #4a5567;
-  --fg-muted: #8a93a3;
+  --fg: 14 21 37;
+  --fg-secondary: 74 85 103;
+  --fg-muted: 138 147 163;
 
-  --accent: #2d6bff;
-  --accent-hover: #1f5af0;
-  --accent-contrast: #ffffff;
-  --accent-soft: rgba(45, 107, 255, 0.1);
-  --accent-glow: rgba(45, 107, 255, 0.28);
+  --accent: 45 107 255;
+  --accent-hover: 31 90 240;
+  --accent-contrast: 255 255 255;
+  --accent-soft: rgb(45 107 255 / 0.1);
+  --accent-glow: rgb(45 107 255 / 0.28);
 
-  --gold: #e0a400;
-  --success: #1aa566;
-  --warn: #c98410;
-  --danger: #e03e3e;
+  --gold: 224 164 0;
+  --success: 26 165 102;
+  --warn: 201 132 16;
+  --danger: 224 62 62;
 
-  --shadow-soft:
-    0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
-  --shadow-elevated:
-    0 12px 32px -8px rgba(16, 24, 40, 0.16),
+  --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
+  --shadow-elevated: 0 12px 32px -8px rgba(16, 24, 40, 0.16),
     0 2px 6px -2px rgba(16, 24, 40, 0.06);
-  --shadow-glow:
-    0 0 0 3px var(--accent-soft), 0 6px 20px -4px var(--accent-glow);
+  --shadow-glow: 0 0 0 3px var(--accent-soft), 0 6px 20px -4px var(--accent-glow);
 
   --scrollbar-thumb: #c7d0de;
   --scrollbar-thumb-hover: #9aa6b8;
@@ -50,32 +47,32 @@
 
 .dark {
   /* Dark theme — the hero */
-  --canvas: #0a0b0f;
-  --surface-1: #101218;
-  --surface-2: #16181f;
-  --surface-3: #1c1f28;
+  --canvas: 10 11 15;
+  --surface-1: 16 18 24;
+  --surface-2: 22 24 31;
+  --surface-3: 28 31 40;
   --border: rgba(255, 255, 255, 0.07);
   --border-strong: rgba(255, 255, 255, 0.14);
 
-  --fg: #e7e9ee;
-  --fg-secondary: #9ba1ae;
-  --fg-muted: #646b7a;
+  --fg: 231 233 238;
+  --fg-secondary: 155 161 174;
+  --fg-muted: 100 107 122;
 
-  --accent: #5b8cff;
-  --accent-hover: #7aa0ff;
-  --accent-contrast: #08090d;
-  --accent-soft: rgba(91, 140, 255, 0.14);
-  --accent-glow: rgba(91, 140, 255, 0.35);
+  --accent: 91 140 255;
+  --accent-hover: 122 160 255;
+  --accent-contrast: 8 9 13;
+  --accent-soft: rgb(91 140 255 / 0.14);
+  --accent-glow: rgb(91 140 255 / 0.35);
 
-  --gold: #ffc53d;
-  --success: #3dd68c;
-  --warn: #f5b544;
-  --danger: #ff5c5c;
+  --gold: 255 197 61;
+  --success: 61 214 140;
+  --warn: 245 181 68;
+  --danger: 255 92 92;
 
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-elevated:
-    0 12px 40px -8px rgba(0, 0, 0, 0.6), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 0 1px var(--accent), 0 0 24px -2px var(--accent-glow);
+  --shadow-elevated: 0 12px 40px -8px rgba(0, 0, 0, 0.6),
+    0 2px 8px -2px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 0 1px rgb(var(--accent)), 0 0 24px -2px var(--accent-glow);
 
   --scrollbar-thumb: #2a2e3a;
   --scrollbar-thumb-hover: #3a3f4d;
@@ -88,25 +85,19 @@
 }
 
 html {
-  background-color: var(--canvas);
+  background-color: rgb(var(--canvas));
 }
 
 body {
   margin: 0;
-  background-color: var(--canvas);
-  color: var(--fg);
+  background-color: rgb(var(--canvas));
+  color: rgb(var(--fg));
   font-family:
-    "Inter",
-    "Inter Tight",
-    system-ui,
-    -apple-system,
-    sans-serif;
+    "Inter", "Inter Tight", system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {
@@ -117,7 +108,7 @@ body {
 
 ::selection {
   background-color: var(--accent-soft);
-  color: var(--fg);
+  color: rgb(var(--fg));
 }
 
 /* ── Scrollbars — thin, theme-aware ──────────────────────────────────────── */
@@ -145,7 +136,7 @@ body {
 
 /* ── Glass surface utility ───────────────────────────────────────────────── */
 .glass {
-  background-color: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  background-color: color-mix(in srgb, rgb(var(--surface-2)) 72%, transparent);
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
@@ -179,7 +170,7 @@ body {
   display: inline-block;
   width: 2px;
   height: 1em;
-  background-color: var(--accent);
+  background-color: rgb(var(--accent));
   border-radius: 1px;
   margin-left: 2px;
   vertical-align: text-bottom;
@@ -198,21 +189,19 @@ body {
   min-width: 1.3em;
   height: 1.4em;
   background-color: var(--accent-soft);
-  color: var(--accent);
+  color: rgb(var(--accent));
   border-radius: 4px;
   font-weight: 700;
   vertical-align: super;
   margin: 0 1px;
   user-select: none;
-  transition:
-    background-color 0.15s,
-    box-shadow 0.15s;
+  transition: background-color 0.15s, box-shadow 0.15s;
   font-style: normal;
   font-family: "Inter", system-ui, sans-serif;
   cursor: pointer;
 }
 .cite-ref:hover {
-  background-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  background-color: rgb(var(--accent) / 0.3);
   box-shadow: 0 0 0 1px var(--accent-glow);
 }
 
