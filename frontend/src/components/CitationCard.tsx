@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Citation } from "../types";
 
 interface Props {
@@ -14,47 +15,66 @@ export function CitationCard({ citations }: Props) {
     <div className="mt-2">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-xs text-brand-blue hover:text-brand-blue-dark transition-colors font-medium"
+        aria-expanded={open}
+        className="group flex items-center gap-1.5 text-[11px] text-brand-blue/70 dark:text-brand-blue-light/70 hover:text-brand-blue dark:hover:text-brand-blue-light transition-colors font-medium"
       >
-        <svg
-          className={`w-3 h-3 transition-transform ${open ? "rotate-90" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+        <motion.span
+          animate={{ rotate: open ? 90 : 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="flex-shrink-0"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </motion.span>
         {citations.length} {citations.length === 1 ? "source" : "sources"}
       </button>
 
-      {open && (
-        <div className="mt-2 space-y-2">
-          {citations.map((c, i) => (
-            <div
-              key={i}
-              className="rounded-lg bg-brand-surface-muted border border-brand-gray p-3 text-xs"
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="cite-ref flex-shrink-0">{i + 1}</span>
-                <span className="font-semibold text-brand-blue truncate">
-                  {c.doc_name}
-                </span>
-                <span className="text-brand-gray-text flex-shrink-0 ml-auto">
-                  p.{c.page_number}
-                </span>
-              </div>
-              <p className="text-brand-navy/70 leading-relaxed line-clamp-3">
-                {c.excerpt}
-              </p>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="citations"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 space-y-1.5">
+              {citations.map((c, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl bg-brand-surface-muted dark:bg-brand-navy border border-brand-gray/70 dark:border-brand-navy-border/70 p-3 text-xs"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="cite-ref flex-shrink-0">{i + 1}</span>
+                    <span className="font-semibold text-brand-blue dark:text-brand-blue-light truncate flex-1">
+                      {c.doc_name}
+                    </span>
+                    <span className="text-brand-gray-text dark:text-white/40 flex-shrink-0 tabular-nums">
+                      p.{c.page_number}
+                    </span>
+                  </div>
+                  <p className="text-brand-navy/65 dark:text-white/60 leading-relaxed line-clamp-3 text-[11px]">
+                    {c.excerpt}
+                  </p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
