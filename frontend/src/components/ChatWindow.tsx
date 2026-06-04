@@ -310,31 +310,45 @@ function DashboardState({
               Bibliothèque
             </motion.button>
 
-            {/* AI tool cards */}
+            {/* AI suggestion actions — horizontal list, not identical cards */}
             <div className="bg-white dark:bg-brand-navy-light rounded-2xl border border-brand-gray dark:border-brand-navy-border overflow-hidden">
-              <div className="px-4 py-3 border-b border-brand-gray dark:border-brand-navy-border">
-                <h3 className="text-[11px] font-semibold uppercase tracking-widest text-brand-gray-text dark:text-white/50">
-                  Outils IA suggérés
+              <div className="px-4 py-2.5 border-b border-brand-gray dark:border-brand-navy-border">
+                <h3 className="text-[11px] font-medium text-brand-gray-text dark:text-white/40">
+                  Suggestions rapides
                 </h3>
               </div>
-              <div className="p-3 flex flex-col gap-2">
+              <div className="divide-y divide-brand-gray/50 dark:divide-brand-navy-border/50">
                 {aiTools.map((tool, i) => (
                   <motion.button
                     key={tool.label}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 + i * 0.06, duration: 0.3 }}
+                    initial={{ opacity: 0, x: 6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 + i * 0.06, duration: 0.22 }}
                     onClick={() => onSuggestion(tool.prompt)}
-                    className="text-left p-3 rounded-xl border border-brand-gray dark:border-brand-navy-border bg-brand-surface-muted dark:bg-brand-navy hover:border-brand-blue/40 hover:bg-brand-blue/5 transition-all group"
+                    className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-brand-surface-muted dark:hover:bg-brand-navy/60 transition-colors group"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className="text-brand-blue/60 group-hover:text-brand-blue transition-colors flex-shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-brand-blue/8 dark:bg-brand-blue/15 flex items-center justify-center flex-shrink-0 group-hover:bg-brand-blue/15 dark:group-hover:bg-brand-blue/25 transition-colors">
+                      <span className="text-brand-blue dark:text-brand-blue-light [&_svg]:w-4 [&_svg]:h-4">
                         {tool.icon}
-                      </div>
-                      <p className="text-xs font-semibold text-brand-navy dark:text-white/90 leading-snug">
-                        {tool.label}
-                      </p>
+                      </span>
                     </div>
+                    <span className="text-xs font-medium text-brand-navy dark:text-white/80 group-hover:text-brand-blue dark:group-hover:text-white transition-colors leading-snug">
+                      {tool.label}
+                    </span>
+                    <svg
+                      className="w-3 h-3 text-brand-gray-mid dark:text-white/20 ml-auto flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
                   </motion.button>
                 ))}
               </div>
