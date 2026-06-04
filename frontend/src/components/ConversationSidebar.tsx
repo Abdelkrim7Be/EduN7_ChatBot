@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { ReactNode } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Conversation, DocumentRecord } from "../types";
 
 interface Props {
@@ -238,10 +239,10 @@ function ConvItem({
         e.preventDefault();
         setRenaming(true);
       }}
-      className={`group relative flex items-start gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+      className={`group relative flex items-start gap-2 px-3 py-2 rounded-xl cursor-pointer transition-colors duration-150 ${
         isActive
-          ? "bg-brand-blue/20 border-l-2 border-brand-gold"
-          : "hover:bg-brand-gray dark:hover:bg-brand-navy-light border-l-2 border-transparent"
+          ? "bg-brand-blue/15 dark:bg-brand-blue/20 ring-1 ring-brand-blue/20 dark:ring-brand-blue/30"
+          : "hover:bg-brand-gray dark:hover:bg-brand-navy-light"
       }`}
     >
       <div className="flex-1 min-w-0">
@@ -302,14 +303,14 @@ function DocStatusIcon({ status }: { status?: string }) {
     return (
       <span
         title="Échec du traitement"
-        className="flex-shrink-0 w-2 h-2 rounded-full bg-red-500"
+        className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400"
       />
     );
   }
   return (
     <span
-      title="Traitement en cours..."
-      className="flex-shrink-0 w-3 h-3 border border-brand-blue border-t-transparent rounded-full animate-spin"
+      title="Traitement en cours…"
+      className="flex-shrink-0 w-3 h-3 border-[1.5px] border-brand-blue dark:border-brand-blue-light border-t-transparent rounded-full animate-spin"
     />
   );
 }
@@ -459,17 +460,27 @@ export function ConversationSidebar({
               <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-brand-gray-text dark:text-white/25">
                 {label}
               </p>
-              {items.map((conv) => (
-                <ConvItem
+              {items.map((conv, idx) => (
+                <motion.div
                   key={conv.session_id}
-                  conv={conv}
-                  isActive={conv.session_id === currentSessionId}
-                  onSelect={() => onSwitchConversation(conv)}
-                  onDelete={() => onDeleteConversation(conv.session_id)}
-                  onRename={(title) =>
-                    onRenameConversation(conv.session_id, title)
-                  }
-                />
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    duration: 0.18,
+                    delay: idx * 0.04,
+                    ease: "easeOut",
+                  }}
+                >
+                  <ConvItem
+                    conv={conv}
+                    isActive={conv.session_id === currentSessionId}
+                    onSelect={() => onSwitchConversation(conv)}
+                    onDelete={() => onDeleteConversation(conv.session_id)}
+                    onRename={(title) =>
+                      onRenameConversation(conv.session_id, title)
+                    }
+                  />
+                </motion.div>
               ))}
             </div>
           ))
