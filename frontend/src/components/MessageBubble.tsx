@@ -60,21 +60,19 @@ function CitationPopover({ n, citation }: { n: number; citation?: Citation }) {
             ref={refs.setFloating}
             style={floatingStyles}
             {...getFloatingProps()}
-            className="z-50 max-w-[280px] rounded-xl bg-brand-navy dark:bg-brand-navy-light border border-brand-navy-border p-3 shadow-elevated text-xs pointer-events-none"
+            className="z-50 max-w-[280px] rounded-xl glass border border-hairline-strong p-3 shadow-elevated text-xs pointer-events-none"
           >
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="cite-ref !bg-white/10 !text-white flex-shrink-0">
-                {n}
-              </span>
-              <span className="font-semibold text-white truncate flex-1">
+              <span className="cite-ref flex-shrink-0">{n}</span>
+              <span className="font-semibold text-fg truncate flex-1">
                 {citation.doc_name}
               </span>
-              <span className="text-white/50 flex-shrink-0 tabular-nums">
+              <span className="text-fg-muted flex-shrink-0 tabular-nums">
                 p.{citation.page_number}
               </span>
             </div>
             {citation.excerpt && (
-              <p className="text-white/70 leading-relaxed line-clamp-4 text-[11px]">
+              <p className="text-fg-secondary leading-relaxed line-clamp-4 text-[11px]">
                 {citation.excerpt}
               </p>
             )}
@@ -144,7 +142,7 @@ function makeComponents(citations?: Citation[]) {
       }
       return (
         <code
-          className="rounded bg-brand-blue/10 dark:bg-brand-blue/20 px-1.5 py-0.5 text-[0.85em] font-mono text-brand-blue dark:text-brand-blue-light"
+          className="rounded bg-accent/10 px-1.5 py-0.5 text-[0.85em] font-mono text-accent"
           {...rest}
         >
           {children}
@@ -188,8 +186,8 @@ function ActionBtn({
       disabled={disabled}
       className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
         active
-          ? (activeClass ?? "text-brand-blue bg-brand-blue/10")
-          : "text-brand-gray-text dark:text-white/40 hover:text-brand-navy dark:hover:text-white/80 hover:bg-brand-gray dark:hover:bg-brand-navy-light"
+          ? (activeClass ?? "text-accent bg-accent/10")
+          : "text-fg-muted hover:text-fg hover:bg-surface-3"
       }`}
     >
       {children}
@@ -252,9 +250,13 @@ export function MessageBubble({
     >
       {/* AI avatar */}
       {!isUser && (
-        <div className="w-7 h-7 rounded-lg bg-brand-blue flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 shadow-sm shadow-brand-blue/20">
+        <div
+          className={`w-7 h-7 rounded-lg bg-accent flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 shadow-glow ${
+            message.isStreaming ? "animate-glow-pulse" : ""
+          }`}
+        >
           <svg
-            className="w-4 h-4 text-white"
+            className="w-4 h-4 text-accent-contrast"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -274,7 +276,7 @@ export function MessageBubble({
         className={`max-w-[78%] ${isUser ? "items-end" : "items-start"} flex flex-col group/msg`}
       >
         {editing ? (
-          <div className="w-full min-w-[260px] rounded-2xl bg-white dark:bg-brand-navy-light border border-brand-blue/40 p-2 shadow-soft">
+          <div className="w-full min-w-[260px] rounded-2xl bg-surface-2 border border-accent/40 p-2 shadow-glow">
             <textarea
               ref={editRef}
               value={draft}
@@ -292,19 +294,19 @@ export function MessageBubble({
                   setEditing(false);
                 }
               }}
-              className="w-full resize-none bg-transparent text-sm text-brand-navy dark:text-white/90 outline-none leading-relaxed max-h-60"
+              className="w-full resize-none bg-transparent text-sm text-fg outline-none leading-relaxed max-h-60"
               rows={1}
             />
             <div className="flex items-center justify-end gap-2 mt-2">
               <button
                 onClick={() => setEditing(false)}
-                className="text-xs px-2.5 py-1 rounded-lg text-brand-gray-text hover:text-brand-navy dark:hover:text-white transition-colors"
+                className="text-xs px-2.5 py-1 rounded-lg text-fg-muted hover:text-fg hover:bg-surface-3 transition-colors"
               >
                 Annuler
               </button>
               <button
                 onClick={saveEdit}
-                className="text-xs px-3 py-1 rounded-lg bg-brand-blue text-white font-medium hover:bg-brand-blue-dark transition-colors"
+                className="text-xs px-3 py-1 rounded-lg bg-accent text-accent-contrast font-medium hover:bg-accent-hover transition-colors shadow-glow"
               >
                 Envoyer
               </button>
@@ -312,10 +314,10 @@ export function MessageBubble({
           </div>
         ) : (
           <div
-            className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+            className={`text-sm leading-relaxed ${
               isUser
-                ? "bg-brand-blue text-white rounded-br-sm shadow-sm shadow-brand-blue/20"
-                : "bg-brand-surface-muted dark:bg-brand-navy-light text-brand-navy dark:text-white/90 rounded-bl-sm border border-brand-gray dark:border-brand-navy-border"
+                ? "rounded-2xl rounded-br-sm px-4 py-3 bg-accent text-accent-contrast shadow-glow"
+                : "rounded-2xl px-1 py-1 text-fg"
             }`}
           >
             {isUser ? (
@@ -378,7 +380,7 @@ export function MessageBubble({
               title={copied ? "Copié !" : "Copier la réponse"}
               label={copied ? "Réponse copiée" : "Copier la réponse"}
               active={copied}
-              activeClass="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10"
+              activeClass="text-success bg-success/10"
             >
               {copied ? (
                 <svg
@@ -440,14 +442,14 @@ export function MessageBubble({
             )}
 
             {/* Separator */}
-            <span className="w-px h-4 bg-brand-gray dark:bg-brand-navy-border mx-0.5" />
+            <span className="w-px h-4 bg-hairline-strong mx-0.5" />
 
             <ActionBtn
               onClick={() => setFeedback(feedback === "up" ? null : "up")}
               title="Bonne réponse"
               label="Bonne réponse"
               active={feedback === "up"}
-              activeClass="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10"
+              activeClass="text-success bg-success/10"
             >
               <svg
                 className="w-3.5 h-3.5"
@@ -469,7 +471,7 @@ export function MessageBubble({
               title="Mauvaise réponse"
               label="Mauvaise réponse"
               active={feedback === "down"}
-              activeClass="text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10"
+              activeClass="text-danger bg-danger/10"
             >
               <svg
                 className="w-3.5 h-3.5"
@@ -490,7 +492,7 @@ export function MessageBubble({
         )}
 
         {!isUser && message.actualProvider && (
-          <p className="text-[10px] text-brand-gray-text dark:text-white/35 px-1 mt-0.5">
+          <p className="text-[10px] text-fg-muted px-1 mt-0.5">
             ✦ {message.actualProvider} · {message.actualModel}
           </p>
         )}

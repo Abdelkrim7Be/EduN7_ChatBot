@@ -16,7 +16,7 @@ export function CitationCard({ citations }: Props) {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="group flex items-center gap-1.5 text-[11px] text-brand-blue/70 dark:text-brand-blue-light/70 hover:text-brand-blue dark:hover:text-brand-blue-light transition-colors font-medium"
+        className="group flex items-center gap-1.5 text-[11px] text-accent/80 hover:text-accent transition-colors font-medium"
       >
         <motion.span
           animate={{ rotate: open ? 90 : 0 }}
@@ -55,18 +55,18 @@ export function CitationCard({ citations }: Props) {
               {citations.map((c, i) => (
                 <div
                   key={i}
-                  className="rounded-xl bg-brand-surface-muted dark:bg-brand-navy border border-brand-gray/70 dark:border-brand-navy-border/70 p-3 text-xs"
+                  className="rounded-xl bg-surface-2 border border-hairline p-3 text-xs"
                 >
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="cite-ref flex-shrink-0">{i + 1}</span>
-                    <span className="font-semibold text-brand-blue dark:text-brand-blue-light truncate flex-1">
+                    <span className="font-semibold text-accent truncate flex-1">
                       {c.doc_name}
                     </span>
-                    <span className="text-brand-gray-text dark:text-white/40 flex-shrink-0 tabular-nums">
+                    <span className="text-fg-muted flex-shrink-0 tabular-nums">
                       p.{c.page_number}
                     </span>
                   </div>
-                  <p className="text-brand-navy/65 dark:text-white/60 leading-relaxed line-clamp-3 text-[11px]">
+                  <p className="text-fg-secondary leading-relaxed line-clamp-3 text-[11px]">
                     {c.excerpt}
                   </p>
                 </div>

@@ -98,21 +98,21 @@ function formatTimeAgo(dateStr: string): string {
 function StatusBadge({ status }: { status?: string }) {
   if (!status || status === "ready") {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/10 text-success border border-success/25">
         Prêt
       </span>
     );
   }
   if (status === "failed") {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200">
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-danger/10 text-danger border border-danger/25">
         Erreur d'analyse
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-blue/8 text-brand-blue border border-brand-blue/20">
-      <span className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse" />
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent border border-accent/25">
+      <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
       {STATUS_LABELS[status] ?? "Traitement…"}
     </span>
   );
@@ -155,7 +155,7 @@ function DashboardState({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-brand-surface-muted dark:bg-brand-navy">
+    <div className="flex-1 overflow-y-auto bg-canvas">
       <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Header */}
         <motion.div
@@ -164,9 +164,9 @@ function DashboardState({
           transition={{ duration: 0.35 }}
           className="flex flex-col items-center text-center mb-8"
         >
-          <div className="w-12 h-12 rounded-xl bg-brand-blue flex items-center justify-center mb-3 shadow-md shadow-brand-blue/30">
+          <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center mb-3 shadow-glow">
             <svg
-              className="w-7 h-7 text-white"
+              className="w-7 h-7 text-accent-contrast"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -179,10 +179,10 @@ function DashboardState({
               />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-brand-navy dark:text-white">
+          <h1 className="text-xl font-bold text-fg">
             ENSET AI
           </h1>
-          <p className="text-sm text-brand-gray-text dark:text-white/60 mt-1 max-w-sm">
+          <p className="text-sm text-fg-secondary mt-1 max-w-sm">
             Bonjour, {firstName} — importez vos documents PDF et posez vos
             questions grâce à l'IA
           </p>
@@ -201,14 +201,14 @@ function DashboardState({
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={onUpload}
-              className={`bg-white dark:bg-brand-navy-light rounded-2xl border-2 border-dashed transition-all cursor-pointer p-8 text-center ${
+              className={`bg-surface-1 rounded-2xl border-2 border-dashed transition-all cursor-pointer p-8 text-center ${
                 isDragging
-                  ? "border-brand-blue bg-brand-blue/5 scale-[1.01] shadow-md"
-                  : "border-brand-gray dark:border-brand-navy-border hover:border-brand-blue/50 hover:shadow-md"
+                  ? "border-accent bg-accent/5 scale-[1.01] shadow-glow"
+                  : "border-hairline hover:border-accent/50 hover:shadow-elevated"
               }`}
             >
               <svg
-                className="w-9 h-9 text-brand-gray-mid mx-auto mb-3"
+                className="w-9 h-9 text-fg-muted mx-auto mb-3"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -220,11 +220,11 @@ function DashboardState({
                   d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                 />
               </svg>
-              <p className="text-sm font-medium text-brand-navy dark:text-white/90 mb-1">
+              <p className="text-sm font-medium text-fg mb-1">
                 Glissez vos PDF ici, ou{" "}
-                <span className="text-brand-blue">parcourez vos fichiers</span>
+                <span className="text-accent">parcourez vos fichiers</span>
               </p>
-              <p className="text-xs text-brand-gray-text dark:text-white/50">
+              <p className="text-xs text-fg-muted">
                 Plusieurs PDF acceptés
               </p>
             </motion.div>
@@ -235,22 +235,22 @@ function DashboardState({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.1 }}
-                className="bg-white dark:bg-brand-navy-light rounded-2xl border border-brand-gray dark:border-brand-navy-border overflow-hidden"
+                className="bg-surface-1 rounded-2xl border border-hairline overflow-hidden"
               >
-                <div className="px-4 py-3 border-b border-brand-gray dark:border-brand-navy-border">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-widest text-brand-gray-text dark:text-white/50">
+                <div className="px-4 py-3 border-b border-hairline">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-widest text-fg-muted">
                     Documents chargés récemment
                   </h3>
                 </div>
-                <div className="divide-y divide-brand-gray/50 dark:divide-brand-navy-border/50">
+                <div className="divide-y divide-hairline">
                   {documents.slice(0, 8).map((doc) => (
                     <div
                       key={doc.doc_id}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-brand-surface-muted/50 dark:hover:bg-brand-navy/50 transition-colors"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-surface-2 transition-colors"
                     >
-                      <div className="w-7 h-7 rounded-lg bg-brand-blue/10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
                         <svg
-                          className="w-3.5 h-3.5 text-brand-blue"
+                          className="w-3.5 h-3.5 text-accent"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -264,10 +264,10 @@ function DashboardState({
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-brand-navy dark:text-white/90 truncate">
+                        <p className="text-sm font-medium text-fg truncate">
                           {doc.name}
                         </p>
-                        <p className="text-[11px] text-brand-gray-text dark:text-white/40">
+                        <p className="text-[11px] text-fg-muted">
                           {formatTimeAgo(doc.uploaded_at)}
                         </p>
                       </div>
@@ -292,7 +292,7 @@ function DashboardState({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.12, duration: 0.3 }}
               onClick={() => navigate("/library")}
-              className="w-full py-3 px-4 rounded-xl bg-brand-blue text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-brand-blue-dark transition-colors shadow-sm shadow-brand-blue/25"
+              className="w-full py-3 px-4 rounded-xl bg-accent text-accent-contrast text-sm font-semibold flex items-center justify-center gap-2 hover:bg-accent-hover transition-colors shadow-glow"
             >
               <svg
                 className="w-4 h-4"
@@ -311,13 +311,13 @@ function DashboardState({
             </motion.button>
 
             {/* AI suggestion actions — horizontal list, not identical cards */}
-            <div className="bg-white dark:bg-brand-navy-light rounded-2xl border border-brand-gray dark:border-brand-navy-border overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-brand-gray dark:border-brand-navy-border">
-                <h3 className="text-[11px] font-medium text-brand-gray-text dark:text-white/40">
+            <div className="bg-surface-1 rounded-2xl border border-hairline overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-hairline">
+                <h3 className="text-[11px] font-medium text-fg-muted">
                   Suggestions rapides
                 </h3>
               </div>
-              <div className="divide-y divide-brand-gray/50 dark:divide-brand-navy-border/50">
+              <div className="divide-y divide-hairline">
                 {aiTools.map((tool, i) => (
                   <motion.button
                     key={tool.label}
@@ -325,18 +325,18 @@ function DashboardState({
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.15 + i * 0.06, duration: 0.22 }}
                     onClick={() => onSuggestion(tool.prompt)}
-                    className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-brand-surface-muted dark:hover:bg-brand-navy/60 transition-colors group"
+                    className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-surface-2 transition-colors group"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-brand-blue/8 dark:bg-brand-blue/15 flex items-center justify-center flex-shrink-0 group-hover:bg-brand-blue/15 dark:group-hover:bg-brand-blue/25 transition-colors">
-                      <span className="text-brand-blue dark:text-brand-blue-light [&_svg]:w-4 [&_svg]:h-4">
+                    <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 group-hover:bg-accent/20 transition-colors">
+                      <span className="text-accent [&_svg]:w-4 [&_svg]:h-4">
                         {tool.icon}
                       </span>
                     </div>
-                    <span className="text-xs font-medium text-brand-navy dark:text-white/80 group-hover:text-brand-blue dark:group-hover:text-white transition-colors leading-snug">
+                    <span className="text-xs font-medium text-fg-secondary group-hover:text-accent transition-colors leading-snug">
                       {tool.label}
                     </span>
                     <svg
-                      className="w-3 h-3 text-brand-gray-mid dark:text-white/20 ml-auto flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="w-3 h-3 text-fg-muted ml-auto flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -399,7 +399,7 @@ export function ChatWindow({
 
   return (
     <div
-      className="flex-1 overflow-y-auto px-4 py-4 bg-white dark:bg-brand-navy"
+      className="flex-1 overflow-y-auto px-4 py-4 bg-canvas"
       role="log"
       aria-live="polite"
       aria-relevant="additions text"
