@@ -163,14 +163,14 @@ function ChatArea({
 
   if (sessionLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-brand-surface-muted">
-        <div className="w-6 h-6 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
+      <div className="flex-1 flex items-center justify-center bg-canvas">
+        <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden relative">
+    <div className="flex flex-1 overflow-hidden relative bg-canvas">
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
@@ -212,7 +212,7 @@ function ChatArea({
         />
       </div>
 
-      <div className="flex flex-col flex-1 overflow-hidden bg-white">
+      <div className="flex flex-col flex-1 overflow-hidden bg-canvas">
         <ChatWindow
           messages={messages}
           userName={auth.user!.name}
@@ -248,7 +248,7 @@ function ChatArea({
       {!sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="md:hidden fixed bottom-20 left-3 z-50 p-2 bg-brand-navy rounded-full shadow-lg text-white/60 hover:text-white transition-colors"
+          className="md:hidden fixed bottom-20 left-3 z-50 p-2.5 glass border border-hairline rounded-full shadow-elevated text-fg-secondary hover:text-fg transition-colors"
           title="Menu"
         >
           <svg
@@ -271,7 +271,7 @@ function ChatArea({
       {messages.length > 0 && (
         <button
           onClick={clearMessages}
-          className="hidden sm:block absolute top-3 right-3 text-xs text-brand-gray-text hover:text-brand-navy transition-colors z-10"
+          className="hidden sm:block absolute top-3 right-3 text-xs text-fg-muted hover:text-fg hover:bg-surface-3 px-2 py-1 rounded-md transition-colors z-10"
         >
           Effacer
         </button>
@@ -296,12 +296,19 @@ function AppHeader({
   const isLibraryRoute = location.pathname === "/library";
   const isDark = themeState.theme === "dark";
 
+  const navLink = (active: boolean) =>
+    `text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-150 ${
+      active
+        ? "bg-accent text-accent-contrast shadow-glow"
+        : "text-fg-muted hover:text-fg hover:bg-surface-3"
+    }`;
+
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b border-brand-gray dark:border-brand-navy-border bg-white dark:bg-brand-navy flex-shrink-0">
+    <header className="glass flex items-center justify-between px-4 py-2.5 border-b border-hairline flex-shrink-0 z-20">
       <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-brand-blue flex items-center justify-center shadow-sm shadow-brand-blue/50">
+        <div className="relative w-8 h-8 rounded-xl bg-accent flex items-center justify-center shadow-glow">
           <svg
-            className="w-4 h-4 text-white"
+            className="w-[18px] h-[18px] text-accent-contrast"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -317,14 +324,14 @@ function AppHeader({
         <div className="flex items-center gap-1.5">
           <Link
             to="/"
-            className="text-brand-navy dark:text-white font-bold text-sm tracking-tight hover:text-brand-blue dark:hover:text-white/80 transition-colors"
+            className="font-display text-fg font-bold text-[15px] tracking-tight hover:text-accent transition-colors"
           >
             ENSET AI
           </Link>
-          <div className="w-1.5 h-1.5 rounded-full bg-brand-gold" />
+          <div className="w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_8px_var(--gold)]" />
         </div>
         {auth.isRole("admin", "professor") && (
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-gold/20 text-brand-gold border border-brand-gold/30">
+          <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-accent-soft text-accent border border-accent/30">
             {auth.user!.role}
           </span>
         )}
@@ -333,37 +340,16 @@ function AppHeader({
       <div className="flex items-center gap-2">
         {/* Nav */}
         <nav className="flex items-center gap-1 mr-2">
-          <Link
-            to="/"
-            className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
-              !isAdminRoute && !isLibraryRoute
-                ? "bg-brand-blue text-white"
-                : "text-brand-gray-text dark:text-white/50 hover:text-brand-navy dark:hover:text-white hover:bg-brand-surface-muted dark:hover:bg-brand-navy-light"
-            }`}
-          >
+          <Link to="/" className={navLink(!isAdminRoute && !isLibraryRoute)}>
             Chat
           </Link>
           {auth.isRole("professor", "admin") && (
-            <Link
-              to="/library"
-              className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
-                isLibraryRoute
-                  ? "bg-brand-blue text-white"
-                  : "text-brand-gray-text dark:text-white/50 hover:text-brand-navy dark:hover:text-white hover:bg-brand-surface-muted dark:hover:bg-brand-navy-light"
-              }`}
-            >
+            <Link to="/library" className={navLink(isLibraryRoute)}>
               Bibliothèque
             </Link>
           )}
           {auth.isRole("admin") && (
-            <Link
-              to="/admin/dashboard"
-              className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
-                isAdminRoute
-                  ? "bg-brand-blue text-white"
-                  : "text-brand-gray-text dark:text-white/50 hover:text-brand-navy dark:hover:text-white hover:bg-brand-surface-muted dark:hover:bg-brand-navy-light"
-              }`}
-            >
+            <Link to="/admin/dashboard" className={navLink(isAdminRoute)}>
               Admin
             </Link>
           )}
@@ -380,11 +366,11 @@ function AppHeader({
         )}
 
         {/* User + theme toggle */}
-        <div className="flex items-center gap-2 ml-1">
-          <div className="w-7 h-7 rounded-full bg-brand-blue flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm">
+        <div className="flex items-center gap-2 ml-1 pl-2 border-l border-hairline">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center text-accent-contrast text-xs font-bold flex-shrink-0 shadow-glow">
             {auth.user!.name.charAt(0).toUpperCase()}
           </div>
-          <span className="text-xs text-brand-gray-text dark:text-white/60 hidden sm:block max-w-[120px] truncate">
+          <span className="text-xs text-fg-secondary hidden sm:block max-w-[120px] truncate">
             {auth.user!.name}
           </span>
 
@@ -392,7 +378,7 @@ function AppHeader({
           <button
             onClick={themeState.toggle}
             title={isDark ? "Mode clair" : "Mode sombre"}
-            className="p-1 text-brand-gray-mid dark:text-white/40 hover:text-brand-navy dark:hover:text-white/80 transition-colors"
+            className="p-1.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface-3 transition-colors"
           >
             {isDark ? (
               <svg
@@ -428,7 +414,7 @@ function AppHeader({
           <button
             onClick={auth.logout}
             title="Se déconnecter"
-            className="p-1 text-brand-gray-mid dark:text-white/40 hover:text-brand-navy dark:hover:text-white/80 transition-colors"
+            className="p-1.5 rounded-lg text-fg-muted hover:text-danger hover:bg-surface-3 transition-colors"
           >
             <svg
               className="w-4 h-4"
@@ -459,8 +445,8 @@ export default function App() {
 
   if (auth.loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-brand-surface-muted min-h-screen">
-        <div className="w-6 h-6 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
+      <div className="flex-1 flex items-center justify-center bg-canvas min-h-screen">
+        <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -483,7 +469,7 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <div className="flex flex-col h-screen bg-brand-surface-muted dark:bg-brand-surface-muted">
+      <div className="flex flex-col h-screen bg-canvas">
         <AppHeader
           auth={auth}
           providerState={providerState}
