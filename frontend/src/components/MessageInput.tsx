@@ -131,7 +131,8 @@ export function MessageInput({
         </div>
 
         <p className="text-center text-[10px] text-fg-muted mt-1.5">
-          Entrée pour envoyer · Maj+Entrée pour un saut de ligne
+          Entrée pour envoyer · Maj+Entrée pour un saut de ligne ·{" "}
+          <kbd className="font-mono">⌘K</kbd> Palette
         </p>
       </div>
     </div>
