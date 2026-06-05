@@ -7,12 +7,15 @@ import { useProviders } from "./hooks/useProviders";
 import { useConversations } from "./hooks/useConversations";
 import { useAuth } from "./hooks/useAuth";
 import { useTheme } from "./hooks/useTheme";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { ChatWindow } from "./components/ChatWindow";
 import { MessageInput } from "./components/MessageInput";
 import { ModelSelector } from "./components/ModelSelector";
 import { LoginPage } from "./components/LoginPage";
 import { ToastProvider } from "./components/ToastProvider";
+import { CommandPalette } from "./components/CommandPalette";
+import { ShortcutCheatsheet } from "./components/ShortcutCheatsheet";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { AdminDashboard } from "./components/admin/AdminDashboard";
 import { AdminUsers } from "./components/admin/AdminUsers";
@@ -58,9 +61,13 @@ interface ProviderState {
 function ChatArea({
   auth,
   providerState,
+  onToggleTheme,
+  onOpenCheatsheet,
 }: {
   auth: AuthState;
   providerState: ProviderState;
+  onToggleTheme: () => void;
+  onOpenCheatsheet: () => void;
 }) {
   const {
     sessionId,
@@ -89,8 +96,10 @@ function ChatArea({
   } = useChat(sessionId);
   const { conversations, refresh: refreshConvos } = useConversations();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [inputValue, setInputValue] = useState("");
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   const { selected } = providerState;
 
@@ -196,6 +205,36 @@ function ChatArea({
     URL.revokeObjectURL(url);
   }
 
+  useKeyboardShortcuts([
+    {
+      key: "k",
+      mod: true,
+      description: "Palette",
+      handler: () => setPaletteOpen(true),
+      allowInInput: true,
+    },
+    {
+      key: "/",
+      mod: false,
+      description: "Focuser input",
+      handler: () => messageInputRef.current?.focus(),
+    },
+    {
+      key: "n",
+      mod: true,
+      description: "Nouvelle conversation",
+      handler: handleNewConversation,
+      allowInInput: true,
+    },
+    {
+      key: "e",
+      mod: true,
+      description: "Exporter",
+      handler: handleExportConversation,
+      allowInInput: true,
+    },
+  ]);
+
   if (sessionLoading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-canvas">
@@ -267,6 +306,7 @@ function ChatArea({
           onChange={setInputValue}
           isStreaming={isStreaming}
           onStop={stop}
+          focusRef={messageInputRef}
         />
       </div>
 
@@ -333,6 +373,26 @@ function ChatArea({
           </button>
         </div>
       )}
+
+      {/* Command palette */}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onNewConversation={handleNewConversation}
+        onExportConversation={handleExportConversation}
+        onClearMessages={clearMessages}
+        onToggleTheme={onToggleTheme}
+        onOpenCheatsheet={onOpenCheatsheet}
+        conversations={conversations}
+        currentSessionId={sessionId ?? ""}
+        onSwitchConversation={handleSwitchConversation}
+        documents={documents}
+        selectedDocIds={selectedDocIds}
+        onToggleDoc={toggleSelection}
+        canAccessLibrary={auth.isRole("professor", "admin")}
+        canAccessAdmin={auth.isRole("admin")}
+        hasMessages={messages.length > 0}
+      />
     </div>
   );
 }
@@ -343,10 +403,12 @@ function AppHeader({
   auth,
   providerState,
   themeState,
+  onOpenCheatsheet,
 }: {
   auth: AuthState;
   providerState: ProviderState;
   themeState: ThemeState;
+  onOpenCheatsheet: () => void;
 }) {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
@@ -422,7 +484,7 @@ function AppHeader({
           />
         )}
 
-        {/* User + theme toggle */}
+        {/* User + controls */}
         <div className="flex items-center gap-2 ml-1 pl-2 border-l border-hairline">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center text-accent-contrast text-xs font-bold flex-shrink-0 shadow-glow">
             {auth.user!.name.charAt(0).toUpperCase()}
@@ -430,6 +492,15 @@ function AppHeader({
           <span className="text-xs text-fg-secondary hidden sm:block max-w-[120px] truncate">
             {auth.user!.name}
           </span>
+
+          {/* Shortcut cheatsheet trigger */}
+          <button
+            onClick={onOpenCheatsheet}
+            title="Raccourcis clavier (?)"
+            className="p-1.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface-3 transition-colors text-xs font-semibold"
+          >
+            ?
+          </button>
 
           {/* Theme toggle */}
           <button
@@ -499,6 +570,16 @@ export default function App() {
   const auth = useAuth();
   const providerState = useProviders();
   const themeState = useTheme();
+  const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
+
+  useKeyboardShortcuts([
+    {
+      key: "?",
+      mod: false,
+      description: "Raccourcis clavier",
+      handler: () => setCheatsheetOpen(true),
+    },
+  ]);
 
   if (auth.loading) {
     return (
@@ -531,6 +612,7 @@ export default function App() {
           auth={auth}
           providerState={providerState}
           themeState={themeState}
+          onOpenCheatsheet={() => setCheatsheetOpen(true)}
         />
 
         <Routes>
@@ -558,9 +640,21 @@ export default function App() {
           )}
           <Route
             path="*"
-            element={<ChatArea auth={auth} providerState={providerState} />}
+            element={
+              <ChatArea
+                auth={auth}
+                providerState={providerState}
+                onToggleTheme={themeState.toggle}
+                onOpenCheatsheet={() => setCheatsheetOpen(true)}
+              />
+            }
           />
         </Routes>
+
+        <ShortcutCheatsheet
+          open={cheatsheetOpen}
+          onClose={() => setCheatsheetOpen(false)}
+        />
       </div>
     </ToastProvider>
   );

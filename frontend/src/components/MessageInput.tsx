@@ -1,4 +1,4 @@
-import { useState, useRef, type KeyboardEvent } from "react";
+import { useState, useRef, type KeyboardEvent, type RefObject } from "react";
 
 interface Props {
   onSend: (text: string) => void;
@@ -8,6 +8,7 @@ interface Props {
   onChange?: (v: string) => void;
   isStreaming?: boolean;
   onStop?: () => void;
+  focusRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
 export function MessageInput({
@@ -18,11 +19,13 @@ export function MessageInput({
   onChange,
   isStreaming = false,
   onStop,
+  focusRef,
 }: Props) {
   const [internalText, setInternalText] = useState("");
   const text = value !== undefined ? value : internalText;
   const setText = onChange !== undefined ? onChange : setInternalText;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const resolvedRef = focusRef ?? textareaRef;
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -36,13 +39,13 @@ export function MessageInput({
     if (!trimmed || disabled) return;
     onSend(trimmed);
     setText("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+    if (resolvedRef.current) {
+      resolvedRef.current.style.height = "auto";
     }
   }
 
   function handleInput() {
-    const el = textareaRef.current;
+    const el = resolvedRef.current;
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
@@ -79,7 +82,7 @@ export function MessageInput({
             </button>
 
             <textarea
-              ref={textareaRef}
+              ref={resolvedRef}
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
