@@ -161,6 +161,41 @@ function ChatArea({
     await refreshConvos();
   }
 
+  function handleExportConversation() {
+    const conv = conversations.find((c) => c.session_id === sessionId);
+    const title = conv?.title ?? "Conversation";
+    const date = new Date().toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const lines: string[] = [
+      `# ${title}`,
+      "",
+      `*Exporté le ${date}*`,
+      "",
+      "---",
+      "",
+    ];
+    for (const msg of messages) {
+      lines.push(msg.role === "user" ? "**Vous**" : "**ENSET AI**");
+      lines.push("");
+      lines.push(msg.content);
+      lines.push("");
+      lines.push("---");
+      lines.push("");
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (sessionLoading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-canvas">
@@ -267,14 +302,36 @@ function ChatArea({
         </button>
       )}
 
-      {/* Clear chat — shown when there are messages */}
+      {/* Chat actions — shown when there are messages */}
       {messages.length > 0 && (
-        <button
-          onClick={clearMessages}
-          className="hidden sm:block absolute top-3 right-3 text-xs text-fg-muted hover:text-fg hover:bg-surface-3 px-2 py-1 rounded-md transition-colors z-10"
-        >
-          Effacer
-        </button>
+        <div className="hidden sm:flex items-center gap-1 absolute top-3 right-3 z-10">
+          <button
+            onClick={handleExportConversation}
+            className="flex items-center gap-1 text-xs text-fg-muted hover:text-fg hover:bg-surface-3 px-2 py-1 rounded-md transition-colors"
+            title="Exporter la conversation"
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+            Exporter
+          </button>
+          <button
+            onClick={clearMessages}
+            className="text-xs text-fg-muted hover:text-fg hover:bg-surface-3 px-2 py-1 rounded-md transition-colors"
+          >
+            Effacer
+          </button>
+        </div>
       )}
     </div>
   );

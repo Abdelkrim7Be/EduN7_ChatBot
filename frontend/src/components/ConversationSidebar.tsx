@@ -258,9 +258,7 @@ function ConvItem({
         ) : (
           <p
             className={`text-xs font-medium truncate leading-snug ${
-              isActive
-                ? "text-fg"
-                : "text-fg-secondary"
+              isActive ? "text-fg" : "text-fg-secondary"
             }`}
           >
             {conv.title}
@@ -375,9 +373,7 @@ export function ConversationSidebar({
     <aside className="w-72 h-full flex-shrink-0 bg-surface-1 border-r border-hairline flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-hairline flex-shrink-0">
-        <span className="text-sm font-semibold text-fg">
-          Conversations
-        </span>
+        <span className="text-sm font-semibold text-fg">Conversations</span>
         <button
           onClick={onCollapseToggle}
           title="Réduire le panneau"

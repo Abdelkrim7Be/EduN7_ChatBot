@@ -179,9 +179,7 @@ function DashboardState({
               />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-fg">
-            ENSET AI
-          </h1>
+          <h1 className="text-xl font-bold text-fg">ENSET AI</h1>
           <p className="text-sm text-fg-secondary mt-1 max-w-sm">
             Bonjour, {firstName} — importez vos documents PDF et posez vos
             questions grâce à l'IA
@@ -224,9 +222,7 @@ function DashboardState({
                 Glissez vos PDF ici, ou{" "}
                 <span className="text-accent">parcourez vos fichiers</span>
               </p>
-              <p className="text-xs text-fg-muted">
-                Plusieurs PDF acceptés
-              </p>
+              <p className="text-xs text-fg-muted">Plusieurs PDF acceptés</p>
             </motion.div>
 
             {/* Recently loaded docs table */}

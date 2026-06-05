@@ -79,14 +79,14 @@ export function CodeBlock({ code, lang }: Props) {
   const label = language === "text" ? "texte" : language;
 
   return (
-    <div className="not-prose my-3 overflow-hidden rounded-xl border border-brand-gray dark:border-brand-navy-border bg-[#fafbfc] dark:bg-[#0d1117]">
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-brand-gray dark:border-brand-navy-border bg-brand-surface-muted dark:bg-brand-navy/60">
-        <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-brand-gray-text dark:text-white/40">
+    <div className="not-prose my-3 overflow-hidden rounded-xl border border-hairline bg-[#fafbfc] dark:bg-[#0d1117]">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-hairline bg-surface-2">
+        <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-fg-muted">
           {label}
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 text-[10px] font-medium text-brand-gray-text dark:text-white/50 hover:text-brand-blue dark:hover:text-white transition-colors"
+          className="flex items-center gap-1 text-[10px] font-medium text-fg-muted hover:text-fg transition-colors"
           aria-label={copied ? "Code copié" : "Copier le code"}
         >
           {copied ? (
@@ -132,7 +132,7 @@ export function CodeBlock({ code, lang }: Props) {
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
-        <pre className="overflow-x-auto p-3 m-0 text-[13px] leading-relaxed text-brand-navy dark:text-white/80">
+        <pre className="overflow-x-auto p-3 m-0 text-[13px] leading-relaxed text-fg">
           <code>{code}</code>
         </pre>
       )}

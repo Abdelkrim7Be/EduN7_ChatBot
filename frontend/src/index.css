@@ -34,10 +34,13 @@
   --warn: 201 132 16;
   --danger: 224 62 62;
 
-  --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
-  --shadow-elevated: 0 12px 32px -8px rgba(16, 24, 40, 0.16),
+  --shadow-soft:
+    0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
+  --shadow-elevated:
+    0 12px 32px -8px rgba(16, 24, 40, 0.16),
     0 2px 6px -2px rgba(16, 24, 40, 0.06);
-  --shadow-glow: 0 0 0 3px var(--accent-soft), 0 6px 20px -4px var(--accent-glow);
+  --shadow-glow:
+    0 0 0 3px var(--accent-soft), 0 6px 20px -4px var(--accent-glow);
 
   --scrollbar-thumb: #c7d0de;
   --scrollbar-thumb-hover: #9aa6b8;
@@ -70,8 +73,8 @@
   --danger: 255 92 92;
 
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-elevated: 0 12px 40px -8px rgba(0, 0, 0, 0.6),
-    0 2px 8px -2px rgba(0, 0, 0, 0.4);
+  --shadow-elevated:
+    0 12px 40px -8px rgba(0, 0, 0, 0.6), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
   --shadow-glow: 0 0 0 1px rgb(var(--accent)), 0 0 24px -2px var(--accent-glow);
 
   --scrollbar-thumb: #2a2e3a;
@@ -93,11 +96,17 @@ body {
   background-color: rgb(var(--canvas));
   color: rgb(var(--fg));
   font-family:
-    "Inter", "Inter Tight", system-ui, -apple-system, sans-serif;
+    "Inter",
+    "Inter Tight",
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 #root {
@@ -195,7 +204,9 @@ body {
   vertical-align: super;
   margin: 0 1px;
   user-select: none;
-  transition: background-color 0.15s, box-shadow 0.15s;
+  transition:
+    background-color 0.15s,
+    box-shadow 0.15s;
   font-style: normal;
   font-family: "Inter", system-ui, sans-serif;
   cursor: pointer;
