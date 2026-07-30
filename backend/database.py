@@ -4,7 +4,8 @@ from pathlib import Path
 
 import config
 
-DB_PATH = Path(config.UPLOAD_DIR) / "conversations.db"
+DB_PATH = Path(config.DB_PATH)
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 @contextmanager

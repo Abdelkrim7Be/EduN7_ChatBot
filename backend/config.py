@@ -24,6 +24,7 @@ CHROMA_HOST: str = os.getenv("CHROMA_HOST", "localhost")
 CHROMA_PORT: int = int(os.getenv("CHROMA_PORT", "8000"))
 
 UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "./uploads")
+DB_PATH: str = os.getenv("DB_PATH", "./data/edun7.db")
 
 EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "1000"))

@@ -25,6 +25,7 @@ services:
       - "8080:8080"
     volumes:
       - uploads_data:/app/uploads
+      - db_data:/app/data
     env_file: .env
     environment:
       CHROMA_HOST: chromadb
@@ -58,3 +59,4 @@ services:
 volumes:
   chroma_data:
   uploads_data:
+  db_data:
