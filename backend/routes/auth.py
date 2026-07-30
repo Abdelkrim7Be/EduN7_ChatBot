@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, g
 
 from middleware.auth import require_auth
-from services.auth_service import register_user, authenticate_user, create_jwt, AuthError
+from services.auth_service import register_user, authenticate_user, create_jwt, AuthError, revoke_token
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -47,5 +47,9 @@ def me():
 
 
 @auth_bp.post("/api/auth/logout")
+@require_auth
 def logout():
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        revoke_token(auth_header[7:])
     return jsonify({"ok": True}), 200

@@ -26,14 +26,22 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
+def _validate_password(password: str) -> None:
+    if len(password) < 8:
+        raise AuthError("Password must be at least 8 characters", 400)
+    if not any(c.isupper() for c in password):
+        raise AuthError("Password must contain at least one uppercase letter", 400)
+    if not any(c.isdigit() for c in password):
+        raise AuthError("Password must contain at least one digit", 400)
+
+
 def register_user(email: str, name: str, password: str) -> UserRecord:
     email = email.strip().lower()
     name = name.strip()
 
     if not email or not name or not password:
         raise AuthError("email, name, and password are required", 400)
-    if len(password) < 8:
-        raise AuthError("password must be at least 8 characters", 400)
+    _validate_password(password)
 
     if config.ALLOWED_EMAIL_DOMAINS:
         domain = email.split("@")[-1] if "@" in email else ""
@@ -90,7 +98,16 @@ def create_jwt(user: UserRecord) -> str:
     return jwt.encode(payload, config.JWT_SECRET, algorithm="HS256")
 
 
+_revoked_tokens: set[str] = set()
+
+
+def revoke_token(token: str) -> None:
+    _revoked_tokens.add(token)
+
+
 def decode_jwt(token: str) -> dict:
+    if token in _revoked_tokens:
+        raise AuthError("Token has been revoked", 401)
     try:
         return jwt.decode(token, config.JWT_SECRET, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
