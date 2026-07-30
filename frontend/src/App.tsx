@@ -30,7 +30,7 @@ import type { Conversation } from "./types";
 
 type View = "chat" | "admin";
 
-export default function App() {
+function AppContent() {
   const auth = useAuth();
   const { sessionId, loading: sessionLoading, switchSession } = useSession(auth.isAuthenticated);
   const {
@@ -120,11 +120,9 @@ export default function App() {
 
   if (!auth.isAuthenticated) {
     return (
-      <ToastProvider>
-        <Suspense fallback={<LoadingSpinner />}>
-          <LoginPage onLogin={auth.login} onRegister={auth.register} />
-        </Suspense>
-      </ToastProvider>
+      <Suspense fallback={<LoadingSpinner />}>
+        <LoginPage onLogin={auth.login} onRegister={auth.register} />
+      </Suspense>
     );
   }
 
@@ -137,8 +135,7 @@ export default function App() {
   }
 
   return (
-    <ToastProvider>
-      <div className="flex flex-col h-screen bg-brand-surface-muted">
+    <div className="flex flex-col h-screen bg-brand-surface-muted">
 
         {/* Header */}
         <header className="flex items-center justify-between px-4 py-3 border-b border-brand-navy-border bg-brand-navy flex-shrink-0">
@@ -308,6 +305,13 @@ export default function App() {
           onChange={handleFileChange}
         />
       </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
     </ToastProvider>
   );
 }
