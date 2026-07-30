@@ -1,3 +1,5 @@
+> **Note**: This terminal directory contains a standalone CLI chatbot. It is independent of the main EduN7 web application.
+
 # groqchat
 
 A terminal chatbot, powered by Groq Cloud API (Windows / macOS / Linux / Android / iOS)
