@@ -50,11 +50,25 @@ def _build_messages(session_id: str, user_query: str, context: str) -> list:
     session = session_service.get_or_create(session_id)
     messages = [SystemMessage(content=config.RAG_SYSTEM_PROMPT)]
 
-    for turn in session.messages:
+    max_ctx_chars = 32000
+    if len(context) > max_ctx_chars:
+        context = context[:max_ctx_chars] + "\n... [context truncated]"
+
+    history_chars_limit = 16000
+    history_chars = 0
+    history_messages = []
+
+    for turn in reversed(session.messages):
+        turn_len = len(turn["content"])
+        if history_chars + turn_len > history_chars_limit:
+            break
+        history_chars += turn_len
         if turn["role"] == "user":
-            messages.append(HumanMessage(content=turn["content"]))
+            history_messages.insert(0, HumanMessage(content=turn["content"]))
         else:
-            messages.append(AIMessage(content=turn["content"]))
+            history_messages.insert(0, AIMessage(content=turn["content"]))
+
+    messages.extend(history_messages)
 
     augmented_query = (
         f"<context>\n{context}\n</context>\n\n"
