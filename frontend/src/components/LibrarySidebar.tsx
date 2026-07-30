@@ -73,39 +73,51 @@ export function LibrarySidebar({
           {docs.map((doc) => {
             const selected = selectedDocIds.has(doc.doc_id);
             return (
-              <div key={doc.doc_id} className={`p-3 border transition-colors group cursor-pointer ${
-                selected ? "border-white bg-white/5" : "border-border-subtle bg-transparent hover:border-gray-500"
-              }`} onClick={() => onToggleDoc(doc.doc_id)}>
+              <div key={doc.doc_id} className={`p-3 border transition-colors group ${
+                doc.status === "uploading" ? "border-border-subtle bg-transparent opacity-70 cursor-wait" :
+                selected ? "border-white bg-white/5 cursor-pointer" : "border-border-subtle bg-transparent hover:border-gray-500 cursor-pointer"
+              }`} onClick={() => { if (doc.status !== "uploading") onToggleDoc(doc.doc_id) }}>
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">
-                    {selected ? <CheckSquare className="w-4 h-4 text-white" /> : <Square className="w-4 h-4 text-gray-500" />}
+                    {doc.status === "uploading" ? (
+                      <div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+                    ) : selected ? (
+                      <CheckSquare className="w-4 h-4 text-white" />
+                    ) : (
+                      <Square className="w-4 h-4 text-gray-500" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-xs truncate ${selected ? "text-white font-bold" : "text-gray-400"}`}>
+                    <div className={`text-xs truncate ${doc.status === "uploading" ? "text-gray-400" : selected ? "text-white font-bold" : "text-gray-400"}`}>
                       {doc.name}
                     </div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPreviewDoc({ id: doc.doc_id, name: doc.name });
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-white transition-all"
-                    title="View PDF"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                  </button>
-                  {(doc.scope !== "shared" || doc.user_id === user?.id || isRole("admin")) && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteDoc(doc.doc_id);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-400 transition-all"
-                      title="Remove"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  
+                  {doc.status !== "uploading" && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewDoc({ id: doc.doc_id, name: doc.name });
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-white transition-all"
+                        title="View PDF"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      {(doc.scope !== "shared" || doc.user_id === user?.id || isRole("admin")) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteDoc(doc.doc_id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-400 transition-all"
+                          title="Remove"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

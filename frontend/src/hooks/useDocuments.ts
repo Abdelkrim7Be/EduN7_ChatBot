@@ -115,15 +115,32 @@ export function useDocuments(sessionId: string) {
       setUploadStage("uploading");
 
       try {
-        // POST returns immediately with status='uploading' records
+        // Optimistically add files to the sidebar so the user sees them instantly
+        const optimisticDocs: DocumentRecord[] = files.map(f => ({
+          doc_id: `temp-${Math.random().toString(36).substring(2, 11)}`,
+          name: f.name,
+          original_filename: f.name,
+          collection_name: "",
+          page_count: 0,
+          chunk_count: 0,
+          uploaded_at: new Date().toISOString(),
+          scope,
+          status: "uploading"
+        }));
+        setDocuments(prev => [...prev, ...optimisticDocs]);
+
+        // POST blocks until the backend finishes processing
         const pendingDocs = await uploadDocuments(files, sessionId, scope);
         const docIds = pendingDocs.map((d) => d.doc_id);
 
-        // Add pending records so they appear in the sidebar right away
+        // Replace optimistic records with real records
         setDocuments((prev) => {
-          const existingIds = new Set(prev.map((d) => d.doc_id));
+          const tempIds = new Set(optimisticDocs.map(d => d.doc_id));
+          const filtered = prev.filter(d => !tempIds.has(d.doc_id));
+          
+          const existingIds = new Set(filtered.map((d) => d.doc_id));
           return [
-            ...prev,
+            ...filtered,
             ...pendingDocs.filter((d) => !existingIds.has(d.doc_id)),
           ];
         });
@@ -162,6 +179,8 @@ export function useDocuments(sessionId: string) {
         setUploadError(e instanceof Error ? e.message : "Upload failed");
         setUploadStage(null);
         setIsUploading(false);
+        // Remove optimistic docs on error
+        setDocuments(prev => prev.filter(d => !d.doc_id.startsWith('temp-')));
       }
     },
     [sessionId],
