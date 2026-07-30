@@ -38,7 +38,11 @@ def _friendly_error(provider: str, model: str, exc: Exception) -> str:
 def _build_context(chunks: list[ChunkResult]) -> str:
     lines = []
     for i, chunk in enumerate(chunks, 1):
-        lines.append(f"[{i}] ({chunk.doc_name}, p.{chunk.page_number})\n{chunk.text}")
+        lines.append(
+            f'<document id="{i}" source="{chunk.doc_name}" page="{chunk.page_number}">\n'
+            f'{chunk.text}\n'
+            f'</document>'
+        )
     return "\n\n".join(lines)
 
 
@@ -52,7 +56,11 @@ def _build_messages(session_id: str, user_query: str, context: str) -> list:
         else:
             messages.append(AIMessage(content=turn["content"]))
 
-    augmented_query = f"Document context:\n{context}\n\nQuestion: {user_query}"
+    augmented_query = (
+        f"<context>\n{context}\n</context>\n\n"
+        f"Answer the following question using ONLY the document context above when relevant.\n"
+        f"Question: {user_query}"
+    )
     messages.append(HumanMessage(content=augmented_query))
     return messages
 
