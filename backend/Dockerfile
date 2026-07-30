@@ -7,14 +7,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN mkdir -p /app/data /app/uploads /app/hf_cache \
+    && adduser --disabled-password --gecos "" --uid 10001 appuser \
+    && chown -R appuser:appuser /app
+
+COPY --chown=appuser:appuser . .
+
+USER appuser
+ENV HF_HOME=/app/hf_cache
+
 # Pre-download the embedding model so first request has no cold start
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
-
-COPY . .
-
-RUN adduser --disabled-password --gecos "" --uid 10001 appuser \
-    && chown -R appuser:appuser /app
-USER appuser
 
 EXPOSE 8080
 
