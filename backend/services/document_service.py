@@ -129,20 +129,37 @@ def list_accessible(user_id: str) -> list[DocumentRecord]:
             "ORDER BY uploaded_at DESC",
             (user_id,),
         ).fetchall()
-    return [
-        DocumentRecord(
-            doc_id=r["doc_id"],
-            name=r["name"],
-            original_filename=r["original_filename"],
-            collection_name=r["collection_name"],
-            page_count=r["page_count"],
-            chunk_count=r["chunk_count"],
-            uploaded_at=str(r["uploaded_at"]),
-            scope=r["scope"],
-            category=r["category"] or "Autres",
+
+    records = []
+    stale_ids = []
+    for r in rows:
+        uploaded_path = Path(config.UPLOAD_DIR) / f"{r['doc_id']}_{r['original_filename']}"
+        if not uploaded_path.exists():
+            stale_ids.append(r["doc_id"])
+            try:
+                _chroma_client().delete_collection(r["collection_name"])
+            except Exception:
+                pass
+            continue
+        records.append(
+            DocumentRecord(
+                doc_id=r["doc_id"],
+                name=r["name"],
+                original_filename=r["original_filename"],
+                collection_name=r["collection_name"],
+                page_count=r["page_count"],
+                chunk_count=r["chunk_count"],
+                uploaded_at=str(r["uploaded_at"]),
+                scope=r["scope"],
+                category=r["category"] or "Autres",
+            )
         )
-        for r in rows
-    ]
+
+    if stale_ids:
+        with database.get_db() as conn:
+            conn.executemany("DELETE FROM documents WHERE doc_id=?", [(did,) for did in stale_ids])
+
+    return records
 
 
 def get(doc_id: str, user_id: str | None = None) -> DocumentRecord | None:
