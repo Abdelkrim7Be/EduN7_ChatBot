@@ -10,8 +10,16 @@ import { ConversationSidebar } from "./components/ConversationSidebar";
 import { ChatWindow } from "./components/ChatWindow";
 import { MessageInput } from "./components/MessageInput";
 import { ModelSelector } from "./components/ModelSelector";
-import { LoginPage } from "./components/LoginPage";
-import { AdminPage } from "./components/AdminPage";
+import React, { Suspense } from "react";
+
+const LoginPage = React.lazy(() => import("./components/LoginPage").then(m => ({ default: m.LoginPage })));
+const AdminPage = React.lazy(() => import("./components/AdminPage").then(m => ({ default: m.AdminPage })));
+
+const LoadingSpinner = () => (
+  <div className="flex-1 flex items-center justify-center bg-brand-surface-muted min-h-screen">
+    <div className="w-6 h-6 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 import { ToastProvider } from "./components/ToastProvider";
 import {
   createSession,
@@ -113,7 +121,9 @@ export default function App() {
   if (!auth.isAuthenticated) {
     return (
       <ToastProvider>
-        <LoginPage onLogin={auth.login} onRegister={auth.register} />
+        <Suspense fallback={<LoadingSpinner />}>
+          <LoginPage onLogin={auth.login} onRegister={auth.register} />
+        </Suspense>
       </ToastProvider>
     );
   }
@@ -233,7 +243,9 @@ export default function App() {
 
         {/* Body */}
         {view === "admin" ? (
-          <AdminPage />
+          <Suspense fallback={<LoadingSpinner />}>
+            <AdminPage />
+          </Suspense>
         ) : !hasDocuments ? (
           <UploadOverlay
             onUpload={upload}
