@@ -79,3 +79,17 @@ def delete_document(doc_id: str):
     if not deleted:
         return jsonify({"error": "Document not found or access denied"}), 404
     return jsonify({"deleted": True}), 200
+
+@documents_bp.route("/api/documents/<doc_id>/status", methods=["GET"])
+@require_auth
+def document_status(doc_id: str):
+    doc = document_service.get(doc_id, g.user.id)
+    if not doc:
+        return jsonify({"error": "Document not found"}), 404
+    return jsonify({
+        "doc_id": doc.doc_id,
+        "status": "ready",
+        "error_message": None,
+        "page_count": doc.page_count,
+        "chunk_count": doc.chunk_count
+    }), 200
