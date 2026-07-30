@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name: string;
   role: "student" | "professor" | "admin";
+  avatar_url?: string;
 }
 
 export interface DocumentRecord {
@@ -15,6 +16,14 @@ export interface DocumentRecord {
   uploaded_at: string;
   scope?: "private" | "shared";
   category?: string;
+  status?:
+    | "uploading"
+    | "parsing"
+    | "chunking"
+    | "embedding"
+    | "ready"
+    | "failed";
+  user_id?: string;
 }
 
 export interface Citation {
@@ -93,4 +102,18 @@ export interface AdminStats {
   message_count: number;
   document_count: number;
   shared_doc_count: number;
+}
+
+export interface AdminDocument {
+  doc_id: string;
+  name: string;
+  original_filename: string;
+  collection_name: string;
+  page_count: number;
+  chunk_count: number;
+  scope: "private" | "shared";
+  category: string;
+  uploaded_at: string;
+  uploader_name: string;
+  uploader_email: string;
 }
