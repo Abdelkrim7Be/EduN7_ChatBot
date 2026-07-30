@@ -34,6 +34,11 @@ MAX_HISTORY_TURNS: int = int(os.getenv("MAX_HISTORY_TURNS", "6"))
 SESSION_TTL_SECONDS: int = int(os.getenv("SESSION_TTL_SECONDS", "3600"))
 
 JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-in-production")
+if JWT_SECRET == "change-me-in-production" and os.getenv("FLASK_ENV") != "development":
+    raise RuntimeError(
+        "FATAL: JWT_SECRET is not set. Set JWT_SECRET in your .env file. "
+        "Current value 'change-me-in-production' is not safe for deployment."
+    )
 JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
 ADMIN_EMAILS: list[str] = [e.strip() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()]
 ALLOWED_EMAIL_DOMAINS: list[str] = [d.strip() for d in os.getenv("ALLOWED_EMAIL_DOMAINS", "").split(",") if d.strip()]
