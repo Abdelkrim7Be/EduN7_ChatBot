@@ -84,6 +84,7 @@ function ChatArea({
     remove,
     toggleSelection,
     setSelection,
+    uploadError,
   } = useDocuments(sessionId);
   const { toast } = useToast();
   const {
@@ -137,6 +138,12 @@ function ChatArea({
     setFilesToRename([]);
     setPendingUploads(null);
   }
+
+  useEffect(() => {
+    if (uploadError) {
+      toast(uploadError, "error");
+    }
+  }, [uploadError, toast]);
 
   const { selected } = providerState;
 
