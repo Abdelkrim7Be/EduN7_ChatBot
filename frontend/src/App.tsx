@@ -103,26 +103,29 @@ function ChatArea({
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   const [pendingUploads, setPendingUploads] = useState<{files: File[], visibility: "private" | "shared"} | null>(null);
-  const [fileToRename, setFileToRename] = useState<{file: File, index: number} | null>(null);
+  const [filesToRename, setFilesToRename] = useState<{file: File, index: number}[]>([]);
 
   const isValidName = (name: string) => /^[A-Z0-9]+_[A-Z0-9]+_.+\.pdf$/i.test(name);
 
   function processUploads(files: File[], visibility: "private" | "shared" = "private") {
-    const invalidIndex = files.findIndex(f => !isValidName(f.name));
-    if (invalidIndex !== -1) {
+    const invalidFiles = files.map((f, i) => ({ file: f, index: i })).filter(x => !isValidName(x.file.name));
+    
+    if (invalidFiles.length > 0) {
       setPendingUploads({ files, visibility });
-      setFileToRename({ file: files[invalidIndex], index: invalidIndex });
+      setFilesToRename(invalidFiles);
     } else {
       upload(files, visibility);
     }
   }
 
-  function handleRenameConfirm(renamedFile: File) {
-    if (!pendingUploads || !fileToRename) return;
+  function handleRenameConfirm(renamedFiles: { file: File, index: number }[]) {
+    if (!pendingUploads) return;
     const newFiles = [...pendingUploads.files];
-    newFiles[fileToRename.index] = renamedFile;
+    renamedFiles.forEach(rf => {
+      newFiles[rf.index] = rf.file;
+    });
     
-    setFileToRename(null);
+    setFilesToRename([]);
     setPendingUploads(null); // Clear temporarily
     
     // Reprocess with updated array
@@ -130,7 +133,7 @@ function ChatArea({
   }
 
   function handleRenameCancel() {
-    setFileToRename(null);
+    setFilesToRename([]);
     setPendingUploads(null);
   }
 
@@ -369,8 +372,8 @@ function ChatArea({
       </div>
 
       <UploadRenameModal 
-        isOpen={!!fileToRename}
-        file={fileToRename?.file as File}
+        isOpen={filesToRename.length > 0}
+        files={filesToRename}
         onCancel={handleRenameCancel}
         onConfirm={handleRenameConfirm}
       />
