@@ -13,12 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 def _is_retriable(e: Exception) -> bool:
-    msg = str(e)
-    return any(x in msg for x in ["429", "RESOURCE_EXHAUSTED", "quota", "rate limit", "rate_limit", "RateLimitError"])
+    if isinstance(e, (TimeoutError, ConnectionError)):
+        return True
+    msg = str(e).lower()
+    return any(x in msg for x in ["429", "resource_exhausted", "quota", "rate limit", "rate_limit", "ratelimiterror"])
 
 
 def _friendly_error(provider: str, model: str, exc: Exception) -> str:
     msg = str(exc)
+    if isinstance(exc, (TimeoutError, ConnectionError)) or "timeout" in msg.lower() or "connect" in msg.lower():
+        return f"**Could not reach {provider.title()}.** Check your internet connection and try again."
     if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "quota" in msg.lower() or "rate" in msg.lower():
         return (
             f"**{provider.title()} quota exceeded** — you've hit the free-tier rate limit for `{model}`. "
@@ -30,8 +34,6 @@ def _friendly_error(provider: str, model: str, exc: Exception) -> str:
         return f"**Model `{model}` not found on {provider.title()}.** It may have been renamed or removed."
     if "402" in msg or "insufficient" in msg.lower() or "credit" in msg.lower():
         return f"**{provider.title()} account has no credits.** Add billing at the provider's website."
-    if "Connection" in msg or "connect" in msg.lower() or "timeout" in msg.lower():
-        return f"**Could not reach {provider.title()}.** Check your internet connection and try again."
     return f"**{provider.title()} error:** {msg[:200]}"
 
 
