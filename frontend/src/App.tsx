@@ -16,7 +16,7 @@ import { ChatWindow } from "./components/ChatWindow";
 import { MessageInput } from "./components/MessageInput";
 import { ModelSelector } from "./components/ModelSelector";
 import { LoginPage } from "./components/LoginPage";
-import { ToastProvider } from "./components/ToastProvider";
+import { ToastProvider, useToast } from "./components/ToastProvider";
 import { CommandPalette } from "./components/CommandPalette";
 import { ShortcutCheatsheet } from "./components/ShortcutCheatsheet";
 import { AdminLayout } from "./components/admin/AdminLayout";
@@ -85,6 +85,7 @@ function ChatArea({
     toggleSelection,
     setSelection,
   } = useDocuments(sessionId);
+  const { toast } = useToast();
   const {
     messages,
     isStreaming,
@@ -93,7 +94,7 @@ function ChatArea({
     editMessage,
     stop,
     clearMessages,
-  } = useChat(sessionId);
+  } = useChat(sessionId, (msg) => toast({ type: "error", title: "API Error", message: msg }));
   const { conversations, refresh: refreshConvos } = useConversations();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);

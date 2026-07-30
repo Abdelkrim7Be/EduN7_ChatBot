@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 import type { Message, Citation, SelectedModel } from "../types";
 import { streamChat, fetchConversationMessages } from "../api/client";
 
-export function useChat(sessionId: string) {
+export function useChat(sessionId: string, onError?: (msg: string) => void) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   // Holds the in-flight request so stop()/regenerate() can cancel the stream.
@@ -87,12 +87,24 @@ export function useChat(sessionId: string) {
             actualProvider = event.provider;
             actualModel = event.model;
           } else if (event.type === "error" && event.content) {
-            fullContent = `⚠️ ${event.content}`;
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, content: fullContent } : m,
-              ),
-            );
+            if (onError) {
+              // Strip markdown formatting if any (e.g. **Cerebras error:**)
+              const cleanMsg = event.content.replace(/\*\*/g, '');
+              onError(cleanMsg);
+            }
+            
+            if (!fullContent) {
+              // Remove the empty assistant placeholder entirely
+              setMessages((prev) => prev.filter((m) => m.id !== assistantId));
+            } else {
+              // Just keep what we got so far
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, content: fullContent } : m,
+                ),
+              );
+            }
+            break; // Stop streaming loop on error
           }
         }
 
