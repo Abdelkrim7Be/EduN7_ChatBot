@@ -94,7 +94,7 @@ function ChatArea({
     editMessage,
     stop,
     clearMessages,
-  } = useChat(sessionId, (msg) => toast({ type: "error", title: "API Error", message: msg }));
+  } = useChat(sessionId, (msg) => toast(msg, "error"));
   const { conversations, refresh: refreshConvos } = useConversations();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
