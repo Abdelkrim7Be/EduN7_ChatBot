@@ -48,6 +48,10 @@ def _chroma_client() -> chromadb.HttpClient:
 def ingest(file_path: str, original_filename: str, user_id: str, scope: str = "private") -> DocumentRecord:
     doc_id = str(uuid.uuid4())[:8]
 
+    new_path = Path(file_path).parent / f"{doc_id}_{original_filename}"
+    Path(file_path).rename(new_path)
+    file_path = str(new_path)
+
     pages = PyMuPDFLoader(file_path).load()
     chunks = _splitter.split_documents(pages)
 

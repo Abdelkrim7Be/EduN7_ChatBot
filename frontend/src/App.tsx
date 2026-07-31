@@ -162,13 +162,16 @@ function ChatArea({
     editMessage(id, text, Array.from(selectedDocIds), selected);
   }
 
-  function handleAttach() {
+  const [uploadIntent, setUploadIntent] = useState<"private" | "shared">("private");
+
+  function handleAttach(intent: "private" | "shared" = "private") {
+    setUploadIntent(intent);
     fileInputRef.current?.click();
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    if (files.length) processUploads(files, "private");
+    if (files.length) processUploads(files, uploadIntent);
     e.target.value = "";
   }
 
@@ -343,7 +346,7 @@ function ChatArea({
         />
         <MessageInput
           onSend={handleSend}
-          onAttach={handleAttach}
+          onAttach={() => handleAttach("private")}
           disabled={isStreaming || !selected}
           value={inputValue}
           onChange={setInputValue}
@@ -371,7 +374,7 @@ function ChatArea({
             selectedDocIds={selectedDocIds}
             onToggleDoc={toggleSelection}
             onDeleteDoc={remove}
-            onAddMore={handleAttach}
+            onAddMore={() => handleAttach("private")}
             onSetSelection={setSelection}
             collapsed={!rightSidebarOpen}
             onCollapseToggle={() => setRightSidebarOpen(!rightSidebarOpen)}
@@ -391,7 +394,10 @@ function ChatArea({
         type="file"
         accept=".pdf"
         multiple
-        className="hidden"
+        className="sr-only"
+        tabIndex={-1}
+        title=""
+        style={{ pointerEvents: 'none' }}
         onChange={handleFileChange}
       />
 

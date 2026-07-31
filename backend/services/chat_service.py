@@ -50,15 +50,12 @@ def _build_context(chunks: list[ChunkResult]) -> str:
 
 def _build_messages(session_id: str, user_query: str, context: str) -> list:
     session = session_service.get_or_create(session_id)
+
     messages = [SystemMessage(content=config.RAG_SYSTEM_PROMPT)]
 
-    max_ctx_chars = 32000
-    if len(context) > max_ctx_chars:
-        context = context[:max_ctx_chars] + "\n... [context truncated]"
-
-    history_chars_limit = 16000
-    history_chars = 0
     history_messages = []
+    history_chars = 0
+    history_chars_limit = config.MAX_HISTORY_TURNS * 1000
 
     for turn in reversed(session.messages):
         turn_len = len(turn["content"])
@@ -72,13 +69,62 @@ def _build_messages(session_id: str, user_query: str, context: str) -> list:
 
     messages.extend(history_messages)
 
-    augmented_query = (
-        f"<context>\n{context}\n</context>\n\n"
-        f"Answer the following question using ONLY the document context above when relevant.\n"
-        f"Question: {user_query}"
-    )
+    if context.strip():
+        augmented_query = (
+            f"Here are some search results from the database. If they are relevant, use them to answer. "
+            f"If they are NOT relevant, completely ignore them and answer using your own knowledge.\n\n"
+            f"<database_results>\n{context}\n</database_results>\n\n"
+            f"User: {user_query}"
+        )
+    else:
+        augmented_query = user_query
+
     messages.append(HumanMessage(content=augmented_query))
     return messages
+
+
+def _rewrite_query(session, user_query: str, provider: str, model: str, is_auto: bool = False) -> str:
+    history_text = ""
+    if session.messages:
+        for msg in session.messages[-4:]:
+            role = "User" if msg["role"] == "user" else "Assistant"
+            history_text += f"{role}: {msg['content']}\n"
+    else:
+        history_text = "(No prior history. This is the first message.)\n"
+    
+    rewrite_prompt = (
+        "Given the following conversation and a follow-up user message, "
+        "determine if the follow-up message requires searching a PRIVATE document knowledge base. "
+        "If the user is asking about general knowledge (e.g., 'who is the president of France?', 'what is Python?', 'capital of Spain', 'write a poem'), "
+        "or if it is just a conversational greeting (like 'hi', 'hello', 'thanks'), "
+        "return EXACTLY the string: __NO_SEARCH__\n"
+        "Only rewrite the query for search if it clearly pertains to internal documents, strategies, or private technical details.\n"
+        "Do NOT answer the query, ONLY return the rewritten query or __NO_SEARCH__.\n\n"
+        f"Conversation History:\n{history_text}\n"
+        f"Follow-up: {user_query}\n"
+        "Output:"
+    )
+    
+    providers_to_try = [(provider, model)]
+    for p, m in AUTO_FALLBACK_ORDER:
+        if (p, m) not in providers_to_try:
+            providers_to_try.append((p, m))
+    
+    for p, m in providers_to_try:
+        try:
+            llm = build_llm(p, m)
+            response = llm.invoke([HumanMessage(content=rewrite_prompt)])
+            rewritten = response.content.strip()
+            if len(rewritten) > 200 or not rewritten:
+                return user_query
+            return rewritten
+        except ValueError:
+            continue
+        except Exception as e:
+            logger.warning("Query rewrite failed for %s/%s: %s", p, m, e)
+            continue
+            
+    return user_query
 
 
 def stream_response(
@@ -89,17 +135,21 @@ def stream_response(
     model: str = config.DEFAULT_MODEL,
 ) -> Generator[str, None, None]:
 
-    chunks = retrieval_service.retrieve(message, doc_ids)
+    session = session_service.get_or_create(session_id)
+    is_auto = (provider == "auto")
+    
+    rewrite_provider = config.DEFAULT_PROVIDER if is_auto else provider
+    rewrite_model = config.DEFAULT_MODEL if is_auto else model
+    
+    search_query = _rewrite_query(session, message, rewrite_provider, rewrite_model, is_auto)
+    logger.warning("Original query: '%s', Rewritten for search: '%s'", message, search_query)
 
-    if not chunks:
-        no_ctx = "I could not find relevant information in the uploaded documents to answer your question."
-        yield f'data: {json.dumps({"type": "token", "content": no_ctx})}\n\n'
-        yield f'data: {json.dumps({"type": "citations", "citations": []})}\n\n'
-        yield f'data: {json.dumps({"type": "done"})}\n\n'
-        session_service.append_turn(session_id, message, no_ctx)
-        return
+    if "__NO_SEARCH__" in search_query:
+        chunks = []
+    else:
+        chunks = retrieval_service.retrieve(search_query, doc_ids)
 
-    context = _build_context(chunks)
+    context = _build_context(chunks) if chunks else ""
     messages = _build_messages(session_id, message, context)
 
     is_auto = provider == "auto"

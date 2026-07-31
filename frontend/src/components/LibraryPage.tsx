@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import type { AdminDocument, User } from "../types";
 import { fetchAdminDocuments, deleteAdminDocument } from "../api/client";
 import { useToast } from "./ToastProvider";
 import { DocumentPreviewModal } from "./DocumentPreviewModal";
+import { useDocuments } from "../hooks/useDocuments";
 
 const CATEGORY_COLORS: Record<string, string> = {
   Cours: "bg-white/10 text-white",
@@ -41,6 +42,21 @@ export function LibraryPage({ user, isRole }: Props) {
     docId: string;
     name: string;
   } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { upload, isUploading } = useDocuments("");
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length) {
+      await upload(files, "shared");
+      // Refetch documents after upload
+      fetchAdminDocuments("shared")
+        .then(setDocs)
+        .catch(() => toast("Erreur lors du chargement de la bibliothèque", "error"));
+    }
+    e.target.value = "";
+  }
 
   useEffect(() => {
     fetchAdminDocuments("shared")
@@ -185,9 +201,22 @@ export function LibraryPage({ user, isRole }: Props) {
                 )}
               </div>
             ) : (
-              <button className="bg-white text-black px-8 py-3 font-bold uppercase tracking-widest hover:bg-white/90 transition-all text-sm">
-                Upload Document
-              </button>
+              <div className="flex items-center gap-4">
+                <button onClick={() => { setLoading(true); fetchAdminDocuments("shared").then(setDocs).finally(() => setLoading(false)); }} className="border border-white/40 text-white px-6 py-3 font-bold uppercase tracking-widest hover:bg-white/10 transition-all text-sm">
+                  Refresh
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="bg-white text-black px-8 py-3 font-bold uppercase tracking-widest hover:bg-white/90 transition-all text-sm disabled:opacity-50">
+                  {isUploading ? "Uploading..." : "Upload Document"}
+                </button>
+              </div>
             )}
           </div>
 

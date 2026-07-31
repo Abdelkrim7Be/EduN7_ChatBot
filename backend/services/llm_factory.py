@@ -85,7 +85,9 @@ BADGE_PRIORITY = ["Free", "Fastest", "Fast", "Powerful", "Standard", "Private"]
 AUTO_FALLBACK_ORDER = [
     ("cerebras",   "llama3.1-8b"),
     ("sambanova",  "Meta-Llama-3.3-70B-Instruct"),
-    ("groq",       "llama-3.3-70b-versatile"),
+    ("groq",       "llama-3.1-8b-instant"),
+    ("groq",       "gemma2-9b-it"),
+    ("groq",       "mixtral-8x7b-32768"),
     ("mistral",    "mistral-small-latest"),
     ("openrouter", "google/gemma-4-31b-it:free"),
     ("gemini",     "gemini-2.0-flash"),
@@ -154,6 +156,7 @@ def build_llm(provider: str, model: str):
             google_api_key=config.GEMINI_API_KEY,
             temperature=config.LLM_TEMPERATURE,
             max_output_tokens=config.LLM_MAX_TOKENS,
+            max_retries=0,
             streaming=True,
         )
 
@@ -180,6 +183,7 @@ def build_llm(provider: str, model: str):
             api_key=config.GROQ_API_KEY,
             temperature=config.LLM_TEMPERATURE,
             max_tokens=config.LLM_MAX_TOKENS,
+            max_retries=0,
             streaming=True,
         )
 
