@@ -1,7 +1,15 @@
 from flask import Blueprint, request, jsonify, g
 
 from middleware.auth import require_auth
-from services.auth_service import register_user, authenticate_user, create_jwt, AuthError, revoke_token
+from services.auth_service import (
+    register_user, 
+    authenticate_user, 
+    create_jwt, 
+    AuthError, 
+    revoke_token,
+    update_user_profile,
+    change_password
+)
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -12,6 +20,10 @@ def register():
     email    = (data.get("email")    or "").strip()
     name     = (data.get("name")     or "").strip()
     password = (data.get("password") or "").strip()
+
+    import config
+    if not config.is_registration_allowed():
+        return jsonify({"error": "Registration is currently disabled"}), 403
 
     try:
         user = register_user(email, name, password)
@@ -53,3 +65,37 @@ def logout():
     if auth_header.startswith("Bearer "):
         revoke_token(auth_header[7:])
     return jsonify({"ok": True}), 200
+
+
+@auth_bp.put("/api/auth/profile")
+@require_auth
+def update_profile():
+    data = request.get_json(silent=True) or {}
+    name = data.get("name")
+    avatar_url = data.get("avatar_url")
+    
+    try:
+        updated_user = update_user_profile(g.user.id, name, avatar_url)
+    except AuthError as e:
+        return jsonify({"error": str(e)}), e.status
+
+    token = create_jwt(updated_user)
+    return jsonify({"token": token, "user": updated_user.to_dict()}), 200
+
+
+@auth_bp.put("/api/auth/password")
+@require_auth
+def update_password():
+    data = request.get_json(silent=True) or {}
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    
+    if not current_password or not new_password:
+        return jsonify({"error": "current_password and new_password are required"}), 400
+        
+    try:
+        change_password(g.user.id, current_password, new_password)
+    except AuthError as e:
+        return jsonify({"error": str(e)}), e.status
+        
+    return jsonify({"updated": True}), 200

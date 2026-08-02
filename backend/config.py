@@ -57,3 +57,31 @@ RAG_SYSTEM_PROMPT: str = (
     "NEVER apologize or say 'The context does not provide this' or 'I cannot find this'. "
     "Just answer the question directly and naturally like a highly intelligent AI."
 )
+
+def get_runtime_setting(key: str, fallback: str = "") -> str:
+    """Get a setting from DB, falling back to the env-based value."""
+    try:
+        from services.settings_service import get_setting
+        return get_setting(key, fallback)
+    except Exception:
+        return fallback
+
+def get_system_prompt() -> str:
+    """Get the system prompt, preferring DB setting over env default."""
+    return get_runtime_setting("system_prompt", RAG_SYSTEM_PROMPT)
+
+def is_registration_allowed() -> bool:
+    """Check if registration is allowed via DB setting."""
+    try:
+        from services.settings_service import get_bool
+        return get_bool("allow_registration", True)
+    except Exception:
+        return True
+
+def is_maintenance_mode() -> bool:
+    """Check if maintenance mode is active."""
+    try:
+        from services.settings_service import get_bool
+        return get_bool("maintenance_mode", False)
+    except Exception:
+        return False
