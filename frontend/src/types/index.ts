@@ -117,3 +117,59 @@ export interface AdminDocument {
   uploader_name: string;
   uploader_email: string;
 }
+
+export interface AuditLogEntry {
+  id: number;
+  user_id: string | null;
+  user_email: string | null;
+  user_name: string | null;
+  action: string;
+  target_type: string | null;
+  target_id: string | null;
+  details: string | null;
+  ip_address: string | null;
+  created_at: number;
+}
+
+export interface ExtendedStats {
+  totals: {
+    total_users: number;
+    suspended_users: number;
+    total_conversations: number;
+    total_messages: number;
+    total_documents: number;
+    shared_documents: number;
+  };
+  activity: {
+    active_users_today: number;
+    messages_today: number;
+    messages_this_week: number;
+    messages_this_month: number;
+    new_users_this_week: number;
+    uploads_this_week: number;
+  };
+  roles_breakdown: Record<string, number>;
+  top_users: { name: string; email: string; message_count: number }[];
+  daily_messages: { day_offset: number; count: number }[];
+  provider_usage: { actual_provider: string; actual_model: string; count: number }[];
+  recent_activity: {
+    action: string;
+    user_email: string;
+    target_type: string;
+    details: string;
+    created_at: number;
+  }[];
+}
+
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  is_active: boolean;
+  created_by: string;
+  author_name: string;
+  created_at: number;
+  expires_at: number | null;
+}
+

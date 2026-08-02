@@ -7,6 +7,9 @@ import type {
   AdminUser,
   AdminStats,
   AdminDocument,
+  AuditLogEntry,
+  ExtendedStats,
+  Announcement,
 } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
@@ -89,6 +92,18 @@ export async function updateProfile(name?: string, avatar_url?: string): Promise
   });
   if (!res.ok) throw new Error("Failed to update profile");
   return res.json();
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const res = await apiFetch('/api/auth/password', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: 'Failed to change password' }));
+    throw new Error(data.error || 'Failed to change password');
+  }
 }
 
 export function storeToken(token: string): void {
@@ -420,3 +435,117 @@ export async function* streamChat(
     }
   }
 }
+
+export interface AdminRole {
+  name: string;
+  description: string;
+  is_builtin: boolean;
+  user_count: number;
+  created_at: number;
+}
+
+export async function fetchAdminRoles(): Promise<AdminRole[]> {
+  const res = await apiFetch("/api/admin/roles");
+  if (!res.ok) throw new Error("Failed to fetch roles");
+  const data = await res.json();
+  return data.roles as AdminRole[];
+}
+
+export async function createAdminRole(name: string, description: string): Promise<void> {
+  const res = await apiFetch("/api/admin/roles", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, description }),
+  });
+  if (!res.ok) throw new Error("Failed to create role");
+}
+
+export async function deleteAdminRole(roleName: string): Promise<void> {
+  const res = await apiFetch(`/api/admin/roles/${encodeURIComponent(roleName)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete role");
+}
+
+// ─── Extended Stats ──────────────────────────────────────────────────────────
+
+export async function fetchExtendedStats(): Promise<ExtendedStats> {
+  const res = await apiFetch("/api/admin/stats/extended");
+  if (!res.ok) throw new Error("Failed to fetch extended stats");
+  return res.json() as Promise<ExtendedStats>;
+}
+
+// ─── Audit Log ───────────────────────────────────────────────────────────────
+
+export async function fetchAuditLog(params?: {
+  user_id?: string;
+  action?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ logs: AuditLogEntry[]; total: number }> {
+  const qs = new URLSearchParams();
+  if (params?.user_id) qs.set("user_id", params.user_id);
+  if (params?.action) qs.set("action", params.action);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.offset) qs.set("offset", String(params.offset));
+  const res = await apiFetch(`/api/admin/audit-log?${qs.toString()}`);
+  if (!res.ok) throw new Error("Failed to fetch audit log");
+  return res.json();
+}
+
+// ─── User Suspension ─────────────────────────────────────────────────────────
+
+export async function suspendUser(userId: string, suspended: boolean): Promise<void> {
+  const res = await apiFetch(`/api/admin/users/${userId}/suspend`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ suspended }),
+  });
+  if (!res.ok) throw new Error("Failed to update user suspension");
+}
+
+export async function deleteAdminUser(userId: string): Promise<void> {
+  const res = await apiFetch(`/api/admin/users/${userId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete user");
+}
+
+// ─── Announcements ───────────────────────────────────────────────────────────
+
+export async function fetchAnnouncements(): Promise<Announcement[]> {
+  const res = await apiFetch("/api/admin/announcements");
+  if (!res.ok) throw new Error("Failed to fetch announcements");
+  const data = await res.json();
+  return data.announcements as Announcement[];
+}
+
+export async function fetchActiveAnnouncements(): Promise<Announcement[]> {
+  const res = await apiFetch("/api/announcements/active");
+  if (!res.ok) throw new Error("Failed to fetch announcements");
+  const data = await res.json();
+  return data.announcements as Announcement[];
+}
+
+export async function createAnnouncement(data: {
+  title: string;
+  content: string;
+  type: string;
+  expires_at?: number;
+}): Promise<void> {
+  const res = await apiFetch("/api/admin/announcements", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create announcement");
+}
+
+export async function deleteAnnouncement(id: number): Promise<void> {
+  const res = await apiFetch(`/api/admin/announcements/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete announcement");
+}
+
+export async function toggleAnnouncement(id: number): Promise<void> {
+  const res = await apiFetch(`/api/admin/announcements/${id}/toggle`, { method: "PUT" });
+  if (!res.ok) throw new Error("Failed to toggle announcement");
+}
+
