@@ -34,6 +34,7 @@ def init_db() -> None:
                 name          TEXT NOT NULL,
                 password_hash TEXT NOT NULL DEFAULT '',
                 role          TEXT NOT NULL DEFAULT 'student',
+                avatar_url    TEXT NOT NULL DEFAULT '',
                 created_at    REAL NOT NULL,
                 last_seen     REAL NOT NULL
             );
@@ -70,9 +71,77 @@ def init_db() -> None:
                 uploaded_at       REAL NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                label TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                kind TEXT NOT NULL DEFAULT 'text',
+                updated_at REAL,
+                updated_by TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS roles (
+                name TEXT PRIMARY KEY,
+                description TEXT NOT NULL DEFAULT '',
+                is_builtin INTEGER NOT NULL DEFAULT 0,
+                created_at REAL NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS audit_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                user_email TEXT,
+                action TEXT NOT NULL,
+                target_type TEXT,
+                target_id TEXT,
+                details TEXT,
+                ip_address TEXT,
+                created_at REAL NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS revoked_tokens (
+                token_hash TEXT PRIMARY KEY,
+                revoked_at REAL NOT NULL,
+                expires_at REAL NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS announcements (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                type TEXT NOT NULL DEFAULT 'info',
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_by TEXT REFERENCES users(id),
+                created_at REAL NOT NULL,
+                expires_at REAL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, created_at);
             CREATE INDEX IF NOT EXISTS idx_docs_user ON documents(user_id);
+            CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id);
+            CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log(action, created_at);
+            CREATE INDEX IF NOT EXISTS idx_revoked_expires ON revoked_tokens(expires_at);
         """)
+
+        # Seed roles
+        for role_name in ("student", "professor", "admin"):
+            conn.execute(
+                "INSERT OR IGNORE INTO roles (name, description, is_builtin, created_at) VALUES (?, ?, 1, 0)",
+                (role_name, f"{role_name.capitalize()} role")
+            )
+
+        # Seed settings
+        default_settings = [
+            ("max_upload_size_mb", "50", "Max Upload Size (MB)"),
+            ("max_docs_per_session", "10", "Max Docs Per Session"),
+            ("allow_registration", "true", "Allow Registration"),
+            ("default_role", "student", "Default Role"),
+            ("system_prompt", "You are ENSET AI, a helpful educational assistant.", "System Prompt")
+        ]
+        for k, v, l in default_settings:
+            conn.execute("INSERT OR IGNORE INTO settings (key, value, label) VALUES (?, ?, ?)", (k, v, l))
+
 
         # Migrate: conversations — add user_id if missing
         cols = [r[1] for r in conn.execute("PRAGMA table_info(conversations)").fetchall()]
@@ -84,6 +153,10 @@ def init_db() -> None:
         ucols = [r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
         if "password_hash" not in ucols:
             conn.execute("ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''")
+        if "avatar_url" not in ucols:
+            conn.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''")
+        if "is_suspended" not in ucols:
+            conn.execute("ALTER TABLE users ADD COLUMN is_suspended INTEGER NOT NULL DEFAULT 0")
         # Remove picture column data not needed for email/password auth (keep column for compat)
 
         # Migrate: documents — add category column
