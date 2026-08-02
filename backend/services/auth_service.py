@@ -1,6 +1,7 @@
 import time
 import uuid
 import logging
+import hashlib
 
 import bcrypt
 import jwt
@@ -73,17 +74,20 @@ def authenticate_user(email: str, password: str) -> UserRecord:
     email = email.strip().lower()
     with database.get_db() as conn:
         row = conn.execute(
-            "SELECT id, email, name, password_hash, role FROM users WHERE email=?", (email,)
+            "SELECT id, email, name, password_hash, role, avatar_url, is_suspended FROM users WHERE email=?", (email,)
         ).fetchone()
 
     if row is None or not verify_password(password, row["password_hash"]):
         raise AuthError("Invalid email or password", 401)
+        
+    if row["is_suspended"]:
+        raise AuthError("Your account has been suspended. Contact an administrator.", 403)
 
     now = time.time()
     with database.get_db() as conn:
         conn.execute("UPDATE users SET last_seen=? WHERE id=?", (now, row["id"]))
 
-    return UserRecord(id=row["id"], email=row["email"], name=row["name"], role=row["role"])
+    return UserRecord(id=row["id"], email=row["email"], name=row["name"], role=row["role"], avatar_url=row["avatar_url"])
 
 
 def create_jwt(user: UserRecord) -> str:
@@ -98,15 +102,29 @@ def create_jwt(user: UserRecord) -> str:
     return jwt.encode(payload, config.JWT_SECRET, algorithm="HS256")
 
 
-_revoked_tokens: set[str] = set()
+def _token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 def revoke_token(token: str) -> None:
-    _revoked_tokens.add(token)
+    try:
+        payload = jwt.decode(token, config.JWT_SECRET, algorithms=["HS256"], options={"verify_exp": False})
+        expires_at = payload.get("exp", 0)
+    except jwt.InvalidTokenError:
+        expires_at = 0
+    with database.get_db() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO revoked_tokens (token_hash, revoked_at, expires_at) VALUES (?, ?, ?)",
+            (_token_hash(token), time.time(), expires_at),
+        )
 
 
 def decode_jwt(token: str) -> dict:
-    if token in _revoked_tokens:
+    with database.get_db() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM revoked_tokens WHERE token_hash=?", (_token_hash(token),)
+        ).fetchone()
+    if row:
         raise AuthError("Token has been revoked", 401)
     try:
         return jwt.decode(token, config.JWT_SECRET, algorithms=["HS256"])
@@ -119,8 +137,40 @@ def decode_jwt(token: str) -> dict:
 def get_user_by_id(user_id: str) -> UserRecord | None:
     with database.get_db() as conn:
         row = conn.execute(
-            "SELECT id, email, name, role FROM users WHERE id=?", (user_id,)
+            "SELECT id, email, name, role, avatar_url FROM users WHERE id=?", (user_id,)
         ).fetchone()
     if row is None:
         return None
     return UserRecord(**dict(row))
+
+
+def update_user_profile(user_id: str, name: str | None, avatar_url: str | None) -> UserRecord:
+    with database.get_db() as conn:
+        user = get_user_by_id(user_id)
+        if not user:
+            raise AuthError("User not found", 404)
+        
+        new_name = name if name is not None else user.name
+        new_avatar_url = avatar_url if avatar_url is not None else user.avatar_url
+        
+        conn.execute(
+            "UPDATE users SET name=?, avatar_url=? WHERE id=?", (new_name, new_avatar_url, user_id)
+        )
+        user.name = new_name
+        user.avatar_url = new_avatar_url
+        return user
+
+
+def change_password(user_id: str, current_password: str, new_password: str) -> None:
+    with database.get_db() as conn:
+        row = conn.execute("SELECT password_hash FROM users WHERE id=?", (user_id,)).fetchone()
+        if row is None:
+            raise AuthError("User not found", 404)
+        
+        if not verify_password(current_password, row["password_hash"]):
+            raise AuthError("Incorrect current password", 400)
+            
+        _validate_password(new_password)
+        new_hash = hash_password(new_password)
+        
+        conn.execute("UPDATE users SET password_hash=? WHERE id=?", (new_hash, user_id))
