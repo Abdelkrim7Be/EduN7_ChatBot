@@ -1,11 +1,12 @@
+import time
 from flask import Blueprint, request, jsonify
 
 import database
 from middleware.auth import require_auth, require_role
+from services import document_service, audit_service
+from flask import g
 
 admin_bp = Blueprint("admin", __name__)
-
-VALID_ROLES = {"student", "professor", "admin"}
 
 
 @admin_bp.get("/api/admin/users")
@@ -47,11 +48,30 @@ def list_users():
 def update_role(user_id: str):
     data = request.get_json(silent=True) or {}
     role = (data.get("role") or "").strip()
-    if role not in VALID_ROLES:
-        return jsonify({"error": f"role must be one of {sorted(VALID_ROLES)}"}), 400
+    with database.get_db() as conn:
+        valid_roles = {r["name"] for r in conn.execute("SELECT name FROM roles").fetchall()}
+    if role not in valid_roles:
+        return jsonify({"error": f"role must be one of {sorted(valid_roles)}"}), 400
     with database.get_db() as conn:
         conn.execute("UPDATE users SET role=? WHERE id=?", (role, user_id))
+    audit_service.log_action("user.role_changed", "user", user_id, f"Changed to {role}")
     return jsonify({"updated": True}), 200
+
+
+@admin_bp.delete("/api/admin/users/<user_id>")
+@require_auth
+@require_role("admin")
+def delete_user(user_id: str):
+    with database.get_db() as conn:
+        doc_ids = [r["doc_id"] for r in conn.execute("SELECT doc_id FROM documents WHERE user_id=?", (user_id,)).fetchall()]
+        
+    for did in doc_ids:
+        document_service.delete(did, user_id, "admin")
+        
+    with database.get_db() as conn:
+        conn.execute("DELETE FROM users WHERE id=?", (user_id,))
+    audit_service.log_action("user.deleted", "user", user_id)
+    return jsonify({"deleted": True}), 200
 
 
 @admin_bp.get("/api/admin/stats")
@@ -80,14 +100,22 @@ def stats():
 @require_auth
 @require_role("admin", "professor")
 def list_shared_documents():
+    scope = request.args.get("scope", "all").lower()
     with database.get_db() as conn:
-        rows = conn.execute("""
+        where_clause = ""
+        params = []
+        if scope == "shared":
+            where_clause = "WHERE d.scope = 'shared'"
+        elif scope == "private":
+            where_clause = "WHERE d.scope = 'private'"
+            
+        rows = conn.execute(f"""
             SELECT d.*, u.name AS uploader_name, u.email AS uploader_email
             FROM documents d
             JOIN users u ON u.id = d.user_id
-            WHERE d.scope = 'shared'
+            {where_clause}
             ORDER BY d.uploaded_at DESC
-        """).fetchall()
+        """, params).fetchall()
     return jsonify({
         "documents": [
             {
@@ -105,3 +133,401 @@ def list_shared_documents():
             for r in rows
         ]
     }), 200
+
+
+@admin_bp.delete("/api/admin/documents/<doc_id>")
+@require_auth
+@require_role("admin")
+def delete_document(doc_id: str):
+    success = document_service.delete(doc_id, user_id="", role="admin")
+    if not success:
+        return jsonify({"error": "Failed to delete document or not found"}), 404
+    audit_service.log_action("document.deleted", "document", doc_id)
+    return jsonify({"deleted": True}), 200
+
+
+@admin_bp.get("/api/admin/conversations")
+@require_auth
+@require_role("admin")
+def list_conversations():
+    search = request.args.get("search", "").strip()
+    query = """
+        SELECT c.session_id, c.title, c.created_at, c.last_active, 
+               u.name as user_name, u.email as user_email,
+               (SELECT COUNT(*) FROM messages m WHERE m.session_id = c.session_id) as message_count,
+               (SELECT content FROM messages m WHERE m.session_id = c.session_id ORDER BY created_at DESC LIMIT 1) as last_message
+        FROM conversations c
+        LEFT JOIN users u ON u.id = c.user_id
+    """
+    params = []
+    if search:
+        query += " WHERE u.name LIKE ? OR u.email LIKE ? OR c.title LIKE ?"
+        params = [f"%{search}%", f"%{search}%", f"%{search}%"]
+        
+    query += " ORDER BY c.last_active DESC"
+    
+    with database.get_db() as conn:
+        rows = conn.execute(query, params).fetchall()
+        
+    return jsonify({
+        "conversations": [
+            {
+                "session_id": r["session_id"],
+                "title": r["title"],
+                "created_at": r["created_at"],
+                "last_active": r["last_active"],
+                "user_name": r["user_name"],
+                "user_email": r["user_email"],
+                "message_count": r["message_count"],
+                "last_message": r["last_message"],
+            }
+            for r in rows
+        ]
+    }), 200
+
+
+@admin_bp.get("/api/admin/conversations/<session_id>")
+@require_auth
+@require_role("admin")
+def get_conversation(session_id: str):
+    with database.get_db() as conn:
+        c_row = conn.execute("SELECT * FROM conversations WHERE session_id=?", (session_id,)).fetchone()
+        if not c_row:
+            return jsonify({"error": "Conversation not found"}), 404
+            
+        m_rows = conn.execute("SELECT * FROM messages WHERE session_id=? ORDER BY created_at ASC", (session_id,)).fetchall()
+        
+    return jsonify({
+        "conversation": {
+            "session_id": c_row["session_id"],
+            "title": c_row["title"],
+            "created_at": c_row["created_at"],
+            "last_active": c_row["last_active"],
+            "doc_ids": c_row["doc_ids"],
+        },
+        "messages": [
+            {
+                "id": r["id"],
+                "role": r["role"],
+                "content": r["content"],
+                "citations": r["citations"],
+                "actual_provider": r["actual_provider"],
+                "actual_model": r["actual_model"],
+                "created_at": r["created_at"],
+            }
+            for r in m_rows
+        ]
+    }), 200
+
+
+@admin_bp.delete("/api/admin/conversations/<session_id>")
+@require_auth
+@require_role("admin")
+def delete_conversation(session_id: str):
+    with database.get_db() as conn:
+        conn.execute("DELETE FROM conversations WHERE session_id=?", (session_id,))
+    audit_service.log_action("conversation.deleted", "conversation", session_id)
+    return jsonify({"deleted": True}), 200
+
+
+@admin_bp.get("/api/admin/settings")
+@require_auth
+@require_role("admin")
+def get_settings():
+    with database.get_db() as conn:
+        rows = conn.execute("SELECT key, value, label, description, kind, updated_at, updated_by FROM settings").fetchall()
+    return jsonify({
+        "settings": [dict(r) for r in rows]
+    }), 200
+
+
+@admin_bp.put("/api/admin/settings/<key>")
+@require_auth
+@require_role("admin")
+def update_setting(key: str):
+    data = request.get_json(silent=True) or {}
+    value = data.get("value")
+    if value is None:
+        return jsonify({"error": "value is required"}), 400
+        
+    with database.get_db() as conn:
+        row = conn.execute("SELECT key FROM settings WHERE key=?", (key,)).fetchone()
+        if not row:
+            return jsonify({"error": "setting not found"}), 404
+            
+        conn.execute(
+            "UPDATE settings SET value=?, updated_at=?, updated_by=? WHERE key=?", 
+            (value, time.time(), request.user.get("email", "") if hasattr(request, 'user') else "", key)
+        )
+    from services.settings_service import invalidate_cache
+    invalidate_cache()
+    audit_service.log_action("setting.changed", "setting", key, f"New value: {value}")
+    return jsonify({"updated": True}), 200
+
+
+@admin_bp.get("/api/admin/roles")
+@require_auth
+@require_role("admin")
+def get_roles():
+    with database.get_db() as conn:
+        rows = conn.execute("""
+            SELECT r.name, r.description, r.is_builtin, r.created_at,
+                   COUNT(u.id) AS user_count
+            FROM roles r
+            LEFT JOIN users u ON u.role = r.name
+            GROUP BY r.name
+            ORDER BY r.is_builtin DESC, r.name ASC
+        """).fetchall()
+    return jsonify({
+        "roles": [dict(r) for r in rows]
+    }), 200
+
+
+@admin_bp.post("/api/admin/roles")
+@require_auth
+@require_role("admin")
+def create_role():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip().lower()
+    description = (data.get("description") or "").strip()
+    
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+        
+    with database.get_db() as conn:
+        row = conn.execute("SELECT name FROM roles WHERE name=?", (name,)).fetchone()
+        if row:
+            return jsonify({"error": "role already exists"}), 400
+            
+        conn.execute(
+            "INSERT INTO roles (name, description, is_builtin, created_at) VALUES (?, ?, 0, ?)",
+            (name, description, time.time())
+        )
+    return jsonify({"created": True, "name": name}), 201
+
+
+@admin_bp.delete("/api/admin/roles/<role_name>")
+@require_auth
+@require_role("admin")
+def delete_role(role_name: str):
+    with database.get_db() as conn:
+        row = conn.execute("SELECT is_builtin FROM roles WHERE name=?", (role_name,)).fetchone()
+        if not row:
+            return jsonify({"error": "role not found"}), 404
+            
+        if row["is_builtin"]:
+            return jsonify({"error": "cannot delete built-in role"}), 400
+            
+        # Optional: check if users are using this role and reject or reassign
+        users_count = conn.execute("SELECT COUNT(*) as c FROM users WHERE role=?", (role_name,)).fetchone()["c"]
+        if users_count > 0:
+            return jsonify({"error": f"cannot delete role: {users_count} users are currently assigned to it"}), 400
+            
+        conn.execute("DELETE FROM roles WHERE name=?", (role_name,))
+    return jsonify({"deleted": True}), 200
+
+
+@admin_bp.get("/api/admin/audit-log")
+@require_auth
+@require_role("admin")
+def get_audit_log():
+    user_id = request.args.get("user_id")
+    action = request.args.get("action")
+    limit = min(int(request.args.get("limit", 50)), 200)
+    offset = int(request.args.get("offset", 0))
+    
+    logs, total = audit_service.get_logs(user_id=user_id, action=action, limit=limit, offset=offset)
+    return jsonify({"logs": logs, "total": total}), 200
+
+
+@admin_bp.put("/api/admin/users/<user_id>/suspend")
+@require_auth
+@require_role("admin")
+def suspend_user(user_id: str):
+    data = request.get_json(silent=True) or {}
+    suspended = bool(data.get("suspended", True))
+    with database.get_db() as conn:
+        conn.execute("UPDATE users SET is_suspended=? WHERE id=?", (int(suspended), user_id))
+    action = "user.suspended" if suspended else "user.unsuspended"
+    audit_service.log_action(action, "user", user_id)
+    return jsonify({"updated": True, "is_suspended": suspended}), 200
+
+
+@admin_bp.get("/api/admin/stats/extended")
+@require_auth
+@require_role("admin")
+def extended_stats():
+    import time as _time
+    now = _time.time()
+    day_ago = now - 86400
+    week_ago = now - 604800
+    month_ago = now - 2592000
+    
+    with database.get_db() as conn:
+        base = conn.execute("""
+            SELECT
+                (SELECT COUNT(*) FROM users) AS total_users,
+                (SELECT COUNT(*) FROM users WHERE is_suspended = 1) AS suspended_users,
+                (SELECT COUNT(*) FROM conversations) AS total_conversations,
+                (SELECT COUNT(*) FROM messages) AS total_messages,
+                (SELECT COUNT(*) FROM documents) AS total_documents,
+                (SELECT COUNT(*) FROM documents WHERE scope='shared') AS shared_documents
+        """).fetchone()
+        
+        # Activity over time periods
+        active_today = conn.execute(
+            "SELECT COUNT(DISTINCT user_id) AS c FROM conversations WHERE last_active > ?", (day_ago,)
+        ).fetchone()["c"]
+        
+        msgs_today = conn.execute(
+            "SELECT COUNT(*) AS c FROM messages WHERE created_at > ?", (day_ago,)
+        ).fetchone()["c"]
+        
+        msgs_week = conn.execute(
+            "SELECT COUNT(*) AS c FROM messages WHERE created_at > ?", (week_ago,)
+        ).fetchone()["c"]
+        
+        msgs_month = conn.execute(
+            "SELECT COUNT(*) AS c FROM messages WHERE created_at > ?", (month_ago,)
+        ).fetchone()["c"]
+        
+        new_users_week = conn.execute(
+            "SELECT COUNT(*) AS c FROM users WHERE created_at > ?", (week_ago,)
+        ).fetchone()["c"]
+        
+        uploads_week = conn.execute(
+            "SELECT COUNT(*) AS c FROM documents WHERE uploaded_at > ?", (week_ago,)
+        ).fetchone()["c"]
+        
+        # Role breakdown
+        role_rows = conn.execute(
+            "SELECT role, COUNT(*) AS count FROM users GROUP BY role"
+        ).fetchall()
+        roles_breakdown = {r["role"]: r["count"] for r in role_rows}
+        
+        # Top users by messages
+        top_users = conn.execute("""
+            SELECT u.name, u.email, COUNT(m.id) AS message_count
+            FROM users u
+            JOIN conversations c ON c.user_id = u.id
+            JOIN messages m ON m.session_id = c.session_id AND m.role = 'user'
+            GROUP BY u.id
+            ORDER BY message_count DESC
+            LIMIT 5
+        """).fetchall()
+        
+        # Messages per day (last 30 days)
+        daily_msgs = conn.execute("""
+            SELECT 
+                CAST((created_at - ?) / 86400 AS INTEGER) AS day_offset,
+                COUNT(*) AS count
+            FROM messages
+            WHERE created_at > ?
+            GROUP BY day_offset
+            ORDER BY day_offset
+        """, (month_ago, month_ago)).fetchall()
+        
+        # Provider usage
+        provider_usage = conn.execute("""
+            SELECT actual_provider, actual_model, COUNT(*) AS count
+            FROM messages
+            WHERE role = 'assistant' AND actual_provider IS NOT NULL
+            GROUP BY actual_provider, actual_model
+            ORDER BY count DESC
+        """).fetchall()
+        
+        # Recent activity
+        recent = conn.execute("""
+            SELECT a.action, a.user_email, a.target_type, a.details, a.created_at
+            FROM audit_log a
+            ORDER BY a.created_at DESC
+            LIMIT 10
+        """).fetchall()
+        
+    return jsonify({
+        "totals": dict(base),
+        "activity": {
+            "active_users_today": active_today,
+            "messages_today": msgs_today,
+            "messages_this_week": msgs_week,
+            "messages_this_month": msgs_month,
+            "new_users_this_week": new_users_week,
+            "uploads_this_week": uploads_week,
+        },
+        "roles_breakdown": roles_breakdown,
+        "top_users": [dict(r) for r in top_users],
+        "daily_messages": [dict(r) for r in daily_msgs],
+        "provider_usage": [dict(r) for r in provider_usage],
+        "recent_activity": [dict(r) for r in recent],
+    }), 200
+
+
+@admin_bp.get("/api/admin/announcements")
+@require_auth
+@require_role("admin")
+def list_announcements():
+    with database.get_db() as conn:
+        rows = conn.execute("""
+            SELECT a.*, u.name AS author_name
+            FROM announcements a
+            LEFT JOIN users u ON u.id = a.created_by
+            ORDER BY a.created_at DESC
+        """).fetchall()
+    return jsonify({"announcements": [dict(r) for r in rows]}), 200
+
+
+@admin_bp.post("/api/admin/announcements")
+@require_auth
+@require_role("admin")
+def create_announcement():
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip()
+    content = (data.get("content") or "").strip()
+    ann_type = (data.get("type") or "info").strip()
+    expires_at = data.get("expires_at")
+    
+    if not title or not content:
+        return jsonify({"error": "title and content are required"}), 400
+    
+    import time as _time
+    with database.get_db() as conn:
+        conn.execute(
+            "INSERT INTO announcements (title, content, type, is_active, created_by, created_at, expires_at) VALUES (?, ?, ?, 1, ?, ?, ?)",
+            (title, content, ann_type, g.user.id, _time.time(), expires_at),
+        )
+    audit_service.log_action("announcement.created", "announcement", None, title)
+    return jsonify({"created": True}), 201
+
+
+@admin_bp.delete("/api/admin/announcements/<int:ann_id>")
+@require_auth
+@require_role("admin")
+def delete_announcement(ann_id: int):
+    with database.get_db() as conn:
+        conn.execute("DELETE FROM announcements WHERE id=?", (ann_id,))
+    audit_service.log_action("announcement.deleted", "announcement", str(ann_id))
+    return jsonify({"deleted": True}), 200
+
+
+@admin_bp.put("/api/admin/announcements/<int:ann_id>/toggle")
+@require_auth
+@require_role("admin")
+def toggle_announcement(ann_id: int):
+    with database.get_db() as conn:
+        conn.execute("UPDATE announcements SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END WHERE id=?", (ann_id,))
+    return jsonify({"toggled": True}), 200
+
+
+@admin_bp.get("/api/announcements/active")
+@require_auth
+def active_announcements():
+    import time as _time
+    now = _time.time()
+    with database.get_db() as conn:
+        rows = conn.execute("""
+            SELECT id, title, content, type, created_at
+            FROM announcements
+            WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > ?)
+            ORDER BY created_at DESC
+        """, (now,)).fetchall()
+    return jsonify({"announcements": [dict(r) for r in rows]}), 200
