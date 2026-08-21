@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface Props {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -9,6 +9,7 @@ interface Props {
 type Tab = "login" | "register";
 
 export function LoginPage({ onLogin, onRegister }: Props) {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>(
     searchParams.get("tab") === "register" ? "register" : "login"
@@ -44,6 +45,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
       } else {
         await onRegister(email, name, password);
       }
+      navigate("/", { replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Une erreur est survenue");
     } finally {

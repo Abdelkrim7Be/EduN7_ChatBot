@@ -15,8 +15,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   Autres: "bg-white/10 text-white",
 };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
+function formatDate(epochSeconds: number): string {
+  return new Date(epochSeconds * 1000).toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "short",
     year: "numeric",

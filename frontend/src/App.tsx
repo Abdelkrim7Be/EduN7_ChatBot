@@ -25,6 +25,10 @@ import { AdminUsers } from "./components/admin/AdminUsers";
 import { AdminDocuments } from "./components/admin/AdminDocuments";
 import { AdminConversations } from "./components/admin/AdminConversations";
 import { AdminSettings } from "./components/admin/AdminSettings";
+import { AdminChatTest } from "./components/admin/AdminChatTest";
+import { AdminRoles } from "./components/admin/AdminRoles";
+import { AdminAuditLog } from "./components/admin/AdminAuditLog";
+import { AdminAnnouncements } from "./components/admin/AdminAnnouncements";
 import { LibraryPage } from "./components/LibraryPage";
 import { LandingPage } from "./pages/LandingPage";
 import { PrimitivePlayground } from "./pages/PrimitivePlayground";
@@ -668,6 +672,10 @@ export default function App() {
               <Route path="documents" element={<AdminDocuments />} />
               <Route path="conversations" element={<AdminConversations />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="chatbot" element={<AdminChatTest />} />
+              <Route path="roles" element={<AdminRoles />} />
+              <Route path="audit-log" element={<AdminAuditLog />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
             </Route>
           )}
           {auth.isRole("professor", "admin") && (

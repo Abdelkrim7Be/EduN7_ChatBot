@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Save, User, Key, Image as ImageIcon } from "lucide-react";
+import { useToast } from "./ToastProvider";
+import { changePassword } from "../api/client";
 
 export function SettingsPage() {
   const { user, updateUser } = useAuth();
@@ -12,7 +14,12 @@ export function SettingsPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   if (!user) return null;
 
@@ -33,6 +40,30 @@ export function SettingsPage() {
       await updateUser(nameInput, avatarInput || undefined);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast("Passwords do not match", "error");
+      return;
+    }
+    if (!currentPassword || !newPassword) {
+      toast("Please fill in all fields", "error");
+      return;
+    }
+    
+    setIsChangingPassword(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      toast("Password changed successfully", "success");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast(err.message || "Failed to change password", "error");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -171,6 +202,8 @@ export function SettingsPage() {
                     <div className="relative">
                       <input
                         type={showCurrentPassword ? "text" : "password"}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder="••••••••"
                         className="w-full bg-transparent border border-white/20 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors pr-10"
                       />
@@ -186,6 +219,8 @@ export function SettingsPage() {
                     <div className="relative">
                       <input
                         type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
                         className="w-full bg-transparent border border-white/20 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors pr-10"
                       />
@@ -201,6 +236,8 @@ export function SettingsPage() {
                     <div className="relative">
                       <input
                         type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
                         className="w-full bg-transparent border border-white/20 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors pr-10"
                       />
@@ -210,9 +247,13 @@ export function SettingsPage() {
                     </div>
                   </div>
                   <div className="pt-4 border-t border-white/10">
-                    <button className="flex items-center gap-2 px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors">
+                    <button 
+                      onClick={handleChangePassword}
+                      disabled={isChangingPassword}
+                      className="flex items-center gap-2 px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    >
                       <Key className="w-4 h-4" />
-                      Update Password
+                      {isChangingPassword ? "Updating..." : "Update Password"}
                     </button>
                   </div>
                 </div>

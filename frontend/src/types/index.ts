@@ -113,7 +113,7 @@ export interface AdminDocument {
   chunk_count: number;
   scope: "private" | "shared";
   category: string;
-  uploaded_at: string;
+  uploaded_at: number;
   uploader_name: string;
   uploader_email: string;
 }

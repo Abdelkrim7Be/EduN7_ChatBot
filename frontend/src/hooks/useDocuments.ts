@@ -109,7 +109,7 @@ export function useDocuments(sessionId: string) {
 
   const upload = useCallback(
     async (files: File[], scope: "private" | "shared" = "private") => {
-      if (!sessionId) return;
+      if (scope === "private" && !sessionId) return;
       setIsUploading(true);
       setUploadError(null);
       setUploadStage("uploading");

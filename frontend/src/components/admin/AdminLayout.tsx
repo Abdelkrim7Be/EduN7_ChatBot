@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, MessageSquare, Settings } from "lucide-react";
+import { LayoutDashboard, Users, FileText, MessageSquare, Settings, Bot, Shield, ClipboardList, Megaphone } from "lucide-react";
 
 type NavItem = {
   to: string;
@@ -10,8 +10,12 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/admin/dashboard", label: "Tableau de bord", icon: <LayoutDashboard className="w-4 h-4" /> },
   { to: "/admin/users",     label: "Utilisateurs",    icon: <Users className="w-4 h-4" /> },
+  { to: "/admin/roles",     label: "Rôles",           icon: <Shield className="w-4 h-4" /> },
   { to: "/admin/documents", label: "Documents",       icon: <FileText className="w-4 h-4" /> },
   { to: "/admin/conversations", label: "Conversations", icon: <MessageSquare className="w-4 h-4" /> },
+  { to: "/admin/audit-log", label: "Journal d'audit", icon: <ClipboardList className="w-4 h-4" /> },
+  { to: "/admin/announcements", label: "Annonces", icon: <Megaphone className="w-4 h-4" /> },
+  { to: "/admin/chatbot",   label: "Test Chatbot",    icon: <Bot className="w-4 h-4" /> },
   { to: "/admin/settings",  label: "Paramètres",      icon: <Settings className="w-4 h-4" /> },
 ];
 

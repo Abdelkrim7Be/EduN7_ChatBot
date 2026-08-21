@@ -29,10 +29,10 @@ PROVIDER_CATALOG = {
         "description": "Fast inference · Free tier",
         "badge": "Fast",
         "models": [
-            {"id": "llama-3.3-70b-versatile",              "name": "Llama 3.3 70B",    "description": "High quality · Fast"},
-            {"id": "llama-3.1-8b-instant",                 "name": "Llama 3.1 8B",     "description": "Fastest"},
-            {"id": "meta-llama/llama-4-scout-17b-16e-instruct", "name": "Llama 4 Scout", "description": "Newest · Multimodal"},
-            {"id": "qwen/qwen3-32b",                       "name": "Qwen 3 32B",       "description": "Strong reasoning"},
+            {"id": "openai/gpt-oss-20b",   "name": "GPT-OSS 20B",       "description": "Fastest · Lightweight"},
+            {"id": "openai/gpt-oss-120b",  "name": "GPT-OSS 120B",      "description": "High quality · Fast"},
+            {"id": "groq/compound",        "name": "Groq Compound",     "description": "Agentic · Tool use"},
+            {"id": "groq/compound-mini",   "name": "Groq Compound Mini","description": "Agentic · Fastest"},
         ],
     },
     "mistral": {
@@ -85,9 +85,9 @@ BADGE_PRIORITY = ["Free", "Fastest", "Fast", "Powerful", "Standard", "Private"]
 AUTO_FALLBACK_ORDER = [
     ("cerebras",   "llama3.1-8b"),
     ("sambanova",  "Meta-Llama-3.3-70B-Instruct"),
-    ("groq",       "llama-3.1-8b-instant"),
-    ("groq",       "gemma2-9b-it"),
-    ("groq",       "mixtral-8x7b-32768"),
+    ("groq",       "openai/gpt-oss-20b"),
+    ("groq",       "groq/compound-mini"),
+    ("groq",       "openai/gpt-oss-120b"),
     ("mistral",    "mistral-small-latest"),
     ("openrouter", "google/gemma-4-31b-it:free"),
     ("gemini",     "gemini-2.0-flash"),

@@ -15,8 +15,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Autres":      "bg-surface-3 text-fg-muted",
 };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
+function formatDate(epochSeconds: number): string {
+  return new Date(epochSeconds * 1000).toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "short",
     year: "numeric",

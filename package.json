@@ -1,0 +1,15 @@
+{
+  "name": "edun7_chatbot",
+  "version": "1.0.0",
+  "description": "EduN7 is a production-ready RAG (Retrieval-Augmented Generation) chatbot that lets you upload PDF documents and have multi-turn conversations with them using AI. Built with React, Python Flask, ChromaDB, and the Groq API.",
+  "main": "e2e_test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.62.1"
+  }
+}
