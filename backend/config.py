@@ -44,6 +44,8 @@ JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
 ADMIN_EMAILS: list[str] = [e.strip() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()]
 ALLOWED_EMAIL_DOMAINS: list[str] = [d.strip() for d in os.getenv("ALLOWED_EMAIL_DOMAINS", "").split(",") if d.strip()]
 
+REDIS_URL: str = os.getenv("REDIS_URL", "")
+
 ALLOWED_ORIGINS: list[str] = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")]
 RATE_LIMIT_CHAT: str = os.getenv("RATE_LIMIT_CHAT", "30 per hour")
 RATE_LIMIT_UPLOAD: str = os.getenv("RATE_LIMIT_UPLOAD", "20 per day")

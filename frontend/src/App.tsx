@@ -30,6 +30,7 @@ import { AdminRoles } from "./components/admin/AdminRoles";
 import { AdminAuditLog } from "./components/admin/AdminAuditLog";
 import { AdminAnnouncements } from "./components/admin/AdminAnnouncements";
 import { LibraryPage } from "./components/LibraryPage";
+import { AnnouncementBanner } from "./components/AnnouncementBanner";
 import { LandingPage } from "./pages/LandingPage";
 import { PrimitivePlayground } from "./pages/PrimitivePlayground";
 import {
@@ -47,7 +48,7 @@ interface ThemeState {
 }
 
 interface AuthState {
-  user: { name: string; role: string } | null;
+  user: { id: string; name: string; role: string } | null;
   isAuthenticated: boolean;
   loading: boolean;
   isRole: (...roles: ("student" | "professor" | "admin")[]) => boolean;
@@ -80,7 +81,7 @@ function ChatArea({
     sessionId,
     loading: sessionLoading,
     switchSession,
-  } = useSession(auth.isAuthenticated);
+  } = useSession(auth.user?.id ?? null);
   const {
     documents,
     selectedDocIds,
@@ -347,6 +348,14 @@ function ChatArea({
           onEditMessage={handleEditMessage}
           onExport={handleExportConversation}
           onClear={() => handleNewConversation(true)}
+          toolbar={
+            <ModelSelector
+              providers={providerState.providers}
+              selected={providerState.selected}
+              onSelect={providerState.select}
+              loading={providerState.loading}
+            />
+          }
         />
         <MessageInput
           onSend={handleSend}
@@ -651,6 +660,7 @@ export default function App() {
   return (
     <ToastProvider>
       <div className="flex flex-col h-[100dvh] bg-[#000000] paper-texture">
+        <AnnouncementBanner />
         {location.pathname.startsWith("/admin") && (
           <AppHeader
             auth={auth}

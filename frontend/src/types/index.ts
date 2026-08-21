@@ -13,7 +13,7 @@ export interface DocumentRecord {
   collection_name: string;
   page_count: number;
   chunk_count: number;
-  uploaded_at: string;
+  uploaded_at: number;
   scope?: "private" | "shared";
   category?: string;
   status?:
@@ -92,6 +92,7 @@ export interface AdminUser {
   role: "student" | "professor" | "admin";
   created_at: number;
   last_seen: number;
+  is_suspended: boolean;
   conversation_count: number;
   document_count: number;
 }

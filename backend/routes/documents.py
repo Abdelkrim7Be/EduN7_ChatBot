@@ -15,6 +15,13 @@ documents_bp = Blueprint("documents", __name__)
 ALLOWED_SCOPES = {"private", "shared"}
 PRIVILEGED_ROLES = {"professor", "admin"}
 
+PDF_MAGIC = b"%PDF-"
+
+
+def _max_upload_bytes() -> int:
+    from services.settings_service import get_int
+    return get_int("max_upload_size_mb", 50) * 1024 * 1024
+
 
 @documents_bp.route("/api/documents/upload", methods=["POST"])
 @require_auth
@@ -36,9 +43,23 @@ def upload():
     upload_dir = Path(config.UPLOAD_DIR)
     upload_dir.mkdir(parents=True, exist_ok=True)
 
+    max_bytes = _max_upload_bytes()
+
     for f in files:
         if not f.filename.lower().endswith(".pdf"):
             return jsonify({"error": f"Only PDF files accepted, got: {f.filename}"}), 422
+
+        # Reject oversized or non-PDF payloads before touching disk.
+        f.stream.seek(0, os.SEEK_END)
+        size = f.stream.tell()
+        f.stream.seek(0)
+        if size > max_bytes:
+            return jsonify({
+                "error": f"{f.filename} is {size // (1024 * 1024)} MB — the limit is {max_bytes // (1024 * 1024)} MB"
+            }), 413
+        if f.stream.read(5) != PDF_MAGIC:
+            return jsonify({"error": f"{f.filename} is not a valid PDF file"}), 422
+        f.stream.seek(0)
 
         safe_name = os.path.basename(f.filename)
         # Replace existing doc with same name for this user
@@ -49,7 +70,7 @@ def upload():
         except Exception:
             pass
 
-        save_path = upload_dir / safe_name
+        save_path = upload_dir / f"{g.user.id}_{safe_name}"
         f.save(str(save_path))
 
         try:

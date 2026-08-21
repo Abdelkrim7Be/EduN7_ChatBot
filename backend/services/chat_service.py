@@ -51,7 +51,7 @@ def _build_context(chunks: list[ChunkResult]) -> str:
 def _build_messages(session_id: str, user_query: str, context: str) -> list:
     session = session_service.get_or_create(session_id)
 
-    messages = [SystemMessage(content=config.RAG_SYSTEM_PROMPT)]
+    messages = [SystemMessage(content=config.get_system_prompt())]
 
     history_messages = []
     history_chars = 0
@@ -141,13 +141,17 @@ def stream_response(
     rewrite_provider = config.DEFAULT_PROVIDER if is_auto else provider
     rewrite_model = config.DEFAULT_MODEL if is_auto else model
     
-    search_query = _rewrite_query(session, message, rewrite_provider, rewrite_model, is_auto)
-    logger.warning("Original query: '%s', Rewritten for search: '%s'", message, search_query)
-
-    if "__NO_SEARCH__" in search_query:
+    if not doc_ids:
+        # No documents selected — retrieval is a no-op, so skip the extra
+        # query-rewrite LLM round-trip entirely (halves latency and cost).
         chunks = []
     else:
-        chunks = retrieval_service.retrieve(search_query, doc_ids)
+        search_query = _rewrite_query(session, message, rewrite_provider, rewrite_model, is_auto)
+        logger.info("Original query: '%s', rewritten for search: '%s'", message, search_query)
+        if "__NO_SEARCH__" in search_query:
+            chunks = []
+        else:
+            chunks = retrieval_service.retrieve(search_query, doc_ids)
 
     context = _build_context(chunks) if chunks else ""
     messages = _build_messages(session_id, message, context)
@@ -163,11 +167,23 @@ def stream_response(
 
         full_response = ""
         try:
-            for chunk in llm.stream(messages):
-                delta = chunk.content
-                if delta:
-                    full_response += delta
-                    yield f'data: {json.dumps({"type": "token", "content": delta})}\n\n'
+            try:
+                for chunk in llm.stream(messages):
+                    delta = chunk.content
+                    if delta:
+                        full_response += delta
+                        yield f'data: {json.dumps({"type": "token", "content": delta})}\n\n'
+            except GeneratorExit:
+                # Client disconnected (stop button / navigation). Keep whatever
+                # was generated so the conversation history is not lost.
+                if full_response:
+                    session_service.append_turn(
+                        session_id, message, full_response,
+                        citations=[c.to_dict() for c in chunks],
+                        provider=try_provider, model=try_model,
+                    )
+                    session_service.update_doc_ids(session_id, doc_ids)
+                raise
 
         except Exception as e:
             logger.warning("LLM error [%s/%s]: %s", try_provider, try_model, e)

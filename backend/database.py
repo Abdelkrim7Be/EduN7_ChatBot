@@ -137,11 +137,18 @@ def init_db() -> None:
             ("max_docs_per_session", "10", "Max Docs Per Session"),
             ("allow_registration", "true", "Allow Registration"),
             ("default_role", "student", "Default Role"),
-            ("system_prompt", "You are ENSET AI, a helpful educational assistant.", "System Prompt")
+            ("system_prompt", config.RAG_SYSTEM_PROMPT, "System Prompt")
         ]
         for k, v, l in default_settings:
             conn.execute("INSERT OR IGNORE INTO settings (key, value, label) VALUES (?, ?, ?)", (k, v, l))
 
+
+        # Migrate: replace the old placeholder system prompt with the real
+        # RAG prompt (the placeholder lost the citation instructions).
+        conn.execute(
+            "UPDATE settings SET value=? WHERE key='system_prompt' AND value=?",
+            (config.RAG_SYSTEM_PROMPT, "You are ENSET AI, a helpful educational assistant."),
+        )
 
         # Migrate: conversations — add user_id if missing
         cols = [r[1] for r in conn.execute("PRAGMA table_info(conversations)").fetchall()]

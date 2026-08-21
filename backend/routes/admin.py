@@ -8,15 +8,33 @@ from flask import g
 
 admin_bp = Blueprint("admin", __name__)
 
+DEFAULT_PAGE_SIZE = 100
+MAX_PAGE_SIZE = 500
+
+
+def _page_args() -> tuple[int, int]:
+    """Read limit/offset query params, clamped to sane bounds."""
+    try:
+        limit = int(request.args.get("limit", DEFAULT_PAGE_SIZE))
+    except (TypeError, ValueError):
+        limit = DEFAULT_PAGE_SIZE
+    try:
+        offset = int(request.args.get("offset", 0))
+    except (TypeError, ValueError):
+        offset = 0
+    return max(1, min(limit, MAX_PAGE_SIZE)), max(0, offset)
+
 
 @admin_bp.get("/api/admin/users")
 @require_auth
 @require_role("admin")
 def list_users():
+    limit, offset = _page_args()
     with database.get_db() as conn:
+        total = conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
         rows = conn.execute("""
             SELECT
-                u.id, u.email, u.name, u.role, u.created_at, u.last_seen,
+                u.id, u.email, u.name, u.role, u.created_at, u.last_seen, u.is_suspended,
                 COUNT(DISTINCT c.session_id) AS conversation_count,
                 COUNT(DISTINCT d.doc_id)     AS document_count
             FROM users u
@@ -24,8 +42,10 @@ def list_users():
             LEFT JOIN documents     d ON d.user_id = u.id
             GROUP BY u.id
             ORDER BY u.last_seen DESC
-        """).fetchall()
+            LIMIT ? OFFSET ?
+        """, (limit, offset)).fetchall()
     return jsonify({
+        "total": total,
         "users": [
             {
                 "id":                 r["id"],
@@ -34,6 +54,7 @@ def list_users():
                 "role":               r["role"],
                 "created_at":         r["created_at"],
                 "last_seen":          r["last_seen"],
+                "is_suspended":       bool(r["is_suspended"]),
                 "conversation_count": r["conversation_count"],
                 "document_count":     r["document_count"],
             }
@@ -52,6 +73,8 @@ def update_role(user_id: str):
         valid_roles = {r["name"] for r in conn.execute("SELECT name FROM roles").fetchall()}
     if role not in valid_roles:
         return jsonify({"error": f"role must be one of {sorted(valid_roles)}"}), 400
+    if user_id == g.user.id and role != "admin":
+        return jsonify({"error": "You cannot remove your own admin role"}), 400
     with database.get_db() as conn:
         conn.execute("UPDATE users SET role=? WHERE id=?", (role, user_id))
     audit_service.log_action("user.role_changed", "user", user_id, f"Changed to {role}")
@@ -62,6 +85,8 @@ def update_role(user_id: str):
 @require_auth
 @require_role("admin")
 def delete_user(user_id: str):
+    if user_id == g.user.id:
+        return jsonify({"error": "You cannot delete your own account"}), 400
     with database.get_db() as conn:
         doc_ids = [r["doc_id"] for r in conn.execute("SELECT doc_id FROM documents WHERE user_id=?", (user_id,)).fetchall()]
         
@@ -101,22 +126,29 @@ def stats():
 @require_role("admin", "professor")
 def list_shared_documents():
     scope = request.args.get("scope", "all").lower()
+    limit, offset = _page_args()
     with database.get_db() as conn:
         where_clause = ""
-        params = []
+        params: list = []
         if scope == "shared":
             where_clause = "WHERE d.scope = 'shared'"
         elif scope == "private":
             where_clause = "WHERE d.scope = 'private'"
-            
+
+        total = conn.execute(
+            f"SELECT COUNT(*) AS c FROM documents d {where_clause}"
+        ).fetchone()["c"]
+
         rows = conn.execute(f"""
             SELECT d.*, u.name AS uploader_name, u.email AS uploader_email
             FROM documents d
-            JOIN users u ON u.id = d.user_id
+            LEFT JOIN users u ON u.id = d.user_id
             {where_clause}
             ORDER BY d.uploaded_at DESC
-        """, params).fetchall()
+            LIMIT ? OFFSET ?
+        """, params + [limit, offset]).fetchall()
     return jsonify({
+        "total": total,
         "documents": [
             {
                 "doc_id":           r["doc_id"],
@@ -127,8 +159,8 @@ def list_shared_documents():
                 "chunk_count":      r["chunk_count"],
                 "scope":            r["scope"],
                 "uploaded_at":      r["uploaded_at"],
-                "uploader_name":    r["uploader_name"],
-                "uploader_email":   r["uploader_email"],
+                "uploader_name":    r["uploader_name"] or "Compte supprimé",
+                "uploader_email":   r["uploader_email"] or "—",
             }
             for r in rows
         ]
@@ -151,6 +183,8 @@ def delete_document(doc_id: str):
 @require_role("admin")
 def list_conversations():
     search = request.args.get("search", "").strip()
+    limit, offset = _page_args()
+    count_query = "SELECT COUNT(*) AS c FROM conversations c LEFT JOIN users u ON u.id = c.user_id"
     query = """
         SELECT c.session_id, c.title, c.created_at, c.last_active, 
                u.name as user_name, u.email as user_email,
@@ -161,15 +195,19 @@ def list_conversations():
     """
     params = []
     if search:
-        query += " WHERE u.name LIKE ? OR u.email LIKE ? OR c.title LIKE ?"
+        where = " WHERE u.name LIKE ? OR u.email LIKE ? OR c.title LIKE ?"
+        query += where
+        count_query += where
         params = [f"%{search}%", f"%{search}%", f"%{search}%"]
-        
-    query += " ORDER BY c.last_active DESC"
-    
+
+    query += " ORDER BY c.last_active DESC LIMIT ? OFFSET ?"
+
     with database.get_db() as conn:
-        rows = conn.execute(query, params).fetchall()
-        
+        total = conn.execute(count_query, params).fetchone()["c"]
+        rows = conn.execute(query, params + [limit, offset]).fetchall()
+
     return jsonify({
+        "total": total,
         "conversations": [
             {
                 "session_id": r["session_id"],
@@ -257,7 +295,7 @@ def update_setting(key: str):
             
         conn.execute(
             "UPDATE settings SET value=?, updated_at=?, updated_by=? WHERE key=?", 
-            (value, time.time(), request.user.get("email", "") if hasattr(request, 'user') else "", key)
+            (value, time.time(), g.user.email, key)
         )
     from services.settings_service import invalidate_cache
     invalidate_cache()
@@ -303,6 +341,7 @@ def create_role():
             "INSERT INTO roles (name, description, is_builtin, created_at) VALUES (?, ?, 0, ?)",
             (name, description, time.time())
         )
+    audit_service.log_action("role.created", "role", name, description)
     return jsonify({"created": True, "name": name}), 201
 
 
@@ -324,6 +363,7 @@ def delete_role(role_name: str):
             return jsonify({"error": f"cannot delete role: {users_count} users are currently assigned to it"}), 400
             
         conn.execute("DELETE FROM roles WHERE name=?", (role_name,))
+    audit_service.log_action("role.deleted", "role", role_name)
     return jsonify({"deleted": True}), 200
 
 
@@ -346,6 +386,8 @@ def get_audit_log():
 def suspend_user(user_id: str):
     data = request.get_json(silent=True) or {}
     suspended = bool(data.get("suspended", True))
+    if user_id == g.user.id and suspended:
+        return jsonify({"error": "You cannot suspend your own account"}), 400
     with database.get_db() as conn:
         conn.execute("UPDATE users SET is_suspended=? WHERE id=?", (int(suspended), user_id))
     action = "user.suspended" if suspended else "user.unsuspended"
@@ -515,6 +557,7 @@ def delete_announcement(ann_id: int):
 def toggle_announcement(ann_id: int):
     with database.get_db() as conn:
         conn.execute("UPDATE announcements SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END WHERE id=?", (ann_id,))
+    audit_service.log_action("announcement.toggled", "announcement", str(ann_id))
     return jsonify({"toggled": True}), 200
 
 

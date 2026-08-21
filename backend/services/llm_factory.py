@@ -52,8 +52,8 @@ PROVIDER_CATALOG = {
         "models": [
             {"id": "google/gemma-4-31b-it:free",                 "name": "Gemma 4 31B",       "description": "Free · Google · Fast"},
             {"id": "nvidia/nemotron-3-super-120b-a12b:free",     "name": "Nemotron 120B",     "description": "Free · NVIDIA · Large"},
-            {"id": "minimax/minimax-m2.5:free",                  "name": "MiniMax M2.5",      "description": "Free · Capable"},
-            {"id": "deepseek/deepseek-v4-flash:free",            "name": "DeepSeek V4 Flash", "description": "Free · Strong reasoning"},
+            {"id": "openai/gpt-oss-20b:free",                    "name": "GPT-OSS 20B",       "description": "Free · Fast"},
+            {"id": "z-ai/glm-5.2:free",                          "name": "GLM 5.2",           "description": "Free · Capable"},
         ],
     },
     "together": {
@@ -72,10 +72,10 @@ PROVIDER_CATALOG = {
         "description": "Ultra-fast · Free · Llama 4 · DeepSeek R1",
         "badge": "Fastest",
         "models": [
-            {"id": "Meta-Llama-4-Maverick-17B-128E-Instruct",    "name": "Llama 4 Maverick", "description": "Newest · Fast · Free"},
-            {"id": "Meta-Llama-3.1-405B-Instruct",               "name": "Llama 3.1 405B",   "description": "Largest open model · Free"},
             {"id": "Meta-Llama-3.3-70B-Instruct",                "name": "Llama 3.3 70B",    "description": "High quality · Free"},
-            {"id": "DeepSeek-R1",                                 "name": "DeepSeek R1",      "description": "Best reasoning · Free"},
+            {"id": "DeepSeek-V3.2",                              "name": "DeepSeek V3.2",    "description": "Strong reasoning"},
+            {"id": "gpt-oss-120b",                               "name": "GPT-OSS 120B",     "description": "Large · Capable"},
+            {"id": "MiniMax-M3",                                 "name": "MiniMax M3",       "description": "Newest · Capable"},
         ],
     },
 }

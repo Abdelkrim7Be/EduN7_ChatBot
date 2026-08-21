@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { UploadCloud, Sparkles, BookOpen, FileText, List, Download, Trash2 } from "lucide-react";
 import type { Message, DocumentRecord } from "../types";
 import { MessageBubble } from "./MessageBubble";
@@ -15,6 +15,8 @@ interface Props {
   onEditMessage?: (id: string, text: string) => void;
   onExport?: () => void;
   onClear?: () => void;
+  /** Rendered in the workspace toolbar — used for the model selector. */
+  toolbar?: ReactNode;
 }
 
 const aiTools = [
@@ -87,7 +89,7 @@ function DashboardState({
               Drag & drop resources
             </div>
             <div className="text-[10px] text-gray-500 uppercase tracking-widest">
-              PDF, TXT, DOCX
+              PDF uniquement · 50 Mo max
             </div>
           </div>
 
@@ -127,6 +129,7 @@ export function ChatWindow({
   onEditMessage,
   onExport,
   onClear,
+  toolbar,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -157,6 +160,7 @@ export function ChatWindow({
           Chat Workspace
         </div>
         <div className="flex items-center gap-4 text-xs font-mono">
+          {toolbar}
           <button onClick={onExport} className="text-gray-500 hover:text-white flex items-center gap-1 transition-colors">
             <Download className="w-3 h-3" /> EXPORT
           </button>

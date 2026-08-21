@@ -58,7 +58,13 @@ def register_user(email: str, name: str, password: str) -> UserRecord:
 
         user_id = str(uuid.uuid4())
         now = time.time()
-        role = "admin" if email in config.ADMIN_EMAILS else "student"
+        if email in config.ADMIN_EMAILS:
+            role = "admin"
+        else:
+            from services.settings_service import get_setting
+            role = get_setting("default_role", "student")
+            if role not in {r["name"] for r in conn.execute("SELECT name FROM roles").fetchall()}:
+                role = "student"
         pw_hash = hash_password(password)
 
         conn.execute(
@@ -117,6 +123,8 @@ def revoke_token(token: str) -> None:
             "INSERT OR IGNORE INTO revoked_tokens (token_hash, revoked_at, expires_at) VALUES (?, ?, ?)",
             (_token_hash(token), time.time(), expires_at),
         )
+        # A token past its own expiry is rejected by decode_jwt anyway.
+        conn.execute("DELETE FROM revoked_tokens WHERE expires_at > 0 AND expires_at < ?", (time.time(),))
 
 
 def decode_jwt(token: str) -> dict:

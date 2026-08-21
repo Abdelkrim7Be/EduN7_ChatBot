@@ -4,7 +4,7 @@ import type { AdminUser } from "../../types";
 import { fetchAdminUsers, updateUserRole, suspendUser, deleteAdminUser } from "../../api/client";
 import { useToast } from "../ToastProvider";
 
-type ExtendedAdminUser = AdminUser & { is_suspended?: boolean };
+type ExtendedAdminUser = AdminUser;
 
 const ROLE_STYLES: Record<string, string> = {
   admin:     "bg-danger/10 text-danger border-danger/30",

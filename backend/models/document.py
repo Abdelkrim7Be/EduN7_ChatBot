@@ -1,5 +1,5 @@
+import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
 
 
 @dataclass
@@ -10,7 +10,7 @@ class DocumentRecord:
     collection_name: str
     page_count: int
     chunk_count: int
-    uploaded_at: str
+    uploaded_at: float
     scope: str = "private"
     category: str = "Autres"
 
@@ -44,7 +44,7 @@ class DocumentRecord:
             collection_name=f"doc_{doc_id}",
             page_count=page_count,
             chunk_count=chunk_count,
-            uploaded_at=datetime.now(timezone.utc).isoformat(),
+            uploaded_at=time.time(),
             scope=scope,
             category=category,
         )

@@ -1,5 +1,15 @@
 services:
 
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   chromadb:
     image: chromadb/chroma:latest
     ports:
@@ -31,10 +41,13 @@ services:
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
       UPLOAD_DIR: /app/uploads
+      REDIS_URL: redis://redis:6379/0
       HF_HUB_OFFLINE: "1"
       TRANSFORMERS_OFFLINE: "1"
     depends_on:
       chromadb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]

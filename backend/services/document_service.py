@@ -108,9 +108,15 @@ def delete(doc_id: str, user_id: str, role: str = "student") -> bool:
         ).fetchone()
         if row is None:
             return False
-        # Only owner, or professor/admin for shared docs, can delete
-        if row["user_id"] != user_id and role not in ("professor", "admin"):
-            return False
+        # Owner can always delete. Professors/admins may moderate shared
+        # documents only — never another user's private document.
+        if row["user_id"] != user_id:
+            if role == "admin" and user_id == "":
+                pass  # explicit admin-console moderation
+            elif role in ("professor", "admin") and row["scope"] == "shared":
+                pass
+            else:
+                return False
 
         conn.execute("DELETE FROM documents WHERE doc_id=?", (doc_id,))
 
@@ -153,7 +159,7 @@ def list_accessible(user_id: str) -> list[DocumentRecord]:
                 collection_name=r["collection_name"],
                 page_count=r["page_count"],
                 chunk_count=r["chunk_count"],
-                uploaded_at=str(r["uploaded_at"]),
+                uploaded_at=float(r["uploaded_at"] or 0),
                 scope=r["scope"],
                 category=r["category"] or "Autres",
             )
@@ -184,7 +190,7 @@ def get(doc_id: str, user_id: str | None = None) -> DocumentRecord | None:
         collection_name=row["collection_name"],
         page_count=row["page_count"],
         chunk_count=row["chunk_count"],
-        uploaded_at=str(row["uploaded_at"]),
+        uploaded_at=float(row["uploaded_at"] or 0),
         scope=row["scope"],
         category=row["category"] or "Autres",
     )
@@ -206,7 +212,7 @@ def get_by_name(filename: str, user_id: str) -> DocumentRecord | None:
         collection_name=row["collection_name"],
         page_count=row["page_count"],
         chunk_count=row["chunk_count"],
-        uploaded_at=str(row["uploaded_at"]),
+        uploaded_at=float(row["uploaded_at"] or 0),
         scope=row["scope"],
         category=row["category"] or "Autres",
     )

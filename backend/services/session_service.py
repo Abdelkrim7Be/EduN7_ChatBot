@@ -1,7 +1,6 @@
 import json
 import time
 import uuid
-from functools import lru_cache
 
 import config
 import database
@@ -18,7 +17,6 @@ def _ensure_conversation(session_id: str, user_id: str | None = None) -> None:
         )
 
 
-@lru_cache(maxsize=128)
 def _load_from_db(session_id: str) -> SessionRecord | None:
     with database.get_db() as conn:
         row = conn.execute("SELECT * FROM conversations WHERE session_id=?", (session_id,)).fetchone()
@@ -40,7 +38,6 @@ def get_or_create(session_id: str, user_id: str | None = None) -> SessionRecord:
     session = _load_from_db(session_id)
     if not session:
         _ensure_conversation(session_id, user_id)
-        _load_from_db.cache_clear()
         session = _load_from_db(session_id)
 
     if user_id is not None:
@@ -87,7 +84,6 @@ def append_turn(
             "UPDATE conversations SET title=? WHERE session_id=? AND title='New conversation'",
             (auto_title, session_id),
         )
-    _load_from_db.cache_clear()
 
 
 def update_doc_ids(session_id: str, new_doc_ids: list[str]) -> None:
@@ -105,17 +101,33 @@ def update_doc_ids(session_id: str, new_doc_ids: list[str]) -> None:
             "UPDATE conversations SET doc_ids=? WHERE session_id=?",
             (json.dumps(list(existing)), session_id),
         )
-    _load_from_db.cache_clear()
 
 
 def delete(session_id: str) -> bool:
     with database.get_db() as conn:
         conn.execute("DELETE FROM conversations WHERE session_id=?", (session_id,))
-    _load_from_db.cache_clear()
     return True
 
 
 def create_new(user_id: str | None = None) -> str:
+    """Return a fresh conversation for the user.
+
+    If the user already has an empty conversation, reuse it instead of
+    inserting another one — otherwise every page load leaves a ghost
+    "New conversation" behind in the sidebar.
+    """
+    if user_id:
+        with database.get_db() as conn:
+            row = conn.execute(
+                "SELECT c.session_id FROM conversations c "
+                "LEFT JOIN messages m ON m.session_id = c.session_id "
+                "WHERE c.user_id = ? GROUP BY c.session_id HAVING COUNT(m.id) = 0 "
+                "ORDER BY c.last_active DESC LIMIT 1",
+                (user_id,),
+            ).fetchone()
+        if row:
+            return row["session_id"]
+
     session_id = str(uuid.uuid4())
     now = time.time()
     with database.get_db() as conn:
@@ -124,5 +136,4 @@ def create_new(user_id: str | None = None) -> str:
             "VALUES (?, 'New conversation', '[]', ?, ?, ?)",
             (session_id, now, now, user_id),
         )
-    _load_from_db.cache_clear()
     return session_id
