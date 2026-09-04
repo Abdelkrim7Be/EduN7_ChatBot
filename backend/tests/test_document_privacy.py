@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 
 class FakePage:
@@ -24,7 +25,8 @@ def test_document_ingestion_log_excludes_private_identifiers(tmp_path, caplog, m
     import database
 
     secret_name = "SECRET_PRIVATE_COURS.pdf"
-    user_id = "private-user-123"
+    unique = uuid.uuid4().hex
+    user_id = f"private-user-{unique}"
     upload_path = tmp_path / secret_name
     upload_path.write_bytes(b"%PDF-1.4\n%%EOF\n")
 
@@ -39,7 +41,7 @@ def test_document_ingestion_log_excludes_private_identifiers(tmp_path, caplog, m
         conn.execute(
             "INSERT INTO users (id, email, name, password_hash, role, created_at, last_seen) "
             "VALUES (?, ?, ?, ?, ?, 0, 0)",
-            (user_id, "private-user@example.com", "Private User", "hash", "student"),
+            (user_id, f"private-user-{unique}@example.com", "Private User", "hash", "student"),
         )
 
     with caplog.at_level(logging.INFO, logger="services.document_service"):
