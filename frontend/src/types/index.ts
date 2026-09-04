@@ -157,6 +157,14 @@ export interface ExtendedStats {
   top_users: { name: string; email: string; message_count: number }[];
   daily_messages: { day_offset: number; count: number }[];
   provider_usage: { actual_provider: string; actual_model: string; count: number }[];
+  public_assistant: {
+    total_requests: number;
+    requests_today: number;
+    successful_requests: number;
+    failed_requests: number;
+    avg_latency_ms: number | null;
+    outcomes: { outcome: string; count: number }[];
+  };
   recent_activity: {
     action: string;
     user_email: string;

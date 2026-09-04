@@ -661,6 +661,23 @@ def extended_stats():
             ORDER BY a.created_at DESC
             LIMIT 10
         """).fetchall()
+
+        public_assistant = conn.execute("""
+            SELECT
+                COUNT(*) AS total_requests,
+                SUM(CASE WHEN created_at > ? THEN 1 ELSE 0 END) AS requests_today,
+                SUM(CASE WHEN outcome = 'success' THEN 1 ELSE 0 END) AS successful_requests,
+                SUM(CASE WHEN outcome != 'success' THEN 1 ELSE 0 END) AS failed_requests,
+                AVG(latency_ms) AS avg_latency_ms
+            FROM public_assistant_events
+        """, (day_ago,)).fetchone()
+
+        public_assistant_outcomes = conn.execute("""
+            SELECT outcome, COUNT(*) AS count
+            FROM public_assistant_events
+            GROUP BY outcome
+            ORDER BY count DESC
+        """).fetchall()
         
     return jsonify({
         "totals": dict(base),
@@ -676,6 +693,10 @@ def extended_stats():
         "top_users": [dict(r) for r in top_users],
         "daily_messages": [dict(r) for r in daily_msgs],
         "provider_usage": [dict(r) for r in provider_usage],
+        "public_assistant": {
+            **dict(public_assistant),
+            "outcomes": [dict(r) for r in public_assistant_outcomes],
+        },
         "recent_activity": [dict(r) for r in recent],
     }), 200
 

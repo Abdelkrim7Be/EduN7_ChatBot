@@ -5,6 +5,7 @@ import {
   BarChart3,
   Clock,
   FileText,
+  MessageCircle,
   MessageSquare,
   Server,
   TrendingUp,
@@ -176,6 +177,7 @@ export function AdminDashboard() {
           <StatCard label="Documents" value={t.total_documents} icon={<FileText className="h-5 w-5" />} />
           <StatCard label="Actifs aujourd'hui" value={a.active_users_today} icon={<UserCheck className="h-5 w-5" />} />
           <StatCard label="Suspendus" value={t.suspended_users} icon={<Ban className="h-5 w-5" />} tone="danger" />
+          <StatCard label="Assistant public" value={stats.public_assistant.requests_today ?? 0} icon={<MessageCircle className="h-5 w-5" />} />
         </div>
 
         <div className="grid min-h-0 grid-cols-[minmax(320px,0.9fr)_minmax(420px,1.1fr)] gap-3 max-lg:grid-cols-1 max-md:min-h-[720px]">
@@ -305,6 +307,47 @@ export function AdminDashboard() {
                   </div>
                 ))
               )}
+            </div>
+          </section>
+
+          <section className="min-h-0 border border-hairline bg-surface-1 p-4">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-fg">
+              <MessageCircle className="h-3.5 w-3.5 text-fg-muted" />
+              Assistant public
+            </h2>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-fg-secondary">Total</span>
+                <span className="text-xs font-semibold text-fg tabular-nums">
+                  {(stats.public_assistant.total_requests ?? 0).toLocaleString("fr-FR")}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-fg-secondary">Échecs</span>
+                <span className="text-xs font-semibold text-fg tabular-nums">
+                  {(stats.public_assistant.failed_requests ?? 0).toLocaleString("fr-FR")}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-fg-secondary">Latence moy.</span>
+                <span className="text-xs font-semibold text-fg tabular-nums">
+                  {stats.public_assistant.avg_latency_ms
+                    ? `${Math.round(stats.public_assistant.avg_latency_ms)} ms`
+                    : "—"}
+                </span>
+              </div>
+              <div className="pt-1">
+                {stats.public_assistant.outcomes.length === 0 ? (
+                  <p className="text-xs text-fg-muted">Pas encore de données</p>
+                ) : (
+                  stats.public_assistant.outcomes.slice(0, 3).map((row) => (
+                    <div key={row.outcome} className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase tracking-widest text-fg-muted">{row.outcome}</span>
+                      <span className="text-[10px] font-semibold text-fg-secondary tabular-nums">{row.count}</span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </section>
         </div>
