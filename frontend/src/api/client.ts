@@ -546,7 +546,8 @@ export async function* streamPublicAssistant(
   });
 
   if (!res.ok || !res.body) {
-    throw new Error(`Assistant request failed: ${res.status}`);
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error ?? `Assistant request failed: ${res.status}`);
   }
 
   const reader = res.body.getReader();

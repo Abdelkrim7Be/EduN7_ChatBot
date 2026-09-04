@@ -105,11 +105,15 @@ export function LandingAssistant() {
           );
         }
       }
-    } catch {
+    } catch (error) {
+      full =
+        error instanceof Error && error.message
+          ? error.message
+          : "L'assistant est momentanément indisponible.";
       setMessages((prev) =>
         prev.map((message) =>
           message.id === assistantId
-            ? { ...message, content: "L'assistant est momentanément indisponible." }
+            ? { ...message, content: full }
             : message,
         ),
       );

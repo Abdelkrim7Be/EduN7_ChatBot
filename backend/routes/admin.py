@@ -18,6 +18,14 @@ admin_bp = Blueprint("admin", __name__)
 
 DEFAULT_PAGE_SIZE = 100
 MAX_PAGE_SIZE = 500
+AUDIT_REDACTED_SETTINGS = {
+    "system_prompt",
+    "public_assistant_context",
+    "public_assistant_instructions",
+    "public_assistant_greeting",
+    "public_assistant_fallback_message",
+    "public_assistant_suggested_questions",
+}
 
 
 def _page_args() -> tuple[int, int]:
@@ -31,6 +39,12 @@ def _page_args() -> tuple[int, int]:
     except (TypeError, ValueError):
         offset = 0
     return max(1, min(limit, MAX_PAGE_SIZE)), max(0, offset)
+
+
+def _setting_audit_details(key: str, value: str) -> str:
+    if key in AUDIT_REDACTED_SETTINGS:
+        return f"New value: [redacted, {len(value)} chars]"
+    return f"New value: {value}"
 
 
 @admin_bp.get("/api/admin/users")
@@ -443,7 +457,7 @@ def update_setting(key: str):
         )
     from services.settings_service import invalidate_cache
     invalidate_cache()
-    audit_service.log_action("setting.changed", "setting", key, f"New value: {value}")
+    audit_service.log_action("setting.changed", "setting", key, _setting_audit_details(key, str(value)))
     return jsonify({"updated": True}), 200
 
 
