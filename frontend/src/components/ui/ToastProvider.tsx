@@ -96,9 +96,15 @@ const ICONS: Record<ToastType, ReactNode> = {
 };
 
 const ACCENT: Record<ToastType, string> = {
-  success: "text-green-400",
-  error: "text-red-400",
-  info: "text-brand-blue-light",
+  success: "text-emerald-300",
+  error: "text-red-300",
+  info: "text-white",
+};
+
+const RAIL: Record<ToastType, string> = {
+  success: "bg-emerald-300",
+  error: "bg-red-300",
+  info: "bg-white",
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -151,7 +157,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ toast, undo, dismiss }}>
       {children}
       <div
-        className="fixed bottom-5 right-5 flex flex-col gap-2 z-[60] pointer-events-none w-full max-w-sm"
+        className="fixed right-4 top-4 z-[60] flex w-[calc(100vw-2rem)] max-w-sm flex-col gap-2 pointer-events-none sm:right-5 sm:top-5"
         role="region"
         aria-label="Notifications"
       >
@@ -171,17 +177,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               }}
               role={t.type === "error" ? "alert" : "status"}
               aria-live={t.type === "error" ? "assertive" : "polite"}
-              className="flex items-center gap-3 pl-3 pr-2 py-2.5 rounded-xl border bg-brand-navy border-brand-navy-border shadow-elevated text-sm font-medium pointer-events-auto"
+              className="relative flex items-center gap-3 overflow-hidden border border-white/15 bg-black/90 px-3 py-3 text-sm font-medium text-white shadow-2xl backdrop-blur pointer-events-auto"
             >
-              <span className={ACCENT[t.type]}>{ICONS[t.type]}</span>
-              <span className="flex-1 text-white/90">{t.message}</span>
+              <span className={`absolute inset-y-0 left-0 w-1 ${RAIL[t.type]}`} />
+              <span className={`${ACCENT[t.type]} ml-1`}>{ICONS[t.type]}</span>
+              <span className="flex-1 break-words text-[13px] leading-relaxed text-white/90">
+                {t.message}
+              </span>
               {t.action && (
                 <button
                   onClick={() => {
                     t.action!.onClick();
                     dismiss(t.id);
                   }}
-                  className="text-xs font-semibold text-brand-gold hover:text-brand-gold-dark px-2 py-1 rounded transition-colors"
+                  className="border border-white/15 px-2 py-1 text-[11px] font-bold uppercase tracking-widest text-white/70 transition-colors hover:border-white/40 hover:text-white"
                 >
                   {t.action.label}
                 </button>
@@ -189,7 +198,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <button
                 onClick={() => dismiss(t.id)}
                 aria-label="Fermer la notification"
-                className="p-1 rounded text-white/40 hover:text-white/80 transition-colors"
+                className="p-1 text-white/35 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <svg
                   className="w-3.5 h-3.5"
