@@ -19,6 +19,7 @@ backend/uploads/*
 node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/test-results/
 
 # Local DB files
 backend/*.db
