@@ -167,7 +167,7 @@ def test_public_assistant_stream_disabled(client):
     response = client.post("/api/public-assistant/stream", json={"message": "Hello"}, buffered=True)
 
     assert response.status_code == 200
-    assert b"Assistant unavailable" in response.data
+    assert "indisponible" in response.data.decode()
 
 
 def test_public_assistant_stream_ignores_attacker_controlled_fields(client, monkeypatch):
@@ -263,7 +263,7 @@ def test_public_assistant_provider_errors_do_not_leak_details(client, monkeypatc
     response = client.post("/api/public-assistant/stream", json={"message": "Hello"}, buffered=True)
 
     assert response.status_code == 200
-    assert b"Assistant unavailable" in response.data
+    assert "indisponible" in response.data.decode()
     assert b"secret provider failure" not in response.data
     with database.get_db() as conn:
         row = conn.execute("SELECT outcome FROM public_assistant_events ORDER BY id DESC LIMIT 1").fetchone()
@@ -290,7 +290,7 @@ def test_public_assistant_mid_stream_provider_error_is_generic(client, monkeypat
 
     assert response.status_code == 200
     assert b"partial" in response.data
-    assert b"Assistant unavailable" in response.data
+    assert "indisponible" in response.data.decode()
     assert b"mid-stream secret failure" not in response.data
     with database.get_db() as conn:
         row = conn.execute("SELECT outcome FROM public_assistant_events ORDER BY id DESC LIMIT 1").fetchone()
@@ -397,7 +397,8 @@ def test_public_assistant_malformed_json_is_safe(client):
     )
 
     assert response.status_code == 200
-    assert b"Message is required" in response.data or b"Assistant unavailable" in response.data
+    body = response.data.decode()
+    assert "Veuillez saisir une question" in body or "indisponible" in body
 
 
 def test_admin_setting_audit_redacts_assistant_context(client):

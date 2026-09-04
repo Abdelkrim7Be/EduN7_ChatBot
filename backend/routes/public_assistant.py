@@ -18,7 +18,7 @@ def stream():
     data = request.get_json(silent=True) or {}
     message = str(data.get("message") or "").strip()
     if len(message) > public_assistant_service.MAX_MESSAGE_CHARS:
-        return jsonify({"error": "message is too long"}), 400
+        return jsonify({"error": "Le message est trop long."}), 400
     history = public_assistant_service.sanitize_history(data.get("history"))
 
     def generate():

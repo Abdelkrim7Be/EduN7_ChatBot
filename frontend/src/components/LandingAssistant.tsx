@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Loader2, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Bot, Loader2, Send, Sparkles, X } from "lucide-react";
 import {
   fetchPublicAssistantConfig,
   streamPublicAssistant,
@@ -137,36 +137,27 @@ export function LandingAssistant() {
 
   return (
     <>
-      <motion.button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="absolute bottom-10 right-6 z-20 hidden max-w-[260px] items-center gap-3 border border-white/20 bg-black/80 px-4 py-3 text-left shadow-2xl backdrop-blur md:flex"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ y: -2, borderColor: "rgba(255,255,255,0.55)" }}
-      >
-        <span className="relative flex h-11 w-11 shrink-0 items-center justify-center border border-white/30 bg-white text-black">
-          <Bot className="h-5 w-5" />
-          <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.9)]" />
-        </span>
-        <span className="min-w-0">
-          <span className="block text-[10px] font-bold uppercase tracking-[0.24em] text-white/50">
-            Assistant public
-          </span>
-          <span className="mt-1 block text-xs leading-relaxed text-white">
-            Questions rapides sur ENSET AI
-          </span>
-        </span>
-      </motion.button>
-
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center border border-white/30 bg-white text-black shadow-2xl md:hidden"
-        title="Assistant public"
-      >
-        <MessageCircle className="h-5 w-5" />
-      </button>
+      <AnimatePresence>
+        {!open && (
+          <motion.button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Assistant public"
+            title="Assistant public"
+            className="fixed bottom-5 right-5 z-40 flex h-16 w-16 items-center justify-center rounded-full border border-white/25 bg-black/85 text-white shadow-2xl backdrop-blur transition-colors hover:border-white/60 hover:bg-white hover:text-black focus:outline-none focus:ring-2 focus:ring-white/70 md:bottom-7 md:right-7 md:h-[72px] md:w-[72px]"
+            initial={{ opacity: 0, y: 14, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            whileHover={{ y: -3, scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+          >
+            <span className="absolute inset-1 rounded-full border border-white/10" />
+            <span className="absolute -right-0.5 top-2 h-3.5 w-3.5 rounded-full border-2 border-black bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.9)]" />
+            <span className="absolute -right-0.5 top-2 h-3.5 w-3.5 animate-ping rounded-full bg-emerald-300/60" />
+            <Bot className="relative h-7 w-7 md:h-8 md:w-8" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {open && (
