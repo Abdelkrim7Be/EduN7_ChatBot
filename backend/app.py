@@ -52,6 +52,18 @@ def create_app() -> Flask:
     def internal_error(e):
         return jsonify({"error": "Internal server error"}), 500
 
+    @app.errorhandler(429)
+    def rate_limited(e):
+        from flask import request
+        if request.path.startswith("/api/public-assistant/"):
+            from services.public_assistant_service import record_event
+            record_event(
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get("User-Agent"),
+                outcome="rate_limited",
+            )
+        return jsonify({"error": "Too many requests. Please try again later."}), 429
+
     return app
 
 

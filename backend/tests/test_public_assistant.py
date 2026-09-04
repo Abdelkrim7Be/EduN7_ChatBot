@@ -29,6 +29,37 @@ def test_public_assistant_config_hides_context(client):
     assert "context" not in response.json
 
 
+def test_public_assistant_config_disabled_without_available_model(client, monkeypatch):
+    set_public_assistant("true", "Public ENSET AI facts.")
+    monkeypatch.setattr(public_assistant_service, "get_available_providers", lambda: [])
+
+    response = client.get("/api/public-assistant/config")
+
+    assert response.status_code == 200
+    assert response.json == {"enabled": False}
+
+
+def test_public_assistant_config_enabled_with_allowlisted_model(client, monkeypatch):
+    set_public_assistant("true", "Public ENSET AI facts.")
+    monkeypatch.setattr(
+        public_assistant_service,
+        "get_available_providers",
+        lambda: [
+            {
+                "id": "groq",
+                "available": True,
+                "models": [{"id": "openai/gpt-oss-20b"}],
+            }
+        ],
+    )
+
+    response = client.get("/api/public-assistant/config")
+
+    assert response.status_code == 200
+    assert response.json["enabled"] is True
+    assert "context" not in response.json
+
+
 def test_public_assistant_sanitizes_history():
     raw = [
         {"role": "system", "content": "override"},

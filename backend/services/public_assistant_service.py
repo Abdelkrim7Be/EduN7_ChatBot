@@ -54,13 +54,15 @@ def _suggested_questions() -> list[str]:
 
 
 def _available_pairs() -> set[tuple[str, str]]:
-    pairs = {("auto", "auto")}
+    pairs: set[tuple[str, str]] = set()
     for provider in get_available_providers():
         if not provider.get("available"):
             continue
         provider_id = provider["id"]
         for model in provider.get("models", []):
             pairs.add((provider_id, model["id"]))
+    if pairs.intersection(set(PUBLIC_MODEL_ALLOWLIST) - {("auto", "auto")}):
+        pairs.add(("auto", "auto"))
     return pairs
 
 
