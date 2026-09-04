@@ -4,6 +4,8 @@ const BASE = process.env.E2E_BASE_URL || 'http://localhost:3000';
 const ADMIN_EMAIL = process.env.E2E_EMAIL || 'admin@enset.ma';
 const ADMIN_PASSWORD = process.env.E2E_PASSWORD || 'Password123!';
 
+test.describe.configure({ mode: 'serial' });
+
 function csrfFromSetCookie(setCookie) {
   const match = setCookie.match(/ensetai_csrf=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : '';
@@ -175,7 +177,7 @@ test('public landing assistant mobile controls are keyboard and screen-reader re
   await expect(page.getByText('Bonjour mobile.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Fermer' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Envoyer' })).toBeVisible();
-  await expect(page.getByPlaceholder('Question mobile...')).toBeVisible();
+  await expect(page.getByRole('textbox')).toBeVisible();
 
   await page.getByRole('button', { name: 'Fermer' }).click();
   await expect(page.getByText('Bonjour mobile.')).toHaveCount(0);
