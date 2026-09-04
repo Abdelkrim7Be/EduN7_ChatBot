@@ -162,7 +162,8 @@ export function LandingAssistant() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed bottom-5 right-5 z-50 flex h-[min(620px,calc(100vh-40px))] w-[min(420px,calc(100vw-40px))] flex-col border border-white/20 bg-black text-white shadow-2xl"
+            dir="ltr"
+            className="fixed bottom-5 right-5 z-50 flex h-[min(620px,calc(100vh-40px))] w-[min(420px,calc(100vw-40px))] flex-col border border-white/20 bg-black text-left text-white shadow-2xl"
             initial={{ opacity: 0, y: 20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
@@ -194,7 +195,7 @@ export function LandingAssistant() {
                   className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[85%] border px-3 py-2 text-sm leading-relaxed ${
+                    className={`max-w-[85%] border px-3 py-2 text-left text-sm leading-relaxed ${
                       message.role === "user"
                         ? "border-white bg-white text-black"
                         : "border-white/15 bg-white/5 text-white"
