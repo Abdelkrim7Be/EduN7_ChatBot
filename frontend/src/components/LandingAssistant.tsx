@@ -195,7 +195,7 @@ export function LandingAssistant() {
                   className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[85%] border px-3 py-2 text-left text-sm leading-relaxed ${
+                    className={`max-w-[85%] border px-3 py-2 text-left text-[13px] leading-relaxed ${
                       message.role === "user"
                         ? "border-white bg-white text-black"
                         : "border-white/15 bg-white/5 text-white"
@@ -219,7 +219,7 @@ export function LandingAssistant() {
                     key={question}
                     type="button"
                     onClick={() => void send(question)}
-                    className="border border-white/15 px-2.5 py-1.5 text-left text-[11px] leading-snug text-white/70 transition-colors hover:border-white/40 hover:text-white"
+                    className="border border-white/15 px-2.5 py-1.5 text-left text-[10px] leading-snug text-white/70 transition-colors hover:border-white/40 hover:text-white"
                   >
                     {question}
                   </button>
@@ -240,7 +240,7 @@ export function LandingAssistant() {
                 rows={1}
                 disabled={streaming}
                 placeholder={config.placeholder || "Posez une question sur ENSET AI..."}
-                className="max-h-28 min-h-11 flex-1 resize-none border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/50 disabled:opacity-60"
+                className="max-h-28 min-h-11 flex-1 resize-none border border-white/15 bg-white/5 px-3 py-2 text-[13px] text-white outline-none placeholder:text-white/35 focus:border-white/50 disabled:opacity-60"
               />
               <button
                 type="submit"
