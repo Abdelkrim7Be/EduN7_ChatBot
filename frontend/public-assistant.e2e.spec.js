@@ -147,3 +147,37 @@ test('public landing assistant full visitor lifecycle', async ({ browser }) => {
   await expect(page.getByRole('button', { name: /assistant public/i })).toHaveCount(0);
   await visitor.close();
 });
+
+test('public landing assistant mobile controls are keyboard and screen-reader reachable', async ({ browser }) => {
+  await configureAssistant({
+    public_assistant_enabled: 'true',
+    public_assistant_context: 'ENSET AI is a controlled educational assistant for ENSET visitors.',
+    public_assistant_greeting: 'Bonjour mobile.',
+    public_assistant_placeholder: 'Question mobile...',
+    public_assistant_suggested_questions: 'What is ENSET AI?',
+    public_assistant_provider: 'auto',
+    public_assistant_model: 'auto',
+  });
+
+  const visitor = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+  });
+  const page = await visitor.newPage();
+  await page.goto(BASE);
+
+  const launcher = page.getByRole('button', { name: /assistant public/i });
+  await expect(launcher).toBeVisible();
+  await launcher.focus();
+  await expect(launcher).toBeFocused();
+  await page.keyboard.press('Enter');
+
+  await expect(page.getByText('Bonjour mobile.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Fermer' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Envoyer' })).toBeVisible();
+  await expect(page.getByPlaceholder('Question mobile...')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Fermer' }).click();
+  await expect(page.getByText('Bonjour mobile.')).toHaveCount(0);
+  await visitor.close();
+});
