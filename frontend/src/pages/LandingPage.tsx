@@ -87,13 +87,14 @@ export function LandingPage() {
               variants={fadeUp}
               className="text-xl md:text-2xl font-light text-gray-400 tracking-wide"
             >
-              Votre assistant académique intelligent
+              Plateforme IA académique auto-hébergée
             </motion.p>
             <motion.p
               variants={fadeUp}
               className="text-gray-500 max-w-xl mx-auto text-sm md:text-base"
             >
-              Analysez vos cours, TDs et examens en conversation naturelle
+              Analyse de documents privés pour les utilisateurs connectés,
+              avec un assistant public limité aux informations validées.
             </motion.p>
             <motion.div
               variants={fadeUp}
@@ -180,10 +181,10 @@ export function LandingPage() {
                   industriel au cœur du Maroc.
                 </p>
                 <p>
-                  ENSET AI est l'assistant intelligent conçu pour accompagner
-                  étudiants et professeurs dans l'exploration de leurs
-                  ressources pédagogiques — cours, TDs, examens — en quelques
-                  secondes.
+                  ENSET AI est déployé comme une plateforme privée pour
+                  accompagner étudiants et professeurs dans l'exploration de
+                  ressources pédagogiques. L'assistant public de la page
+                  d'accueil sert uniquement de guide pour les visiteurs.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 pt-4">
@@ -307,8 +308,8 @@ export function LandingPage() {
                     Plusieurs modèles IA
                   </h3>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    Cerebras pour la vitesse, Gemini pour le contexte long. Vous
-                    choisissez selon vos besoins.
+                    Les modèles sont configurés côté plateforme. Les visiteurs
+                    utilisent l'assistant public sans voir ni choisir le modèle.
                   </p>
                 </div>
               </motion.div>

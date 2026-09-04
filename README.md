@@ -1,14 +1,15 @@
 # EduN7
 
-EduN7 is a self-hosted RAG chatbot platform for private PDF conversations and an optional public landing assistant. It is built with React, Flask, ChromaDB, Redis, and Docker Compose.
+EduN7 is a self-hosted academic AI platform for private PDF conversations, with an optional public landing-page assistant. The public assistant is a visitor guide; the authenticated platform remains the main product.
 
 ## Features
 
-- **Multi-document support** — Upload multiple PDFs and query across all of them simultaneously
+- **Self-hosted deployment** — Run the platform with Docker Compose and keep application services under your control
+- **Private document chat** — Upload PDFs after authentication and query selected documents
 - **Streaming responses** — Words appear in real time as the AI generates the answer
 - **Source citations** — Every response shows which document pages were used as context
 - **Conversation memory** — The assistant remembers previous turns within your session
-- **Public landing assistant** — Optional unauthenticated assistant limited to admin-approved public context
+- **Public landing assistant** — Optional unauthenticated visitor guide limited to admin-approved public context
 - **Dark, modern UI** — Clean React interface with TailwindCSS
 
 ---
@@ -107,7 +108,7 @@ Get a free key at [console.groq.com](https://console.groq.com).
 
 ## Public Landing Assistant
 
-The landing page can show a small public assistant before login. It is separate from the authenticated document chat:
+The landing page can show a small public assistant before login. Its role is to help visitors understand the platform from admin-approved public information. It is separate from the authenticated document chat:
 
 - the assistant frontend uses only `/api/public-assistant/config` and `/api/public-assistant/stream`
 - it does not receive session IDs, document IDs, private documents, authenticated chat history, user records, tools, or provider credentials

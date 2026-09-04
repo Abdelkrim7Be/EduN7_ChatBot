@@ -37,10 +37,10 @@ const LABELS: Record<string, string> = {
   public_assistant_context: "Contexte public",
   public_assistant_instructions: "Instructions",
   public_assistant_greeting: "Message d'accueil",
-  public_assistant_placeholder: "Placeholder",
+  public_assistant_placeholder: "Texte de saisie",
   public_assistant_fallback_message: "Message de refus",
   public_assistant_suggested_questions: "Questions suggérées",
-  public_assistant_provider: "Provider public",
+  public_assistant_provider: "Fournisseur public",
   public_assistant_model: "Modèle public",
   public_assistant_rate_limit_per_hour: "Limite horaire",
 };
