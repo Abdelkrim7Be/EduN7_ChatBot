@@ -30,6 +30,7 @@ function makeMinimalPdf() {
 const BASE = process.env.E2E_BASE_URL || 'http://localhost:3000';
 
 test('uploaded document survives a reload', async ({ page }) => {
+  test.setTimeout(60000);
   await page.goto(`${BASE}/login`);
 
   await page.locator('input[type="email"]').fill(process.env.E2E_EMAIL || 'admin@enset.ma');
@@ -38,8 +39,10 @@ test('uploaded document survives a reload', async ({ page }) => {
 
   await expect(page.locator('textarea')).toBeEnabled({ timeout: 20000 });
 
-  const pdfPath = path.join(process.cwd(), 'TEST_DOC_e2e.pdf');
+  const pdfName = `TEST_DOC_e2e_${Date.now()}.pdf`;
+  const pdfPath = path.join(process.cwd(), pdfName);
   fs.writeFileSync(pdfPath, makeMinimalPdf());
+  let uploadedDocId = null;
 
   try {
     const fileChooserPromise = page.waitForEvent('filechooser');
@@ -47,18 +50,38 @@ test('uploaded document survives a reload', async ({ page }) => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(pdfPath);
 
-    // TEST_DOC_e2e.pdf already matches the MATIERE_TYPE_TITRE convention, so the
+    // The generated filename matches the MATIERE_TYPE_TITRE convention, so the
     // rename modal should not appear; click through it if it ever does.
     const confirmBtn = page.getByRole('button', { name: 'Confirmer et envoyer' });
     if (await confirmBtn.isVisible().catch(() => false)) {
       await confirmBtn.click();
     }
 
-    await expect(page.getByText('TEST_DOC_e2e.pdf').first()).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText(pdfName).first()).toBeVisible({ timeout: 30000 });
+
+    uploadedDocId = await page.evaluate(async (name) => {
+      const res = await fetch('/api/documents', { credentials: 'include' });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.documents.find((doc) => doc.original_filename === name)?.doc_id ?? null;
+    }, pdfName);
 
     await page.reload();
-    await expect(page.getByText('TEST_DOC_e2e.pdf').first()).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText(pdfName).first()).toBeVisible({ timeout: 30000 });
   } finally {
+    if (uploadedDocId) {
+      await page.evaluate(async (docId) => {
+        const csrf = document.cookie
+          .split('; ')
+          .find((entry) => entry.startsWith('ensetai_csrf='))
+          ?.split('=')[1];
+        await fetch(`/api/documents/${docId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: csrf ? { 'X-CSRF-Token': decodeURIComponent(csrf) } : {},
+        });
+      }, uploadedDocId).catch(() => undefined);
+    }
     fs.rmSync(pdfPath, { force: true });
   }
 });

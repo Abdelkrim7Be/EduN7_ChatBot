@@ -1,6 +1,6 @@
-# EduN7 — Document Chat with RAG
+# EduN7
 
-EduN7 is a production-ready RAG (Retrieval-Augmented Generation) chatbot that lets you upload PDF documents and have multi-turn conversations with them using AI. Built with React, Python Flask, ChromaDB, and the Groq API.
+EduN7 is a self-hosted RAG chatbot platform for private PDF conversations and an optional public landing assistant. It is built with React, Flask, ChromaDB, Redis, and Docker Compose.
 
 ## Features
 
@@ -17,7 +17,7 @@ EduN7 is a production-ready RAG (Retrieval-Augmented Generation) chatbot that le
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 18 + Vite + TypeScript + TailwindCSS |
+| Frontend | React 19 + Vite + TypeScript + TailwindCSS |
 | Backend API | Python Flask |
 | Vector DB | ChromaDB (persistent) |
 | Embeddings | `all-MiniLM-L6-v2` (sentence-transformers) |
@@ -154,23 +154,10 @@ EduN7_ChatBot/
 │   ├── src/
 │   │   ├── api/client.ts
 │   │   ├── hooks/            # useSession, useDocuments, useChat
-│   │   ├── components/       # 7 UI components
+│   │   ├── components/
 │   │   └── types/index.ts
 │   ├── nginx.conf
 │   └── Dockerfile
-├── terminal/                 # Standalone Groq terminal chatbot (CLI)
 ├── docker-compose.yml
 └── .env.example
-```
-
----
-
-## Terminal CLI (optional)
-
-The `terminal/` directory contains a standalone terminal chatbot (`groqchat`) with streaming, TTS, and voice input. It's independent of the web app:
-
-```bash
-cd terminal/package
-pip install -r groqchat/requirements.txt
-python -m groqchat.main
 ```

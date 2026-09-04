@@ -213,8 +213,8 @@ def ingest(file_path: str, original_filename: str, user_id: str, scope: str = "p
         )
 
     logger.info(
-        "Ingested %s: %d pages, %d chunks → collection doc_%s (user=%s, scope=%s)",
-        original_filename, len(pages), len(chunks), doc_id, user_id, scope,
+        "Document ingested: %d pages, %d chunks (scope=%s)",
+        len(pages), len(chunks), scope,
     )
     return record
 

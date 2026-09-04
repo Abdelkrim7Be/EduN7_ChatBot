@@ -33,7 +33,6 @@ import { LibraryPage } from "./components/LibraryPage";
 import { AnnouncementBanner } from "./components/AnnouncementBanner";
 import { ForbiddenPage } from "./components/ForbiddenPage";
 import { LandingPage } from "./pages/LandingPage";
-import { PrimitivePlayground } from "./pages/PrimitivePlayground";
 import {
   createSession,
   updateConversationTitle,
@@ -554,9 +553,6 @@ export default function App() {
           )}
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/welcome" element={<LandingPage />} />
-          {import.meta.env.DEV && (
-            <Route path="/dev/playground" element={<PrimitivePlayground />} />
-          )}
           <Route
             path="*"
             element={
