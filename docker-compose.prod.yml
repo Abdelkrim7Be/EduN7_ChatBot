@@ -14,6 +14,7 @@ services:
       - ALLOWED_EMAIL_DOMAINS=${ALLOWED_EMAIL_DOMAINS:-}
       - RATE_LIMIT_CHAT=${RATE_LIMIT_CHAT:-30 per hour}
       - RATE_LIMIT_UPLOAD=${RATE_LIMIT_UPLOAD:-20 per day}
+      - TRUST_PROXY_HEADERS=true
 
   frontend:
     restart: always

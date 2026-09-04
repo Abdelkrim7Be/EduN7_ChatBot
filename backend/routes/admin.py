@@ -26,6 +26,14 @@ AUDIT_REDACTED_SETTINGS = {
     "public_assistant_fallback_message",
     "public_assistant_suggested_questions",
 }
+PUBLIC_ASSISTANT_TEXT_LIMITS = {
+    "public_assistant_context": public_assistant_service.MAX_CONTEXT_CHARS,
+    "public_assistant_instructions": public_assistant_service.MAX_INSTRUCTIONS_CHARS,
+    "public_assistant_greeting": 2000,
+    "public_assistant_placeholder": 200,
+    "public_assistant_fallback_message": 2000,
+    "public_assistant_suggested_questions": 1000,
+}
 
 
 def _page_args() -> tuple[int, int]:
@@ -45,6 +53,46 @@ def _setting_audit_details(key: str, value: str) -> str:
     if key in AUDIT_REDACTED_SETTINGS:
         return f"New value: [redacted, {len(value)} chars]"
     return f"New value: {value}"
+
+
+def _validate_setting_value(key: str, value) -> tuple[str | None, str | None]:
+    text = str(value)
+    if key == "public_assistant_enabled":
+        normalized = text.strip().lower()
+        if normalized not in {"true", "false"}:
+            return None, "value must be true or false"
+        return normalized, None
+
+    if key in PUBLIC_ASSISTANT_TEXT_LIMITS:
+        limit = PUBLIC_ASSISTANT_TEXT_LIMITS[key]
+        if len(text) > limit:
+            return None, f"value must be at most {limit} characters"
+        return text, None
+
+    if key == "public_assistant_rate_limit_per_hour":
+        try:
+            limit = int(text)
+        except (TypeError, ValueError):
+            return None, "value must be a number"
+        if limit < 5 or limit > 120:
+            return None, "value must be between 5 and 120"
+        return str(limit), None
+
+    if key == "public_assistant_provider":
+        provider = text.strip()
+        allowed = {option["provider"] for option in public_assistant_service.public_model_options()}
+        if provider not in allowed:
+            return None, "provider is not allowed for the public assistant"
+        return provider, None
+
+    if key == "public_assistant_model":
+        model = text.strip()
+        allowed = {option["model"] for option in public_assistant_service.public_model_options()}
+        if model not in allowed:
+            return None, "model is not allowed for the public assistant"
+        return model, None
+
+    return text, None
 
 
 @admin_bp.get("/api/admin/users")
@@ -445,6 +493,9 @@ def update_setting(key: str):
     value = data.get("value")
     if value is None:
         return jsonify({"error": "value is required"}), 400
+    value, validation_error = _validate_setting_value(key, value)
+    if validation_error:
+        return jsonify({"error": validation_error}), 400
         
     with database.get_db() as conn:
         row = conn.execute("SELECT key FROM settings WHERE key=?", (key,)).fetchone()

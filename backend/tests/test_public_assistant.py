@@ -347,6 +347,31 @@ def test_public_assistant_rate_limit_ignores_spoofed_forwarded_for(client, monke
     assert len(calls) == 5
 
 
+def test_public_assistant_trusted_proxy_uses_forwarded_client_ip(monkeypatch):
+    import config
+    from app import create_app
+
+    monkeypatch.setattr(config, "TRUST_PROXY_HEADERS", True)
+    app = create_app()
+    app.config["TESTING"] = True
+    app.config["RATELIMIT_ENABLED"] = False
+    set_public_assistant()
+
+    with app.test_client() as proxy_client:
+        response = proxy_client.post(
+            "/api/public-assistant/stream",
+            json={"message": "Hello"},
+            headers={"X-Forwarded-For": "198.51.100.77"},
+            environ_overrides={"REMOTE_ADDR": "172.22.0.5"},
+            buffered=True,
+        )
+
+    assert response.status_code == 200
+    with database.get_db() as conn:
+        row = conn.execute("SELECT ip_hash FROM public_assistant_events ORDER BY id DESC LIMIT 1").fetchone()
+    assert row["ip_hash"] == public_assistant_service._hash("198.51.100.77")
+
+
 def test_public_assistant_public_only_access_boundary(client):
     assert client.get("/api/public-assistant/config").status_code == 200
     assert client.post("/api/public-assistant/stream", json={"message": "Hello"}, buffered=True).status_code == 200
@@ -392,3 +417,38 @@ def test_admin_setting_audit_redacts_assistant_context(client):
 
     assert "[redacted" in row["details"]
     assert sensitive_context not in row["details"]
+
+
+def test_admin_public_assistant_setting_validation_rejects_invalid_values(client):
+    headers = admin_auth_headers()
+
+    cases = [
+        ("public_assistant_enabled", "maybe"),
+        ("public_assistant_rate_limit_per_hour", "4"),
+        ("public_assistant_rate_limit_per_hour", "121"),
+        ("public_assistant_rate_limit_per_hour", "abc"),
+        ("public_assistant_provider", "openrouter<script>"),
+        ("public_assistant_model", "not-a-public-model"),
+        ("public_assistant_placeholder", "x" * 201),
+        ("public_assistant_context", "x" * (public_assistant_service.MAX_CONTEXT_CHARS + 1)),
+    ]
+
+    for key, value in cases:
+        response = client.put(f"/api/admin/settings/{key}", json={"value": value}, headers=headers)
+        assert response.status_code == 400, key
+
+
+def test_admin_public_assistant_setting_validation_allows_valid_values(client):
+    headers = admin_auth_headers()
+
+    cases = [
+        ("public_assistant_enabled", "true"),
+        ("public_assistant_rate_limit_per_hour", "30"),
+        ("public_assistant_provider", "auto"),
+        ("public_assistant_model", "auto"),
+        ("public_assistant_placeholder", "Question publique..."),
+    ]
+
+    for key, value in cases:
+        response = client.put(f"/api/admin/settings/{key}", json={"value": value}, headers=headers)
+        assert response.status_code == 200, key

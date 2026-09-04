@@ -15,6 +15,10 @@ def create_app() -> Flask:
     database.init_db()
 
     app = Flask(__name__)
+    if config.TRUST_PROXY_HEADERS:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
     CORS(
         app,
         resources={r"/api/*": {"origins": config.ALLOWED_ORIGINS}},
