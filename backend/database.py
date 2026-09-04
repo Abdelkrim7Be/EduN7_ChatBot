@@ -121,6 +121,19 @@ def init_db() -> None:
                 created_at REAL NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS public_assistant_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ip_hash TEXT,
+                user_agent_hash TEXT,
+                outcome TEXT NOT NULL,
+                provider TEXT,
+                model TEXT,
+                latency_ms INTEGER,
+                input_chars INTEGER NOT NULL DEFAULT 0,
+                output_chars INTEGER NOT NULL DEFAULT 0,
+                created_at REAL NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS revoked_tokens (
                 token_hash TEXT PRIMARY KEY,
                 revoked_at REAL NOT NULL,
@@ -154,16 +167,107 @@ def init_db() -> None:
         from services.permissions_service import seed_builtin_permissions
         seed_builtin_permissions(conn)
 
+        scols = [r[1] for r in conn.execute("PRAGMA table_info(settings)").fetchall()]
+        if "description" not in scols:
+            conn.execute("ALTER TABLE settings ADD COLUMN description TEXT NOT NULL DEFAULT ''")
+        if "kind" not in scols:
+            conn.execute("ALTER TABLE settings ADD COLUMN kind TEXT NOT NULL DEFAULT 'text'")
+        if "updated_at" not in scols:
+            conn.execute("ALTER TABLE settings ADD COLUMN updated_at REAL")
+        if "updated_by" not in scols:
+            conn.execute("ALTER TABLE settings ADD COLUMN updated_by TEXT")
+
         # Seed settings
         default_settings = [
             ("max_upload_size_mb", "50", "Max Upload Size (MB)"),
             ("max_docs_per_session", "10", "Max Docs Per Session"),
             ("allow_registration", "true", "Allow Registration"),
             ("default_role", "student", "Default Role"),
-            ("system_prompt", config.RAG_SYSTEM_PROMPT, "System Prompt")
+            ("system_prompt", config.RAG_SYSTEM_PROMPT, "System Prompt"),
+            (
+                "public_assistant_enabled",
+                "false",
+                "Public Assistant Enabled",
+                "Show the landing-page assistant when public context is configured.",
+                "boolean",
+            ),
+            (
+                "public_assistant_context",
+                "",
+                "Public Assistant Context",
+                "Admin-approved public knowledge. The landing assistant may answer only from this context.",
+                "textarea",
+            ),
+            (
+                "public_assistant_instructions",
+                "Be concise, helpful, and clear. Answer in the visitor's language when possible.",
+                "Public Assistant Instructions",
+                "Behavior and tone instructions layered on top of the grounding rules.",
+                "textarea",
+            ),
+            (
+                "public_assistant_greeting",
+                "Bonjour, je suis l'assistant public ENSET AI. Je peux répondre aux questions couvertes par les informations publiques configurées par l'administration.",
+                "Public Assistant Greeting",
+                "Greeting shown when the landing assistant opens.",
+                "textarea",
+            ),
+            (
+                "public_assistant_placeholder",
+                "Posez une question sur ENSET AI...",
+                "Public Assistant Placeholder",
+                "Input placeholder for visitors.",
+                "text",
+            ),
+            (
+                "public_assistant_fallback_message",
+                "Je n'ai pas assez d'informations dans le contexte public ENSET AI pour répondre à cette question. Vous pouvez vous connecter pour utiliser l'assistant complet ou contacter l'administration pour plus de détails.",
+                "Public Assistant Fallback",
+                "Fallback used when an answer is not supported by the public context.",
+                "textarea",
+            ),
+            (
+                "public_assistant_suggested_questions",
+                "",
+                "Public Assistant Suggested Questions",
+                "Optional starter questions, one per line. The public UI shows up to three.",
+                "textarea",
+            ),
+            (
+                "public_assistant_provider",
+                "auto",
+                "Public Assistant Provider",
+                "Provider used globally for anonymous landing-page assistant traffic.",
+                "select",
+            ),
+            (
+                "public_assistant_model",
+                "auto",
+                "Public Assistant Model",
+                "Model used globally for anonymous landing-page assistant traffic.",
+                "select",
+            ),
+            (
+                "public_assistant_rate_limit_per_hour",
+                "30",
+                "Public Assistant Hourly Limit",
+                "Sustained anonymous assistant requests allowed per IP per hour.",
+                "number",
+            ),
         ]
-        for k, v, l in default_settings:
-            conn.execute("INSERT OR IGNORE INTO settings (key, value, label) VALUES (?, ?, ?)", (k, v, l))
+        for setting in default_settings:
+            if len(setting) == 3:
+                k, v, l = setting
+                conn.execute(
+                    "INSERT OR IGNORE INTO settings (key, value, label) VALUES (?, ?, ?)",
+                    (k, v, l),
+                )
+            else:
+                k, v, l, description, kind = setting
+                conn.execute(
+                    "INSERT OR IGNORE INTO settings (key, value, label, description, kind) VALUES (?, ?, ?, ?, ?)",
+                    (k, v, l, description, kind),
+                )
 
 
         # Migrate: replace the old placeholder system prompt with the real

@@ -30,6 +30,7 @@ def create_app() -> Flask:
     from routes.providers import providers_bp
     from routes.conversations import conversations_bp
     from routes.admin import admin_bp
+    from routes.public_assistant import public_assistant_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(documents_bp)
@@ -37,6 +38,7 @@ def create_app() -> Flask:
     app.register_blueprint(providers_bp)
     app.register_blueprint(conversations_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(public_assistant_bp)
 
     @app.route("/api/health")
     def health():
