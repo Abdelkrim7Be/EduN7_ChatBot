@@ -16,6 +16,18 @@ from models.document import DocumentRecord
 
 logger = logging.getLogger(__name__)
 
+_PDF_RISK_PATTERNS = [
+    (b"/JavaScript", "JavaScript"),
+    (b"/JS", "JavaScript"),
+    (b"/OpenAction", "auto-open action"),
+    (b"/AA", "additional action"),
+    (b"/Launch", "launch action"),
+    (b"/EmbeddedFile", "embedded file"),
+    (b"/RichMedia", "rich media"),
+    (b"/XFA", "XFA form"),
+    (b"/AcroForm", "interactive form"),
+]
+
 _CATEGORY_RULES = [
     ("Cours",        r"\b(cours|cm|chapitre|lecture|poly|polycopie|support)\b"),
     ("TD / TP",      r"\b(td|tp|travaux|exercice|atelier|labo|pratique)\b"),
@@ -31,6 +43,103 @@ def detect_category(filename: str) -> str:
         if re.search(pattern, normalized):
             return category
     return "Autres"
+
+
+def scan_pdf_security(file_path: str) -> dict:
+    """Lightweight PDF inspection before parser/indexer ingestion.
+
+    This is intentionally conservative metadata, not a replacement for an
+    antivirus engine or sandbox. It catches risky active-PDF features that are
+    inappropriate for this RAG/document workflow.
+    """
+    path = Path(file_path)
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        return {
+            "status": "failed",
+            "verdict": f"Impossible de lire le fichier: {exc}",
+            "checked_at": time.time(),
+        }
+
+    if not data.startswith(b"%PDF-"):
+        return {
+            "status": "blocked",
+            "verdict": "Fichier rejeté: signature PDF invalide",
+            "checked_at": time.time(),
+        }
+
+    found = []
+    lowered = data.lower()
+    for pattern, label in _PDF_RISK_PATTERNS:
+        if pattern.lower() in lowered:
+            found.append(label)
+
+    if found:
+        unique = sorted(set(found))
+        return {
+            "status": "warning",
+            "verdict": "Contenu actif détecté: " + ", ".join(unique),
+            "checked_at": time.time(),
+        }
+
+    return {
+        "status": "clean",
+        "verdict": "PDF vérifié: aucun contenu actif connu détecté",
+        "checked_at": time.time(),
+    }
+
+
+def is_security_blocking(scan: dict) -> bool:
+    return scan.get("status") in {"blocked", "failed", "warning"}
+
+
+def uploaded_path(doc_id: str, original_filename: str) -> Path:
+    return Path(config.UPLOAD_DIR) / f"{doc_id}_{original_filename}"
+
+
+def _record_from_row(row) -> DocumentRecord:
+    return DocumentRecord(
+        doc_id=row["doc_id"],
+        name=row["name"],
+        original_filename=row["original_filename"],
+        collection_name=row["collection_name"],
+        page_count=row["page_count"],
+        chunk_count=row["chunk_count"],
+        uploaded_at=float(row["uploaded_at"] or 0),
+        scope=row["scope"],
+        category=row["category"] or "Autres",
+        security_status=row["security_status"] or "pending",
+        security_verdict=row["security_verdict"] or "",
+        security_checked_at=(
+            float(row["security_checked_at"])
+            if row["security_checked_at"] is not None
+            else None
+        ),
+    )
+
+
+def ensure_security_scan(doc_id: str, original_filename: str, current_status: str | None = None) -> dict:
+    if current_status and current_status not in {"pending", "unchecked"}:
+        with database.get_db() as conn:
+            row = conn.execute(
+                "SELECT security_status, security_verdict, security_checked_at FROM documents WHERE doc_id=?",
+                (doc_id,),
+            ).fetchone()
+        if row:
+            return {
+                "status": row["security_status"] or "pending",
+                "verdict": row["security_verdict"] or "",
+                "checked_at": row["security_checked_at"],
+            }
+
+    scan = scan_pdf_security(str(uploaded_path(doc_id, original_filename)))
+    with database.get_db() as conn:
+        conn.execute(
+            "UPDATE documents SET security_status=?, security_verdict=?, security_checked_at=? WHERE doc_id=?",
+            (scan["status"], scan["verdict"], scan["checked_at"], doc_id),
+        )
+    return scan
 
 
 _embedding_fn = HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL)
@@ -51,6 +160,11 @@ def ingest(file_path: str, original_filename: str, user_id: str, scope: str = "p
     new_path = Path(file_path).parent / f"{doc_id}_{original_filename}"
     Path(file_path).rename(new_path)
     file_path = str(new_path)
+
+    security = scan_pdf_security(file_path)
+    if is_security_blocking(security):
+        Path(file_path).unlink(missing_ok=True)
+        raise ValueError(security["verdict"])
 
     pages = PyMuPDFLoader(file_path).load()
     chunks = _splitter.split_documents(pages)
@@ -79,17 +193,22 @@ def ingest(file_path: str, original_filename: str, user_id: str, scope: str = "p
         chunk_count=len(chunks),
         scope=scope,
         category=category,
+        security_status=security["status"],
+        security_verdict=security["verdict"],
+        security_checked_at=security["checked_at"],
     )
 
     with database.get_db() as conn:
         conn.execute(
             "INSERT INTO documents "
-            "(doc_id, user_id, name, original_filename, collection_name, page_count, chunk_count, scope, category, uploaded_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(doc_id, user_id, name, original_filename, collection_name, page_count, chunk_count, scope, category, "
+            "security_status, security_verdict, security_checked_at, uploaded_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 record.doc_id, user_id, record.name, record.original_filename,
                 record.collection_name, record.page_count, record.chunk_count,
-                record.scope, record.category, time.time(),
+                record.scope, record.category, record.security_status,
+                record.security_verdict, record.security_checked_at, time.time(),
             ),
         )
 
@@ -125,16 +244,17 @@ def delete(doc_id: str, user_id: str, role: str = "student") -> bool:
     except Exception as e:
         logger.warning("Could not delete ChromaDB collection %s: %s", row["collection_name"], e)
 
-    uploaded_path = Path(config.UPLOAD_DIR) / f"{doc_id}_{row['original_filename']}"
-    if uploaded_path.exists():
-        uploaded_path.unlink()
+    path = uploaded_path(doc_id, row["original_filename"])
+    if path.exists():
+        path.unlink()
     return True
 
 
 def list_accessible(user_id: str) -> list[DocumentRecord]:
     with database.get_db() as conn:
         rows = conn.execute(
-            "SELECT doc_id, name, original_filename, collection_name, page_count, chunk_count, scope, category, uploaded_at "
+            "SELECT doc_id, name, original_filename, collection_name, page_count, chunk_count, scope, category, "
+            "security_status, security_verdict, security_checked_at, uploaded_at "
             "FROM documents WHERE user_id=? OR scope='shared' "
             "ORDER BY uploaded_at DESC",
             (user_id,),
@@ -143,27 +263,21 @@ def list_accessible(user_id: str) -> list[DocumentRecord]:
     records = []
     stale_ids = []
     for r in rows:
-        uploaded_path = Path(config.UPLOAD_DIR) / f"{r['doc_id']}_{r['original_filename']}"
-        if not uploaded_path.exists():
+        path = uploaded_path(r["doc_id"], r["original_filename"])
+        if not path.exists():
             stale_ids.append(r["doc_id"])
             try:
                 _chroma_client().delete_collection(r["collection_name"])
             except Exception:
                 pass
             continue
-        records.append(
-            DocumentRecord(
-                doc_id=r["doc_id"],
-                name=r["name"],
-                original_filename=r["original_filename"],
-                collection_name=r["collection_name"],
-                page_count=r["page_count"],
-                chunk_count=r["chunk_count"],
-                uploaded_at=float(r["uploaded_at"] or 0),
-                scope=r["scope"],
-                category=r["category"] or "Autres",
-            )
-        )
+        if (r["security_status"] or "pending") == "pending":
+            ensure_security_scan(r["doc_id"], r["original_filename"], r["security_status"])
+            refreshed = get(r["doc_id"], user_id)
+            if refreshed:
+                records.append(refreshed)
+            continue
+        records.append(_record_from_row(r))
 
     if stale_ids:
         with database.get_db() as conn:
@@ -176,43 +290,28 @@ def get(doc_id: str, user_id: str | None = None) -> DocumentRecord | None:
     with database.get_db() as conn:
         row = conn.execute(
             "SELECT doc_id, user_id AS owner_id, name, original_filename, collection_name, "
-            "page_count, chunk_count, scope, category, uploaded_at FROM documents WHERE doc_id=?",
+            "page_count, chunk_count, scope, category, security_status, security_verdict, "
+            "security_checked_at, uploaded_at FROM documents WHERE doc_id=?",
             (doc_id,),
         ).fetchone()
     if row is None:
         return None
     if user_id is not None and row["owner_id"] != user_id and row["scope"] != "shared":
         return None  # Access denied — caller should treat as 403
-    return DocumentRecord(
-        doc_id=row["doc_id"],
-        name=row["name"],
-        original_filename=row["original_filename"],
-        collection_name=row["collection_name"],
-        page_count=row["page_count"],
-        chunk_count=row["chunk_count"],
-        uploaded_at=float(row["uploaded_at"] or 0),
-        scope=row["scope"],
-        category=row["category"] or "Autres",
-    )
+    if (row["security_status"] or "pending") == "pending":
+        ensure_security_scan(row["doc_id"], row["original_filename"], row["security_status"])
+        return get(doc_id, user_id)
+    return _record_from_row(row)
 
 
 def get_by_name(filename: str, user_id: str) -> DocumentRecord | None:
     with database.get_db() as conn:
         row = conn.execute(
-            "SELECT doc_id, name, original_filename, collection_name, page_count, chunk_count, scope, category, uploaded_at "
+            "SELECT doc_id, name, original_filename, collection_name, page_count, chunk_count, scope, category, "
+            "security_status, security_verdict, security_checked_at, uploaded_at "
             "FROM documents WHERE original_filename=? AND user_id=?",
             (filename, user_id),
         ).fetchone()
     if row is None:
         return None
-    return DocumentRecord(
-        doc_id=row["doc_id"],
-        name=row["name"],
-        original_filename=row["original_filename"],
-        collection_name=row["collection_name"],
-        page_count=row["page_count"],
-        chunk_count=row["chunk_count"],
-        uploaded_at=float(row["uploaded_at"] or 0),
-        scope=row["scope"],
-        category=row["category"] or "Autres",
-    )
+    return _record_from_row(row)

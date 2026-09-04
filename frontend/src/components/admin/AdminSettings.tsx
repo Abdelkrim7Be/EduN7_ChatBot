@@ -1,11 +1,27 @@
-import { useEffect, useState } from "react";
-import { Settings2, Info } from "lucide-react";
-import type { Setting } from "../../api/client";
-import { fetchSettings, updateSetting } from "../../api/client";
+import { useEffect, useMemo, useState } from "react";
+import { Info, Save, Settings2 } from "lucide-react";
+import type { Setting, AdminRole } from "../../api/client";
+import { fetchAdminRoles, fetchSettings, updateSetting } from "../../api/client";
 import { useToast } from "../ToastProvider";
 
+const GROUPS: Record<string, string> = {
+  max_upload_size_mb: "Limites",
+  max_docs_per_session: "Limites",
+  allow_registration: "Accès",
+  default_role: "Accès",
+  system_prompt: "IA",
+};
+
+const LABELS: Record<string, string> = {
+  max_upload_size_mb: "Max Upload Size",
+  max_docs_per_session: "Max Docs Per Session",
+  allow_registration: "Allow Registration",
+  default_role: "Default Role",
+  system_prompt: "System Prompt",
+};
+
 function formatDate(ts: number | null): string {
-  if (!ts) return "—";
+  if (!ts) return "Jamais modifié";
   return new Date(ts * 1000).toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "short",
@@ -15,24 +31,117 @@ function formatDate(ts: number | null): string {
   });
 }
 
+function SettingControl({
+  setting,
+  draft,
+  roles,
+  onChange,
+}: {
+  setting: Setting;
+  draft: string;
+  roles: AdminRole[];
+  onChange: (value: string) => void;
+}) {
+  if (setting.key === "allow_registration" || setting.kind === "boolean") {
+    return (
+      <select
+        value={draft === "true" ? "true" : "false"}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-36 border border-hairline bg-surface-2 px-3 text-sm text-fg"
+      >
+        <option value="true">Enabled</option>
+        <option value="false">Disabled</option>
+      </select>
+    );
+  }
+
+  if (setting.key === "default_role") {
+    return (
+      <select
+        value={draft}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-44 border border-hairline bg-surface-2 px-3 text-sm text-fg"
+      >
+        {roles.map((role) => (
+          <option key={role.name} value={role.name}>
+            {role.name}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (setting.key === "system_prompt") {
+    return (
+      <textarea
+        value={draft}
+        onChange={(e) => onChange(e.target.value)}
+        rows={5}
+        className="min-h-28 w-full resize-y border border-hairline bg-surface-2 px-3 py-2 text-sm text-fg"
+      />
+    );
+  }
+
+  if (
+    setting.kind === "number" ||
+    setting.key === "max_upload_size_mb" ||
+    setting.key === "max_docs_per_session"
+  ) {
+    const unit = setting.key === "max_upload_size_mb" ? "MB" : "";
+    return (
+      <div className="flex h-9 w-44 items-center border border-hairline bg-surface-2">
+        <input
+          type="number"
+          value={draft}
+          onChange={(e) => onChange(e.target.value)}
+          min="0"
+          className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-fg"
+        />
+        {unit && (
+          <span className="border-l border-hairline px-3 text-[10px] uppercase tracking-widest text-fg-muted">
+            {unit}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <input
+      type="text"
+      value={draft}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-9 w-full border border-hairline bg-surface-2 px-3 text-sm text-fg"
+    />
+  );
+}
+
 function SettingRow({
   setting,
+  roles,
   onSaved,
 }: {
   setting: Setting;
+  roles: AdminRole[];
   onSaved: (key: string, value: string) => void;
 }) {
   const { toast } = useToast();
   const [draft, setDraft] = useState(setting.value);
   const [saving, setSaving] = useState(false);
   const dirty = draft !== setting.value;
+  const isPrompt = setting.key === "system_prompt";
+
+  useEffect(() => {
+    setDraft(setting.value);
+  }, [setting.value]);
 
   async function handleSave() {
+    if (!dirty) return;
     setSaving(true);
     try {
       await updateSetting(setting.key, draft);
       onSaved(setting.key, draft);
-      toast(`${setting.label} mis à jour`, "success");
+      toast(`${LABELS[setting.key] ?? setting.label} mis à jour`, "success");
     } catch {
       toast("Erreur lors de la sauvegarde", "error");
     } finally {
@@ -41,54 +150,33 @@ function SettingRow({
   }
 
   return (
-    <div className="flex items-start justify-between gap-6 py-5 border-b border-hairline last:border-0">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-fg">{setting.label}</p>
-        <p className="text-xs text-fg-secondary mt-0.5 leading-relaxed">{setting.description}</p>
-        {setting.updated_at && (
-          <p className="text-[10px] text-fg-muted mt-1.5">
-            Modifié le {formatDate(setting.updated_at)}
+    <div className={`border border-hairline bg-surface-1 p-4 ${isPrompt ? "md:col-span-2" : ""}`}>
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-fg">{LABELS[setting.key] ?? setting.label}</p>
+          <p className="mt-1 text-xs leading-relaxed text-fg-secondary">
+            {setting.description || "Paramètre runtime appliqué immédiatement."}
           </p>
-        )}
+          <p className="mt-2 text-[10px] uppercase tracking-widest text-fg-muted">
+            {formatDate(setting.updated_at)}
+          </p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={!dirty || saving}
+          className="flex h-9 shrink-0 items-center gap-2 border border-white/20 bg-white px-3 text-xs font-bold text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-2 disabled:text-fg-muted"
+        >
+          <Save className="h-3.5 w-3.5" />
+          {saving ? "..." : "Enregistrer"}
+        </button>
       </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
-        {setting.kind === "boolean" ? (
-          <button
-            onClick={() => {
-              const next = draft === "true" ? "false" : "true";
-              setDraft(next);
-              updateSetting(setting.key, next)
-                .then(() => { onSaved(setting.key, next); toast(`${setting.label} mis à jour`, "success"); })
-                .catch(() => toast("Erreur lors de la sauvegarde", "error"));
-            }}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent/30 ${
-              draft === "true" ? "bg-accent" : "bg-surface-3"
-            }`}
-          >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-              draft === "true" ? "translate-x-6" : "translate-x-1"
-            }`} />
-          </button>
-        ) : (
-          <>
-            <input
-              type={setting.kind === "number" ? "number" : "text"}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              min={setting.kind === "number" ? "0" : undefined}
-              className="w-28 border border-hairline bg-surface-2 rounded-lg px-2.5 py-1.5 text-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent/30 transition-shadow"
-            />
-            <button
-              onClick={handleSave}
-              disabled={!dirty || saving}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-accent-contrast disabled:opacity-40 disabled:cursor-not-allowed hover:bg-accent-hover transition-colors"
-            >
-              {saving ? "..." : "Enregistrer"}
-            </button>
-          </>
-        )}
-      </div>
+      <SettingControl
+        setting={setting}
+        draft={draft}
+        roles={roles}
+        onChange={setDraft}
+      />
     </div>
   );
 }
@@ -96,11 +184,17 @@ function SettingRow({
 export function AdminSettings() {
   const { toast } = useToast();
   const [settings, setSettings] = useState<Setting[]>([]);
+  const [roles, setRoles] = useState<AdminRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchSettings()
-      .then(setSettings)
+      .then((loadedSettings) => {
+        setSettings(loadedSettings);
+        return fetchAdminRoles()
+          .then((roleData) => setRoles(roleData.roles))
+          .catch(() => setRoles([]));
+      })
       .catch(() => toast("Erreur chargement des paramètres", "error"))
       .finally(() => setLoading(false));
   }, []);
@@ -111,38 +205,61 @@ export function AdminSettings() {
     );
   }
 
+  const grouped = useMemo(() => {
+    return settings.reduce<Record<string, Setting[]>>((acc, setting) => {
+      const group = GROUPS[setting.key] ?? "Autres";
+      acc[group] = [...(acc[group] || []), setting];
+      return acc;
+    }, {});
+  }, [settings]);
+
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-fg flex items-center gap-2">
-          <Settings2 className="w-5 h-5 text-accent" />
-          Paramètres
-        </h1>
-        <p className="text-sm text-fg-secondary mt-0.5">
-          Configuration runtime de la plateforme — modifications immédiates sans redéploiement
-        </p>
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="w-7 h-7 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+    <div className="h-full overflow-y-auto p-6">
+      <div className="mx-auto flex max-w-6xl flex-col gap-5">
+        <div>
+          <h1 className="flex items-center gap-2 text-xl font-bold text-fg">
+            <Settings2 className="h-5 w-5 text-accent" />
+            Paramètres
+          </h1>
+          <p className="mt-1 text-sm text-fg-secondary">
+            Contrôles runtime clairs, typés et appliqués sans redéploiement
+          </p>
         </div>
-      ) : (
-        <div className="bg-surface-1 rounded-2xl border border-hairline shadow-soft px-5">
-          {settings.map((s) => (
-            <SettingRow key={s.key} setting={s} onSaved={handleSaved} />
-          ))}
-        </div>
-      )}
 
-      <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4 flex gap-3">
-        <Info className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-fg-secondary leading-relaxed">
-          <span className="font-semibold text-fg">Note :</span> Ces paramètres sont stockés en base de données
-          et s'appliquent en temps réel. Les valeurs d'environnement (variables{" "}
-          <code className="font-mono bg-surface-2 px-1 rounded text-accent">.env</code>) servent de valeurs
-          par défaut initiales et ne sont pas modifiables ici.
-        </p>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {Object.entries(grouped).map(([group, items]) => (
+              <section key={group}>
+                <div className="mb-2 text-[10px] uppercase tracking-widest text-fg-muted">
+                  {group}
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {items.map((setting) => (
+                    <SettingRow
+                      key={setting.key}
+                      setting={setting}
+                      roles={roles}
+                      onSaved={handleSaved}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-3 border border-accent/20 bg-accent/5 p-4">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+          <p className="text-xs leading-relaxed text-fg-secondary">
+            <span className="font-semibold text-fg">Note :</span> ces valeurs sont stockées en base et
+            appliquées en temps réel. Les variables <code className="bg-surface-2 px-1 text-accent">.env</code>{" "}
+            servent seulement de valeurs initiales.
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, Trash2, X, MessageSquare } from "lucide-react";
 import type { AdminConversation, AdminConversationMessage } from "../../api/client";
 import { deleteAdminConversation, fetchAdminConversationMessages, fetchAdminConversations } from "../../api/client";
 import { useToast } from "../ToastProvider";
+import { conversationTitle } from "../../utils/conversationTitle";
+import { AdminPagination } from "./AdminPagination";
+
+const PAGE_SIZE = 10;
 
 function timeAgo(ts: number): string {
   const diff = Math.floor((Date.now() / 1000 - ts) / 60);
@@ -51,7 +55,6 @@ function ConversationDrawer({
 }: {
   sessionId: string;
   onClose: () => void;
-  title: string;
   onDeleted: () => void;
 }) {
   const { toast } = useToast();
@@ -63,11 +66,12 @@ function ConversationDrawer({
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setLoading(true);
     fetchAdminConversationMessages(sessionId)
       .then((d) => { setConvTitle(d.conversation.title); setMessages(d.messages); })
       .catch(() => toast("Erreur chargement messages", "error"))
       .finally(() => setLoading(false));
-  }, [sessionId]);
+  }, [sessionId, toast]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -151,23 +155,41 @@ function ConversationDrawer({
 export function AdminConversations() {
   const { toast } = useToast();
   const [convs, setConvs] = useState<AdminConversation[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [open, setOpen] = useState<AdminConversation | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
+  const loadConvs = useCallback((nextPage: number, query = debouncedSearch) => {
     setLoading(true);
-    fetchAdminConversations(debouncedSearch || undefined)
-      .then(setConvs)
+    fetchAdminConversations(query || undefined, {
+      limit: PAGE_SIZE,
+      offset: (nextPage - 1) * PAGE_SIZE,
+    })
+      .then(({ conversations: pageRows, total: t }) => {
+        setTotal(t);
+        setConvs(pageRows);
+      })
       .catch(() => toast("Erreur chargement conversations", "error"))
       .finally(() => setLoading(false));
-  }, [debouncedSearch]);
+  }, [debouncedSearch, toast]);
+
+  function handlePageChange(nextPage: number) {
+    setPage(nextPage);
+    loadConvs(nextPage);
+  }
+
+  useEffect(() => {
+    setPage(1);
+    loadConvs(1, debouncedSearch);
+  }, [debouncedSearch, loadConvs]);
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -190,6 +212,14 @@ export function AdminConversations() {
         />
       </div>
 
+      <AdminPagination
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={total}
+        loading={loading}
+        onPageChange={handlePageChange}
+      />
+
       {loading ? (
         <div className="flex justify-center py-20">
           <div className="w-7 h-7 border-2 border-accent border-t-transparent rounded-full animate-spin" />
@@ -206,7 +236,7 @@ export function AdminConversations() {
         <div className="bg-surface-1 rounded-2xl border border-hairline shadow-soft overflow-hidden">
           <div className="px-5 py-3 border-b border-hairline bg-surface-2/40">
             <p className="text-xs text-fg-muted font-medium">
-              {convs.length} conversation{convs.length !== 1 ? "s" : ""}
+              {total} conversation{total !== 1 ? "s" : ""}
               {search && ` · filtrées sur "${search}"`}
             </p>
           </div>
@@ -221,7 +251,7 @@ export function AdminConversations() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-fg truncate group-hover:text-accent transition-colors">
-                      {conv.title}
+                      {conversationTitle(conv.title)}
                     </p>
                     <span className="text-[11px] text-fg-muted flex-shrink-0">{timeAgo(conv.last_active)}</span>
                   </div>
@@ -240,13 +270,19 @@ export function AdminConversations() {
               </li>
             ))}
           </ul>
+          <AdminPagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={total}
+            loading={loading}
+            onPageChange={handlePageChange}
+          />
         </div>
       )}
 
       {open && (
         <ConversationDrawer
           sessionId={open.session_id}
-          title={open.title}
           onClose={() => setOpen(null)}
           onDeleted={() => setConvs((prev) => prev.filter((c) => c.session_id !== open.session_id))}
         />

@@ -1,9 +1,16 @@
 import time
-from flask import Blueprint, request, jsonify
+import re
+from flask import Blueprint, request, jsonify, send_file
 
 import database
 from middleware.auth import require_auth, require_role
 from services import document_service, audit_service
+from services.permissions_service import (
+    PERMISSIONS,
+    get_role_permissions,
+    normalize_permissions,
+    set_role_permissions,
+)
 from flask import g
 
 admin_bp = Blueprint("admin", __name__)
@@ -30,8 +37,64 @@ def _page_args() -> tuple[int, int]:
 @require_role("admin")
 def list_users():
     limit, offset = _page_args()
+    role = (request.args.get("role") or "").strip()
+    search = (request.args.get("search") or "").strip()
+    status = (request.args.get("status") or "all").strip().lower()
     with database.get_db() as conn:
-        total = conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
+        params: list[object] = []
+        filters = []
+        if role:
+            filters.append("u.role = ?")
+            params.append(role)
+        if search:
+            filters.append("(u.name LIKE ? OR u.email LIKE ?)")
+            params.extend([f"%{search}%", f"%{search}%"])
+        if status == "active":
+            filters.append("u.is_suspended = 0")
+        elif status == "suspended":
+            filters.append("u.is_suspended = 1")
+        where = f"WHERE {' AND '.join(filters)}" if filters else ""
+        total = conn.execute(
+            f"SELECT COUNT(*) AS c FROM users u {where}",
+            params,
+        ).fetchone()["c"]
+
+        role_count_filters = []
+        role_count_params: list[object] = []
+        if search:
+            role_count_filters.append("(u.name LIKE ? OR u.email LIKE ?)")
+            role_count_params.extend([f"%{search}%", f"%{search}%"])
+        if status == "active":
+            role_count_filters.append("u.is_suspended = 0")
+        elif status == "suspended":
+            role_count_filters.append("u.is_suspended = 1")
+        role_count_where = f"WHERE {' AND '.join(role_count_filters)}" if role_count_filters else ""
+        role_rows = conn.execute(
+            f"SELECT u.role, COUNT(*) AS c FROM users u {role_count_where} GROUP BY u.role",
+            role_count_params,
+        ).fetchall()
+
+        status_count_filters = []
+        status_count_params: list[object] = []
+        if role:
+            status_count_filters.append("u.role = ?")
+            status_count_params.append(role)
+        if search:
+            status_count_filters.append("(u.name LIKE ? OR u.email LIKE ?)")
+            status_count_params.extend([f"%{search}%", f"%{search}%"])
+        status_count_where = f"WHERE {' AND '.join(status_count_filters)}" if status_count_filters else ""
+        status_row = conn.execute(
+            f"""
+                SELECT
+                    COUNT(*) AS all_count,
+                    SUM(CASE WHEN u.is_suspended = 0 THEN 1 ELSE 0 END) AS active_count,
+                    SUM(CASE WHEN u.is_suspended = 1 THEN 1 ELSE 0 END) AS suspended_count
+                FROM users u
+                {status_count_where}
+            """,
+            status_count_params,
+        ).fetchone()
+
         rows = conn.execute("""
             SELECT
                 u.id, u.email, u.name, u.role, u.created_at, u.last_seen, u.is_suspended,
@@ -40,12 +103,20 @@ def list_users():
             FROM users u
             LEFT JOIN conversations c ON c.user_id = u.id
             LEFT JOIN documents     d ON d.user_id = u.id
+            {where}
             GROUP BY u.id
             ORDER BY u.last_seen DESC
             LIMIT ? OFFSET ?
-        """, (limit, offset)).fetchall()
+        """.format(where=where), (*params, limit, offset)).fetchall()
+    role_counts = {r["role"]: r["c"] for r in role_rows}
     return jsonify({
         "total": total,
+        "role_counts": role_counts,
+        "status_counts": {
+            "all": status_row["all_count"] or 0,
+            "active": status_row["active_count"] or 0,
+            "suspended": status_row["suspended_count"] or 0,
+        },
         "users": [
             {
                 "id":                 r["id"],
@@ -126,18 +197,47 @@ def stats():
 @require_role("admin", "professor")
 def list_shared_documents():
     scope = request.args.get("scope", "all").lower()
+    search = (request.args.get("search") or "").strip()
     limit, offset = _page_args()
     with database.get_db() as conn:
-        where_clause = ""
-        params: list = []
+        filters = []
+        params: list[object] = []
         if scope == "shared":
-            where_clause = "WHERE d.scope = 'shared'"
+            filters.append("d.scope = 'shared'")
         elif scope == "private":
-            where_clause = "WHERE d.scope = 'private'"
+            filters.append("d.scope = 'private'")
+        if search:
+            filters.append(
+                "(d.name LIKE ? OR d.original_filename LIKE ? OR u.name LIKE ? OR u.email LIKE ? OR d.category LIKE ?)"
+            )
+            params.extend([f"%{search}%"] * 5)
+        where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
 
         total = conn.execute(
-            f"SELECT COUNT(*) AS c FROM documents d {where_clause}"
+            f"""
+                SELECT COUNT(*) AS c
+                FROM documents d
+                LEFT JOIN users u ON u.id = d.user_id
+                {where_clause}
+            """,
+            params,
         ).fetchone()["c"]
+
+        count_filters = []
+        count_params: list[object] = []
+        if search:
+            count_filters.append(
+                "(d.name LIKE ? OR d.original_filename LIKE ? OR u.name LIKE ? OR u.email LIKE ? OR d.category LIKE ?)"
+            )
+            count_params.extend([f"%{search}%"] * 5)
+        count_where = f"WHERE {' AND '.join(count_filters)}" if count_filters else ""
+        scope_rows = conn.execute(f"""
+            SELECT d.scope, COUNT(*) AS c
+            FROM documents d
+            LEFT JOIN users u ON u.id = d.user_id
+            {count_where}
+            GROUP BY d.scope
+        """, count_params).fetchall()
 
         rows = conn.execute(f"""
             SELECT d.*, u.name AS uploader_name, u.email AS uploader_email
@@ -147,24 +247,60 @@ def list_shared_documents():
             ORDER BY d.uploaded_at DESC
             LIMIT ? OFFSET ?
         """, params + [limit, offset]).fetchall()
+    documents = []
+    for r in rows:
+        security = document_service.ensure_security_scan(
+            r["doc_id"],
+            r["original_filename"],
+            r["security_status"],
+        )
+        documents.append({
+            "doc_id":              r["doc_id"],
+            "name":                r["name"],
+            "original_filename":   r["original_filename"],
+            "collection_name":     r["collection_name"],
+            "page_count":          r["page_count"],
+            "chunk_count":         r["chunk_count"],
+            "scope":               r["scope"],
+            "category":            r["category"] or "Autres",
+            "security_status":     security["status"],
+            "security_verdict":    security["verdict"],
+            "security_checked_at": security["checked_at"],
+            "uploaded_at":         r["uploaded_at"],
+            "uploader_name":       r["uploader_name"] or "Compte supprimé",
+            "uploader_email":      r["uploader_email"] or "—",
+        })
+    scope_counts = {r["scope"]: r["c"] for r in scope_rows}
     return jsonify({
         "total": total,
-        "documents": [
-            {
-                "doc_id":           r["doc_id"],
-                "name":             r["name"],
-                "original_filename": r["original_filename"],
-                "collection_name":  r["collection_name"],
-                "page_count":       r["page_count"],
-                "chunk_count":      r["chunk_count"],
-                "scope":            r["scope"],
-                "uploaded_at":      r["uploaded_at"],
-                "uploader_name":    r["uploader_name"] or "Compte supprimé",
-                "uploader_email":   r["uploader_email"] or "—",
-            }
-            for r in rows
-        ]
+        "scope_counts": {
+            "all": sum(scope_counts.values()),
+            "shared": scope_counts.get("shared", 0),
+            "private": scope_counts.get("private", 0),
+        },
+        "documents": documents,
     }), 200
+
+
+@admin_bp.get("/api/admin/documents/<doc_id>/file")
+@require_auth
+@require_role("admin", "professor")
+def preview_document_file(doc_id: str):
+    doc = document_service.get(doc_id, None)
+    if not doc:
+        return jsonify({"error": "Document not found"}), 404
+    path = document_service.uploaded_path(doc.doc_id, doc.original_filename)
+    if not path.exists():
+        return jsonify({"error": "Document file not found"}), 404
+    response = send_file(
+        path,
+        mimetype="application/pdf",
+        as_attachment=False,
+        download_name=doc.original_filename,
+    )
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Content-Security-Policy"] = "sandbox"
+    return response
 
 
 @admin_bp.delete("/api/admin/documents/<doc_id>")
@@ -317,7 +453,15 @@ def get_roles():
             ORDER BY r.is_builtin DESC, r.name ASC
         """).fetchall()
     return jsonify({
-        "roles": [dict(r) for r in rows]
+        "permissions": PERMISSIONS,
+        "roles": [
+            {
+                **dict(r),
+                "is_builtin": bool(r["is_builtin"]),
+                "permissions": get_role_permissions(r["name"]),
+            }
+            for r in rows
+        ],
     }), 200
 
 
@@ -328,9 +472,12 @@ def create_role():
     data = request.get_json(silent=True) or {}
     name = (data.get("name") or "").strip().lower()
     description = (data.get("description") or "").strip()
+    permissions = normalize_permissions(data.get("permissions") or [])
     
     if not name:
         return jsonify({"error": "name is required"}), 400
+    if not re.fullmatch(r"[a-z0-9_-]{2,40}", name):
+        return jsonify({"error": "name must be 2-40 lowercase letters, digits, _ or -"}), 400
         
     with database.get_db() as conn:
         row = conn.execute("SELECT name FROM roles WHERE name=?", (name,)).fetchone()
@@ -341,8 +488,29 @@ def create_role():
             "INSERT INTO roles (name, description, is_builtin, created_at) VALUES (?, ?, 0, ?)",
             (name, description, time.time())
         )
+    set_role_permissions(name, permissions)
     audit_service.log_action("role.created", "role", name, description)
     return jsonify({"created": True, "name": name}), 201
+
+
+@admin_bp.put("/api/admin/roles/<role_name>/permissions")
+@require_auth
+@require_role("admin")
+def update_role_permissions(role_name: str):
+    data = request.get_json(silent=True) or {}
+    permissions = normalize_permissions(data.get("permissions") or [])
+    with database.get_db() as conn:
+        row = conn.execute("SELECT name FROM roles WHERE name=?", (role_name,)).fetchone()
+        if not row:
+            return jsonify({"error": "role not found"}), 404
+    updated = set_role_permissions(role_name, permissions)
+    audit_service.log_action(
+        "role.permissions_changed",
+        "role",
+        role_name,
+        ", ".join(updated),
+    )
+    return jsonify({"permissions": updated}), 200
 
 
 @admin_bp.delete("/api/admin/roles/<role_name>")

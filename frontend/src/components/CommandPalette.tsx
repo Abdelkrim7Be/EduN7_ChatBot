@@ -380,7 +380,7 @@ export function CommandPalette({
                   {/* Conversations */}
                   {conversations.length > 0 && (
                     <Command.Group
-                      heading="Recent Conversations"
+                      heading="Conversations récentes"
                       className={groupHeadingClass}
                     >
                       {conversations.slice(0, 6).map((conv) => (
@@ -391,7 +391,7 @@ export function CommandPalette({
                           onSelect={() => run(() => onSwitchConversation(conv))}
                         >
                           <span className="truncate flex-1">
-                            {conv.title || "Conversation sans titre"}
+                            {conv.title || "Nouvelle conversation"}
                           </span>
                           {conv.session_id === currentSessionId && (
                             <span className="text-[10px] text-accent font-medium flex-shrink-0">

@@ -2,11 +2,12 @@ import os
 import logging
 from pathlib import Path
 
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, send_file
 
 import config
 from limiter_instance import limiter
 from middleware.auth import require_auth
+from services.permissions_service import role_has_permission
 from services import document_service, session_service
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,11 @@ def upload():
     requested_scope = request.form.get("scope", "private").strip()
     if requested_scope not in ALLOWED_SCOPES:
         requested_scope = "private"
-    if requested_scope == "shared" and g.user.role not in PRIVILEGED_ROLES:
+    if (
+        requested_scope == "shared"
+        and g.user.role not in PRIVILEGED_ROLES
+        and not role_has_permission(g.user.role, "library.upload_shared")
+    ):
         requested_scope = "private"
 
     records = []
@@ -76,6 +81,9 @@ def upload():
         try:
             record = document_service.ingest(str(save_path), safe_name, g.user.id, requested_scope)
             records.append(record.to_dict())
+        except ValueError as e:
+            logger.warning("Security scan rejected %s: %s", safe_name, e)
+            return jsonify({"error": f"Security scan failed: {e}"}), 422
         except Exception as e:
             logger.error("Ingestion failed for %s: %s", safe_name, e)
             return jsonify({"error": f"Ingestion failed: {e}"}), 500
@@ -114,3 +122,23 @@ def document_status(doc_id: str):
         "page_count": doc.page_count,
         "chunk_count": doc.chunk_count
     }), 200
+
+
+@documents_bp.route("/api/documents/<doc_id>/file", methods=["GET"])
+@require_auth
+def document_file(doc_id: str):
+    doc = document_service.get(doc_id, g.user.id)
+    if not doc:
+        return jsonify({"error": "Document not found"}), 404
+    path = document_service.uploaded_path(doc.doc_id, doc.original_filename)
+    if not path.exists():
+        return jsonify({"error": "Document file not found"}), 404
+    response = send_file(
+        path,
+        mimetype="application/pdf",
+        as_attachment=False,
+        download_name=doc.original_filename,
+    )
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Content-Security-Policy"] = "sandbox"
+    return response

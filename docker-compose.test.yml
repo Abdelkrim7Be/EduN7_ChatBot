@@ -1,15 +1,13 @@
-version: '3.8'
-
 services:
   backend-test:
     build:
       context: ./backend
     environment:
-      - DB_PATH=:memory:
-      - CHROMA_HOST=chroma-test
-      - CHROMA_PORT=8000
-      - FLASK_ENV=testing
-      - JWT_SECRET=test_secret_do_not_use_in_prod
+      - "DB_PATH=:memory:"
+      - "CHROMA_HOST=chroma-test"
+      - "CHROMA_PORT=8000"
+      - "FLASK_ENV=testing"
+      - "JWT_SECRET=test_secret_do_not_use_in_prod"
     command: >
       sh -c "pip install pytest && pytest"
     depends_on:
@@ -18,4 +16,4 @@ services:
   chroma-test:
     image: chromadb/chroma:0.5.5
     environment:
-      - IS_PERSISTENT=False
+      - "IS_PERSISTENT=False"

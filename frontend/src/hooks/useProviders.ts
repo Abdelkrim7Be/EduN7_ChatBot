@@ -17,7 +17,9 @@ function saveStored(sel: SelectedModel) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sel));
 }
 
-export function useProviders() {
+// The provider list is behind auth (it reveals which keys are configured),
+// so it can only be fetched once the user is signed in.
+export function useProviders(isAuthenticated: boolean) {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [selected, setSelected] = useState<SelectedModel | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,8 +56,14 @@ export function useProviders() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setProviders([]);
+      setSelected(null);
+      setLoading(false);
+      return;
+    }
     refresh();
-  }, [refresh]);
+  }, [refresh, isAuthenticated]);
 
   function select(provider: string, model: string) {
     const sel = { provider, model };

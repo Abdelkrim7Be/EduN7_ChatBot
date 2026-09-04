@@ -13,15 +13,23 @@ import type {
 } from "../types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
-const TOKEN_KEY = "ensetai_token";
+const CSRF_COOKIE = "ensetai_csrf";
 
-function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+// The session token lives in an httpOnly cookie the page cannot read, so the
+// browser attaches it automatically. Non-GET requests echo the readable CSRF
+// cookie back in a header, which a cross-origin page cannot do.
+function readCookie(name: string): string | null {
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${name}=([^;]*)`),
+  );
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
-function authHeaders(): Record<string, string> {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+function csrfHeaders(method?: string): Record<string, string> {
+  const verb = (method ?? "GET").toUpperCase();
+  if (verb === "GET" || verb === "HEAD") return {};
+  const token = readCookie(CSRF_COOKIE);
+  return token ? { "X-CSRF-Token": token } : {};
 }
 
 async function apiFetch(
@@ -30,24 +38,30 @@ async function apiFetch(
 ): Promise<Response> {
   const res = await fetch(`${BASE}${url}`, {
     ...init,
+    credentials: "include",
     headers: {
       ...(init.headers as Record<string, string>),
-      ...authHeaders(),
+      ...csrfHeaders(init.method),
     },
   });
   if (res.status === 401) {
-    localStorage.removeItem(TOKEN_KEY);
     window.dispatchEvent(new Event("auth:expired"));
   }
   return res;
 }
 
+async function readApiError(res: Response, fallback: string): Promise<Error> {
+  const data = await res.json().catch(() => null);
+  return new Error(data?.error ?? fallback);
+}
+
 export async function loginWithEmail(
   email: string,
   password: string,
-): Promise<{ token: string; user: User }> {
+): Promise<{ user: User }> {
   const res = await fetch(`${BASE}/api/auth/login`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
@@ -62,9 +76,10 @@ export async function registerWithEmail(
   email: string,
   name: string,
   password: string,
-): Promise<{ token: string; user: User }> {
+): Promise<{ user: User }> {
   const res = await fetch(`${BASE}/api/auth/register`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, name, password }),
   });
@@ -84,13 +99,13 @@ export async function fetchMe(): Promise<User> {
   return data.user as User;
 }
 
-export async function updateProfile(name?: string, avatar_url?: string): Promise<{ token: string; user: User }> {
+export async function updateProfile(name?: string, avatar_url?: string): Promise<{ user: User }> {
   const res = await apiFetch("/api/auth/profile", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, avatar_url }),
   });
-  if (!res.ok) throw new Error("Failed to update profile");
+  if (!res.ok) throw await readApiError(res, "Failed to update profile");
   return res.json();
 }
 
@@ -106,16 +121,8 @@ export async function changePassword(currentPassword: string, newPassword: strin
   }
 }
 
-export function storeToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
-}
-
-export function hasToken(): boolean {
-  return !!getToken();
+export async function logout(): Promise<void> {
+  await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
 }
 
 export async function createSession(): Promise<string> {
@@ -249,11 +256,33 @@ export async function deleteConversationApi(sessionId: string): Promise<void> {
   }
 }
 
-export async function fetchAdminUsers(): Promise<AdminUser[]> {
-  const res = await apiFetch("/api/admin/users");
+export async function fetchAdminUsers(params?: {
+  limit?: number;
+  offset?: number;
+  role?: string;
+  search?: string;
+  status?: "all" | "active" | "suspended";
+}): Promise<{
+  users: AdminUser[];
+  total: number;
+  role_counts: Record<string, number>;
+  status_counts: { all: number; active: number; suspended: number };
+}> {
+  const qs = new URLSearchParams();
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.offset) qs.set("offset", String(params.offset));
+  if (params?.role) qs.set("role", params.role);
+  if (params?.search) qs.set("search", params.search);
+  if (params?.status && params.status !== "all") qs.set("status", params.status);
+  const res = await apiFetch(`/api/admin/users?${qs.toString()}`);
   if (!res.ok) throw new Error("Failed to fetch users");
   const data = await res.json();
-  return data.users as AdminUser[];
+  return {
+    users: data.users as AdminUser[],
+    total: data.total as number,
+    role_counts: data.role_counts ?? {},
+    status_counts: data.status_counts ?? { all: data.total as number, active: 0, suspended: 0 },
+  };
 }
 
 export async function updateUserRole(
@@ -270,12 +299,36 @@ export async function updateUserRole(
 
 export async function fetchAdminDocuments(
   scope?: "all" | "shared" | "private",
-): Promise<AdminDocument[]> {
-  const qs = scope ? `?scope=${scope}` : "";
-  const res = await apiFetch(`/api/admin/documents${qs}`);
+  params?: { limit?: number; offset?: number; search?: string },
+): Promise<{
+  documents: AdminDocument[];
+  total: number;
+  scope_counts: { all: number; shared: number; private: number };
+}> {
+  const qs = new URLSearchParams();
+  if (scope) qs.set("scope", scope);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.offset) qs.set("offset", String(params.offset));
+  if (params?.search) qs.set("search", params.search);
+  const res = await apiFetch(`/api/admin/documents?${qs.toString()}`);
   if (!res.ok) throw new Error("Failed to fetch documents");
   const data = await res.json();
-  return data.documents as AdminDocument[];
+  return {
+    documents: data.documents as AdminDocument[],
+    total: data.total as number,
+    scope_counts: data.scope_counts ?? {
+      all: data.total as number,
+      shared: 0,
+      private: 0,
+    },
+  };
+}
+
+export async function fetchAdminDocumentFile(docId: string): Promise<string> {
+  const res = await apiFetch(`/api/admin/documents/${docId}/file`);
+  if (!res.ok) throw new Error("File not available");
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
 }
 
 export async function deleteAdminDocument(docId: string): Promise<void> {
@@ -310,12 +363,19 @@ export interface AdminConversationMessage {
 
 export async function fetchAdminConversations(
   search?: string,
-): Promise<AdminConversation[]> {
-  const qs = search ? `?search=${encodeURIComponent(search)}` : "";
-  const res = await apiFetch(`/api/admin/conversations${qs}`);
+  params?: { limit?: number; offset?: number },
+): Promise<{ conversations: AdminConversation[]; total: number }> {
+  const qs = new URLSearchParams();
+  if (search) qs.set("search", search);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.offset) qs.set("offset", String(params.offset));
+  const res = await apiFetch(`/api/admin/conversations?${qs.toString()}`);
   if (!res.ok) throw new Error("Failed to fetch conversations");
   const data = await res.json();
-  return data.conversations as AdminConversation[];
+  return {
+    conversations: data.conversations as AdminConversation[],
+    total: data.total as number,
+  };
 }
 
 export async function fetchAdminConversationMessages(
@@ -388,9 +448,10 @@ export async function* streamChat(
 ): AsyncGenerator<StreamEvent> {
   const res = await fetch(`${BASE}/api/chat/stream`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
+      ...csrfHeaders("POST"),
     },
     body: JSON.stringify({
       session_id: sessionId,
@@ -404,7 +465,6 @@ export async function* streamChat(
 
   if (!res.ok || !res.body) {
     if (res.status === 401) {
-      localStorage.removeItem(TOKEN_KEY);
       window.dispatchEvent(new Event("auth:expired"));
     }
     throw new Error(`Chat request failed: ${res.status}`);
@@ -442,22 +502,57 @@ export interface AdminRole {
   is_builtin: boolean;
   user_count: number;
   created_at: number;
+  permissions: string[];
 }
 
-export async function fetchAdminRoles(): Promise<AdminRole[]> {
+export interface AdminPermission {
+  key: string;
+  label: string;
+  description: string;
+  category: string;
+}
+
+export async function fetchAdminRoles(): Promise<{
+  roles: AdminRole[];
+  permissions: AdminPermission[];
+}> {
   const res = await apiFetch("/api/admin/roles");
   if (!res.ok) throw new Error("Failed to fetch roles");
   const data = await res.json();
-  return data.roles as AdminRole[];
+  return {
+    roles: data.roles as AdminRole[],
+    permissions: data.permissions as AdminPermission[],
+  };
 }
 
-export async function createAdminRole(name: string, description: string): Promise<void> {
+export async function createAdminRole(
+  name: string,
+  description: string,
+  permissions: string[] = [],
+): Promise<void> {
   const res = await apiFetch("/api/admin/roles", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, description }),
+    body: JSON.stringify({ name, description, permissions }),
   });
-  if (!res.ok) throw new Error("Failed to create role");
+  if (!res.ok) throw await readApiError(res, "Failed to create role");
+}
+
+export async function updateAdminRolePermissions(
+  roleName: string,
+  permissions: string[],
+): Promise<string[]> {
+  const res = await apiFetch(
+    `/api/admin/roles/${encodeURIComponent(roleName)}/permissions`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ permissions }),
+    },
+  );
+  if (!res.ok) throw new Error("Failed to update role permissions");
+  const data = await res.json();
+  return data.permissions as string[];
 }
 
 export async function deleteAdminRole(roleName: string): Promise<void> {
@@ -548,4 +643,3 @@ export async function toggleAnnouncement(id: number): Promise<void> {
   const res = await apiFetch(`/api/admin/announcements/${id}/toggle`, { method: "PUT" });
   if (!res.ok) throw new Error("Failed to toggle announcement");
 }
-

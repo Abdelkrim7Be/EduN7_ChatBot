@@ -2,49 +2,63 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-test('E2E upload and reload test', async ({ page }) => {
-  // 1. Go to the login page
-  await page.goto('http://localhost:3000/login');
+function makeMinimalPdf() {
+  const stream = 'BT /F1 14 Tf 72 720 Td (EduN7 E2E upload document) Tj ET';
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`,
+  ];
 
-  // 2. Switch to Register tab (since the previous test might not have registered properly, let's create a guaranteed fresh user)
-  const uniqueEmail = `e2e_${Date.now()}@enset.ma`;
-  await page.getByRole('button', { name: 'REGISTER' }).click();
-
-  await page.getByLabel('Name').fill('E2E Tester');
-  await page.getByLabel('Email', { exact: true }).fill(uniqueEmail);
-  await page.getByLabel('Password', { exact: true }).fill('Password123!');
-  await page.getByLabel('Confirm Password').fill('Password123!');
-  await page.getByRole('button', { name: 'INITIALIZE ACCESS' }).click();
-
-  // Wait to reach the chat page
-  await page.waitForURL('**/chat');
-
-  // 3. Create a dummy PDF to upload
-  const dummyPdfPath = path.join(__dirname, 'TEST_DOC_123.pdf');
-  fs.writeFileSync(dummyPdfPath, 'dummy pdf content for e2e test');
-
-  // 4. Upload the document via file chooser
-  const fileChooserPromise = page.waitForEvent('filechooser');
-  await page.locator('input[type="file"]').click({ force: true });
-  const fileChooser = await fileChooserPromise;
-  await fileChooser.setFiles(dummyPdfPath);
-
-  // 5. The upload rename modal might pop up if the name isn't valid, but TEST_DOC_123.pdf might be valid.
-  // Wait for the modal or upload success.
-  const confirmBtn = page.getByRole('button', { name: 'Confirm & Upload All' });
-  if (await confirmBtn.isVisible()) {
-      await confirmBtn.click();
+  let body = '%PDF-1.4\n';
+  const offsets = [0];
+  for (let i = 0; i < objects.length; i += 1) {
+    offsets.push(Buffer.byteLength(body));
+    body += `${i + 1} 0 obj\n${objects[i]}\nendobj\n`;
   }
 
-  // 6. Wait for the document to appear in the sidebar
-  // We can look for the text "TEST_DOC_123"
-  await expect(page.locator('.w-72.border-r').locator('text=TEST_DOC_123.pdf')).toBeVisible({ timeout: 15000 });
+  const xrefOffset = Buffer.byteLength(body);
+  body += `xref\n0 ${objects.length + 1}\n`;
+  body += '0000000000 65535 f \n';
+  body += offsets.slice(1).map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`).join('');
+  body += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+  return Buffer.from(body);
+}
 
-  // 7. Reload the page to verify it persists!
-  await page.reload();
+const BASE = process.env.E2E_BASE_URL || 'http://localhost:3000';
 
-  // 8. Verify it is STILL in the sidebar
-  await expect(page.locator('.w-72.border-r').locator('text=TEST_DOC_123.pdf')).toBeVisible({ timeout: 15000 });
+test('uploaded document survives a reload', async ({ page }) => {
+  await page.goto(`${BASE}/login`);
 
-  console.log("E2E Test Passed: Document persisted after reload!");
+  await page.locator('input[type="email"]').fill(process.env.E2E_EMAIL || 'admin@enset.ma');
+  await page.locator('input[type="password"]').first().fill(process.env.E2E_PASSWORD || 'Password123!');
+  await page.getByRole('button', { name: 'Se connecter' }).click();
+
+  await expect(page.locator('textarea')).toBeEnabled({ timeout: 20000 });
+
+  const pdfPath = path.join(process.cwd(), 'TEST_DOC_e2e.pdf');
+  fs.writeFileSync(pdfPath, makeMinimalPdf());
+
+  try {
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: 'Ajouter un document' }).click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(pdfPath);
+
+    // TEST_DOC_e2e.pdf already matches the MATIERE_TYPE_TITRE convention, so the
+    // rename modal should not appear; click through it if it ever does.
+    const confirmBtn = page.getByRole('button', { name: 'Confirmer et envoyer' });
+    if (await confirmBtn.isVisible().catch(() => false)) {
+      await confirmBtn.click();
+    }
+
+    await expect(page.getByText('TEST_DOC_e2e.pdf').first()).toBeVisible({ timeout: 30000 });
+
+    await page.reload();
+    await expect(page.getByText('TEST_DOC_e2e.pdf').first()).toBeVisible({ timeout: 30000 });
+  } finally {
+    fs.rmSync(pdfPath, { force: true });
+  }
 });

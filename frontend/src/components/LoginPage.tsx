@@ -82,7 +82,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
         </div>
         
         <div className="text-zinc-600 text-xs flex flex-col gap-2 uppercase tracking-widest">
-          <p>TERMINAL_STATUS: READY</p>
+          <p>STATUT_TERMINAL : PRÊT</p>
           <p>© 2026 SOVEREIGN_INTEL_SYSTEMS</p>
         </div>
       </section>
@@ -104,10 +104,10 @@ export function LoginPage({ onLogin, onRegister }: Props) {
           
           <div className="mb-10">
             <h2 className="text-3xl font-bold mb-2">
-              {tab === "login" ? "Initialize Session" : "Request Access"}
+              {tab === "login" ? "Ouvrir une session" : "Demander un accès"}
             </h2>
             <p className="text-zinc-400 text-sm">
-              {tab === "login" ? "Enter your credentials to continue." : "Register to join the research node."}
+              {tab === "login" ? "Saisissez vos identifiants pour continuer." : "Inscrivez-vous pour rejoindre la plateforme."}
             </p>
           </div>
 
@@ -122,7 +122,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                     : "text-zinc-600 hover:text-white"
                 }`}
               >
-                {t === "login" ? "Login" : "Register"}
+                {t === "login" ? "Connexion" : "Inscription"}
               </button>
             ))}
           </div>
@@ -137,7 +137,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="John Doe"
+                  placeholder="Prénom Nom"
                   required
                   className={inputClass}
                 />
@@ -164,7 +164,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                   Security Key
                 </label>
                 {tab === "login" && (
-                  <a href="#" className="text-[10px] text-zinc-500 hover:text-white uppercase">Forgot?</a>
+                  <a href="#" className="text-[10px] text-zinc-500 hover:text-white uppercase">Oublié ?</a>
                 )}
               </div>
               <div className="relative">
@@ -232,10 +232,10 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                 className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-zinc-200 transition-colors duration-200 uppercase tracking-tighter text-sm disabled:opacity-50"
               >
                 {loading
-                  ? "Processing..."
+                  ? "Traitement..."
                   : tab === "login"
-                    ? "Connect to Node"
-                    : "Initialize Access"}
+                    ? "Se connecter"
+                    : "Créer le compte"}
               </button>
             </div>
           </form>
@@ -249,7 +249,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
               onClick={() => switchTab(tab === "login" ? "register" : "login")}
               className="text-white text-xs border border-zinc-800 px-6 py-2 hover:bg-zinc-900 transition-all uppercase tracking-widest"
             >
-              {tab === "login" ? "Request Node Access" : "Authenticate"}
+              {tab === "login" ? "Demander un accès" : "Se connecter"}
             </button>
           </div>
         </div>

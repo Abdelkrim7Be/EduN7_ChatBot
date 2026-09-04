@@ -2,6 +2,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import type { ComponentProps, CSSProperties, ReactNode } from "react";
+import type { Components } from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Copy, RefreshCw, Check, Edit2 } from "lucide-react";
@@ -15,6 +17,13 @@ interface Props {
   onRegenerate?: () => void;
   onEdit?: (id: string, newText: string) => void;
 }
+
+type CodeProps = ComponentProps<"code"> & {
+  inline?: boolean;
+  children?: ReactNode;
+};
+
+const syntaxTheme = vscDarkPlus as Record<string, CSSProperties>;
 
 export function MessageBubble({
   msg,
@@ -41,6 +50,28 @@ export function MessageBubble({
     setIsEditing(false);
   }
 
+  const CodeRenderer = ({ inline, className, children, ...props }: CodeProps) => {
+      const match = /language-(\w+)/.exec(className || "");
+      return !inline && match ? (
+        <SyntaxHighlighter
+          style={syntaxTheme}
+          language={match[1]}
+          PreTag="div"
+          className="rounded-sm !bg-surface-dim border border-border-subtle text-sm font-mono my-4 overflow-x-auto"
+        >
+          {String(children).replace(/\n$/, "")}
+        </SyntaxHighlighter>
+      ) : (
+        <code className="px-1.5 py-0.5 rounded-sm bg-surface-bright text-white text-[0.85em] font-mono border border-border-subtle" {...props}>
+          {children}
+        </code>
+      );
+  };
+
+  const markdownComponents: Components = {
+    code: CodeRenderer as Components["code"],
+  };
+
   return (
     <div className={`flex gap-4 w-full animate-fade-in group hover-reveal ${isUser ? "flex-row-reverse" : ""}`}>
       {/* Avatar */}
@@ -62,8 +93,8 @@ export function MessageBubble({
                   autoFocus
                 />
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => setIsEditing(false)} className="px-3 py-1 text-xs text-gray-400 hover:text-white uppercase">Cancel</button>
-                  <button onClick={handleSaveEdit} className="px-3 py-1 text-xs bg-white text-black rounded-sm uppercase font-bold">Save & Send</button>
+                  <button onClick={() => setIsEditing(false)} className="px-3 py-1 text-xs text-gray-400 hover:text-white uppercase">Annuler</button>
+                  <button onClick={handleSaveEdit} className="px-3 py-1 text-xs bg-white text-black rounded-sm uppercase font-bold">Enregistrer et envoyer</button>
                 </div>
               </div>
             ) : (
@@ -75,14 +106,14 @@ export function MessageBubble({
                   <button
                     onClick={handleCopy}
                     className="p-1.5 text-gray-500 hover:text-white border border-transparent hover:border-border-subtle rounded-sm transition-all flex items-center gap-1 text-[10px] uppercase tracking-widest font-mono"
-                    title="Copy"
+                    title="Copier"
                   >
                     {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
                   <button 
                     onClick={() => setIsEditing(true)} 
                     className="p-1.5 text-gray-500 hover:text-white border border-transparent hover:border-border-subtle rounded-sm transition-all flex items-center gap-1 text-[10px] uppercase tracking-widest font-mono"
-                    title="Edit"
+                    title="Modifier"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
@@ -102,26 +133,7 @@ export function MessageBubble({
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex]}
-                components={{
-                  code({ node, inline, className, children, ...props }: any) {
-                    const match = /language-(\w+)/.exec(className || "");
-                    return !inline && match ? (
-                      <SyntaxHighlighter
-                        style={vscDarkPlus as any}
-                        language={match[1]}
-                        PreTag="div"
-                        className="rounded-sm !bg-surface-dim border border-border-subtle text-sm font-mono my-4 overflow-x-auto"
-                        {...props}
-                      >
-                        {String(children).replace(/\n$/, "")}
-                      </SyntaxHighlighter>
-                    ) : (
-                      <code className="px-1.5 py-0.5 rounded-sm bg-surface-bright text-white text-[0.85em] font-mono border border-border-subtle" {...props}>
-                        {children}
-                      </code>
-                    );
-                  },
-                }}
+                components={markdownComponents}
               >
                 {msg.content}
               </ReactMarkdown>
@@ -133,7 +145,7 @@ export function MessageBubble({
                 <button
                   onClick={handleCopy}
                   className="p-1.5 text-gray-500 hover:text-white border border-transparent hover:border-border-subtle rounded-sm transition-all flex items-center gap-1 text-[10px] uppercase tracking-widest font-mono"
-                  title="Copy"
+                  title="Copier"
                 >
                   {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
@@ -141,7 +153,7 @@ export function MessageBubble({
                   <button
                     onClick={onRegenerate}
                     className="p-1.5 text-gray-500 hover:text-white border border-transparent hover:border-border-subtle rounded-sm transition-all flex items-center gap-1 text-[10px] uppercase tracking-widest font-mono"
-                    title="Regenerate"
+                    title="Régénérer"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>

@@ -52,7 +52,7 @@ export function LibraryPage({ user, isRole }: Props) {
       await upload(files, "shared");
       // Refetch documents after upload
       fetchAdminDocuments("shared")
-        .then(setDocs)
+        .then(({ documents }) => setDocs(documents))
         .catch(() => toast("Erreur lors du chargement de la bibliothèque", "error"));
     }
     e.target.value = "";
@@ -60,7 +60,7 @@ export function LibraryPage({ user, isRole }: Props) {
 
   useEffect(() => {
     fetchAdminDocuments("shared")
-      .then(setDocs)
+      .then(({ documents }) => setDocs(documents))
       .catch(() => toast("Erreur lors du chargement de la bibliothèque", "error"))
       .finally(() => setLoading(false));
   }, []);
@@ -77,7 +77,7 @@ export function LibraryPage({ user, isRole }: Props) {
         next.delete(docId);
         return next;
       });
-      toast("Document removed from library", "success");
+      toast("Document retiré de la bibliothèque", "success");
     } catch {
       toast("Erreur lors de la suppression", "error");
     } finally {
@@ -140,7 +140,11 @@ export function LibraryPage({ user, isRole }: Props) {
   function toggleSelect(docId: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(docId) ? next.delete(docId) : next.add(docId);
+      if (next.has(docId)) {
+        next.delete(docId);
+      } else {
+        next.add(docId);
+      }
       return next;
     });
   }
@@ -166,8 +170,8 @@ export function LibraryPage({ user, isRole }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <p>
-              Shared documents are automatically available in the side panel of the <Link to="/" className="text-white underline underline-offset-4 decoration-white/30 hover:decoration-white">Chat</Link>.
-              Select them in the "Documents" section to query them.
+              Les documents partagés sont automatiquement disponibles dans le panneau latéral du <Link to="/" className="text-white underline underline-offset-4 decoration-white/30 hover:decoration-white">Chat</Link>.
+              Sélectionnez-les dans la section « Documents » pour les interroger.
             </p>
           </div>
 
@@ -188,7 +192,7 @@ export function LibraryPage({ user, isRole }: Props) {
                 {confirmBulk ? (
                   <>
                     <button onClick={handleBulkDelete} disabled={bulkDeleting} className="bg-red-600 text-white px-6 py-2 font-bold uppercase tracking-widest hover:bg-red-700 transition-all text-xs disabled:opacity-50">
-                      {bulkDeleting ? "Deleting..." : "Confirm"}
+                      {bulkDeleting ? "Suppression..." : "Confirmer"}
                     </button>
                     <button onClick={() => setConfirmBulk(false)} className="border border-white/40 text-white px-4 py-2 font-bold uppercase tracking-widest hover:bg-white/10 transition-all text-xs">
                       Cancel
@@ -202,7 +206,7 @@ export function LibraryPage({ user, isRole }: Props) {
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <button onClick={() => { setLoading(true); fetchAdminDocuments("shared").then(setDocs).finally(() => setLoading(false)); }} className="border border-white/40 text-white px-6 py-3 font-bold uppercase tracking-widest hover:bg-white/10 transition-all text-sm">
+                <button onClick={() => { setLoading(true); fetchAdminDocuments("shared").then(({ documents }) => setDocs(documents)).finally(() => setLoading(false)); }} className="border border-white/40 text-white px-6 py-3 font-bold uppercase tracking-widest hover:bg-white/10 transition-all text-sm">
                   Refresh
                 </button>
                 <input
@@ -214,7 +218,7 @@ export function LibraryPage({ user, isRole }: Props) {
                   onChange={handleFileChange}
                 />
                 <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="bg-white text-black px-8 py-3 font-bold uppercase tracking-widest hover:bg-white/90 transition-all text-sm disabled:opacity-50">
-                  {isUploading ? "Uploading..." : "Upload Document"}
+                  {isUploading ? "Envoi en cours..." : "Téléverser un document"}
                 </button>
               </div>
             )}
@@ -246,7 +250,7 @@ export function LibraryPage({ user, isRole }: Props) {
                 type="text" 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="SEARCH BY NAME, AUTHOR OR CATEGORY..." 
+                placeholder="RECHERCHER PAR NOM, AUTEUR OU CATÉGORIE..." 
                 className="w-full bg-transparent border border-white/20 py-2.5 pl-12 pr-4 text-xs uppercase tracking-widest focus:border-white focus:ring-0 placeholder:text-white/30 transition-colors" 
               />
             </div>
@@ -255,16 +259,16 @@ export function LibraryPage({ user, isRole }: Props) {
           {/* Document Grid */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <div className="text-white/50 text-sm uppercase tracking-widest animate-pulse">Loading...</div>
+              <div className="text-white/50 text-sm uppercase tracking-widest animate-pulse">Chargement...</div>
             </div>
           ) : filtered.length === 0 ? (
             <div className="border border-white/20 bg-white/5 p-12 text-center flex flex-col items-center">
                <svg className="w-8 h-8 text-white/30 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path>
                 </svg>
-                <p className="text-sm font-bold uppercase tracking-widest text-white/70">Library empty</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-white/70">Bibliothèque vide</p>
                 <p className="text-xs text-white/40 mt-2 max-w-sm uppercase tracking-wider leading-relaxed">
-                  {search ? "No results found." : "No shared documents at the moment."}
+                  {search ? "Aucun résultat." : "Aucun document partagé pour le moment."}
                 </p>
             </div>
           ) : (

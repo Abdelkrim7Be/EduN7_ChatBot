@@ -12,7 +12,7 @@ export function AdminChatTest() {
   const { toast } = useToast();
   const [sessionId, setSessionId] = useState<string | null>(null);
   
-  const { providers, selected, select, currentProvider, currentModel } = useProviders();
+  const { providers, selected, select, currentProvider, currentModel } = useProviders(true);
   const { documents } = useDocuments("all");
   
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());

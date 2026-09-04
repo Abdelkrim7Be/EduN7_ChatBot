@@ -64,11 +64,13 @@ export function UploadRenameModal({ files, isOpen, onCancel, onConfirm }: Props)
         <div className="absolute top-0 left-0 w-full h-1 bg-white scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
         
         <h2 className="text-sm font-bold tracking-tighter uppercase mb-4 text-red-400">
-          INVALID NAMING CONVENTION ({files.length} FILE{files.length > 1 ? 'S' : ''})
+          NOMMAGE NON CONFORME ({files.length} FICHIER{files.length > 1 ? 'S' : ''})
         </h2>
         
         <p className="text-xs text-gray-400 mb-4">
-          Some files do not follow the required naming convention. Please review and rename them before uploading. Expected format: <strong>COURSE_TYPE_NAME.pdf</strong>
+          Les documents sont nommés <strong>MATIERE_TYPE_TITRE.pdf</strong> pour rester triables dans la bibliothèque
+          partagée — par exemple <strong>MATH_TD_Integrales.pdf</strong> ou <strong>INFO_CM_Reseaux.pdf</strong>.
+          Renommez les fichiers ci-dessous avant de les envoyer.
         </p>
 
         <div className="space-y-4 mb-6">
@@ -78,7 +80,7 @@ export function UploadRenameModal({ files, isOpen, onCancel, onConfirm }: Props)
             return (
               <div key={idx} className="flex flex-col gap-1 border-l-2 border-white/10 pl-3">
                 <label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold block truncate" title={f.file.name}>
-                  Original: {f.file.name}
+                  Nom d'origine : {f.file.name}
                 </label>
                 <input
                   type="text"
@@ -100,7 +102,7 @@ export function UploadRenameModal({ files, isOpen, onCancel, onConfirm }: Props)
             onClick={onCancel}
             className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors"
           >
-            Cancel
+            Annuler
           </button>
           <button
             onClick={handleConfirm}
@@ -111,7 +113,7 @@ export function UploadRenameModal({ files, isOpen, onCancel, onConfirm }: Props)
                 : "bg-gray-800 text-gray-500 cursor-not-allowed"
             }`}
           >
-            Confirm & Upload All
+            Confirmer et envoyer
           </button>
         </div>
       </div>

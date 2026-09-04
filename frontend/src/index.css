@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100;300;400;500;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -246,8 +248,6 @@ body {
   }
 }
 
-@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100;300;400;500;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap");
-
 .paper-texture::before {
   content: "";
   position: absolute;
@@ -258,6 +258,255 @@ body {
   opacity: 0.03;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Admin console deliberately mirrors the primary chat workspace shell. */
+.admin-console {
+  background: #000;
+  color: #fff;
+}
+
+.admin-console *,
+.admin-console input,
+.admin-console select,
+.admin-console textarea,
+.admin-console button {
+  letter-spacing: 0;
+}
+
+.admin-console .bg-canvas,
+.admin-console.bg-canvas {
+  background-color: #000;
+}
+
+.admin-console .bg-surface-1,
+.admin-console [class*="bg-surface-1/"] {
+  background-color: #0e0e0e;
+}
+
+.admin-console .bg-surface-2,
+.admin-console [class*="bg-surface-2/"],
+.admin-console .bg-surface-3,
+.admin-console [class*="bg-surface-3/"] {
+  background-color: #1c1b1b;
+}
+
+.admin-console .border-hairline,
+.admin-console .border-hairline\/30,
+.admin-console .border-hairline\/40 {
+  border-color: #222;
+}
+
+.admin-console .text-fg,
+.admin-console .text-brand-navy {
+  color: #fff;
+}
+
+.admin-console .text-fg-secondary,
+.admin-console .text-brand-gray-text {
+  color: #9ca3af;
+}
+
+.admin-console .text-fg-muted,
+.admin-console .text-brand-gray-mid {
+  color: #4b5563;
+}
+
+.admin-console .rounded-lg,
+.admin-console .rounded-xl,
+.admin-console .rounded-2xl,
+.admin-console .rounded-md,
+.admin-console .rounded-full {
+  border-radius: 2px;
+}
+
+.admin-console .shadow-soft,
+.admin-console .shadow-elevated,
+.admin-console .shadow-glow,
+.admin-console .shadow-sm,
+.admin-console .shadow-lg {
+  box-shadow: none;
+}
+
+.admin-console h1,
+.admin-console h2,
+.admin-console h3 {
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.admin-console h1 {
+  color: #fff;
+  font-size: 1.25rem;
+}
+
+.admin-console h2,
+.admin-console h3 {
+  color: #e5e7eb;
+}
+
+.admin-console p,
+.admin-console span,
+.admin-console td,
+.admin-console th,
+.admin-console label,
+.admin-console input,
+.admin-console textarea,
+.admin-console select,
+.admin-console button {
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+.admin-console input,
+.admin-console textarea,
+.admin-console select {
+  background-color: #0e0e0e;
+  border-color: #222;
+  color: #fff;
+}
+
+.admin-console input::placeholder,
+.admin-console textarea::placeholder {
+  color: #4b5563;
+}
+
+.admin-console input:focus,
+.admin-console textarea:focus,
+.admin-console select:focus {
+  border-color: #444;
+  box-shadow: none;
+  outline: none;
+}
+
+.admin-console button:disabled {
+  background-color: #1c1b1b;
+  border-color: #222;
+  color: #4b5563;
+  opacity: 1;
+}
+
+.admin-console table {
+  border-collapse: collapse;
+}
+
+.admin-console thead tr,
+.admin-console [class*="bg-surface-2/"] {
+  background-color: #000;
+}
+
+.admin-console th {
+  color: #4b5563;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.admin-console tbody tr:hover,
+.admin-console li:hover,
+.admin-console label:hover {
+  background-color: rgb(255 255 255 / 0.05);
+}
+
+.admin-console .bg-accent,
+.admin-console .hover\:bg-accent-hover:hover {
+  background-color: #fff;
+  color: #000;
+}
+
+.admin-console .text-accent {
+  color: rgb(var(--accent));
+}
+
+.admin-console .bg-accent\/10,
+.admin-console .bg-accent\/5,
+.admin-console .bg-accent-soft {
+  background-color: rgb(var(--accent) / 0.1);
+}
+
+.admin-console [class*="bg-gold/"],
+.admin-console [class*="bg-purple-"],
+.admin-console [class*="bg-emerald-"],
+.admin-console [class*="bg-teal-"],
+.admin-console [class*="bg-blue-"],
+.admin-console [class*="bg-amber-"] {
+  background-color: rgb(var(--accent) / 0.08);
+}
+
+.admin-console .text-gold,
+.admin-console .text-purple-400,
+.admin-console .text-purple-500,
+.admin-console .text-emerald-400,
+.admin-console .text-emerald-500,
+.admin-console .text-teal-400,
+.admin-console .text-teal-500,
+.admin-console .text-blue-400,
+.admin-console .text-amber-400 {
+  color: rgb(var(--accent));
+}
+
+.admin-console [class*="border-gold/"],
+.admin-console [class*="border-purple-"],
+.admin-console [class*="border-emerald-"],
+.admin-console [class*="border-teal-"],
+.admin-console [class*="border-blue-"],
+.admin-console [class*="border-amber-"] {
+  border-color: rgb(var(--accent) / 0.22);
+}
+
+.admin-console .bg-gradient-to-br {
+  background-image: none;
+  background-color: #3a3939;
+}
+
+@media (max-width: 767px) {
+  .admin-console {
+    flex-direction: column;
+  }
+
+  .admin-console > aside {
+    width: 100%;
+    height: auto;
+    max-height: 260px;
+    border-right: 0;
+    border-bottom: 1px solid #222;
+  }
+
+  .admin-console > aside > div:first-child {
+    padding: 1rem;
+  }
+
+  .admin-console > aside nav {
+    padding: 0 1rem 1rem;
+    overflow-x: auto;
+  }
+
+  .admin-console > aside nav .mb-8 {
+    margin-bottom: 0.75rem;
+  }
+
+  .admin-console > aside nav .mb-6 {
+    margin-bottom: 0;
+  }
+
+  .admin-console > aside nav .space-y-4 {
+    display: flex;
+    gap: 1rem;
+    min-width: max-content;
+  }
+
+  .admin-console > aside nav .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0;
+  }
+
+  .admin-console > aside nav .space-y-4 a {
+    flex-shrink: 0;
+  }
+
+  .admin-console > main {
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 /* Custom scrollbar for monochrome look */

@@ -19,13 +19,13 @@ export function StreamingIndicator() {
 }
 
 const VERBS = [
-  "Analyzing context",
-  "Synthesizing data",
-  "Modeling response",
-  "Structuring thoughts",
-  "Compiling insights",
-  "Generating output",
-  "Evaluating parameters"
+  "Analyse du contexte",
+  "Synthèse des données",
+  "Modélisation de la réponse",
+  "Structuration du raisonnement",
+  "Compilation des résultats",
+  "Génération de la réponse",
+  "Évaluation des paramètres"
 ];
 
 export function ThinkingStatus() {

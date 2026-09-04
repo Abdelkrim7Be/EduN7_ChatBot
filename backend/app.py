@@ -15,7 +15,11 @@ def create_app() -> Flask:
     database.init_db()
 
     app = Flask(__name__)
-    CORS(app, resources={r"/api/*": {"origins": config.ALLOWED_ORIGINS}})
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": config.ALLOWED_ORIGINS}},
+        supports_credentials=True,
+    )
 
     from limiter_instance import limiter
     limiter.init_app(app)

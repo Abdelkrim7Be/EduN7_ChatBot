@@ -6,12 +6,22 @@ import config
 
 DB_PATH = Path(config.DB_PATH)
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+_MEMORY_CONN: sqlite3.Connection | None = None
+
+
+def _connect() -> sqlite3.Connection:
+    global _MEMORY_CONN
+    if str(DB_PATH) == ":memory:":
+        if _MEMORY_CONN is None:
+            _MEMORY_CONN = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+        return _MEMORY_CONN
+    return sqlite3.connect(str(DB_PATH), check_same_thread=False)
 
 
 @contextmanager
 def get_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    conn = _connect()
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys = ON")
@@ -22,7 +32,8 @@ def get_db():
         conn.rollback()
         raise
     finally:
-        conn.close()
+        if str(DB_PATH) != ":memory:":
+            conn.close()
 
 
 def init_db() -> None:
@@ -68,6 +79,10 @@ def init_db() -> None:
                 page_count        INTEGER NOT NULL DEFAULT 0,
                 chunk_count       INTEGER NOT NULL DEFAULT 0,
                 scope             TEXT NOT NULL DEFAULT 'private',
+                category          TEXT NOT NULL DEFAULT 'Autres',
+                security_status   TEXT NOT NULL DEFAULT 'pending',
+                security_verdict  TEXT NOT NULL DEFAULT '',
+                security_checked_at REAL,
                 uploaded_at       REAL NOT NULL
             );
 
@@ -86,6 +101,12 @@ def init_db() -> None:
                 description TEXT NOT NULL DEFAULT '',
                 is_builtin INTEGER NOT NULL DEFAULT 0,
                 created_at REAL NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS role_permissions (
+                role_name TEXT NOT NULL REFERENCES roles(name) ON DELETE CASCADE,
+                permission TEXT NOT NULL,
+                PRIMARY KEY (role_name, permission)
             );
 
             CREATE TABLE IF NOT EXISTS audit_log (
@@ -130,6 +151,8 @@ def init_db() -> None:
                 "INSERT OR IGNORE INTO roles (name, description, is_builtin, created_at) VALUES (?, ?, 1, 0)",
                 (role_name, f"{role_name.capitalize()} role")
             )
+        from services.permissions_service import seed_builtin_permissions
+        seed_builtin_permissions(conn)
 
         # Seed settings
         default_settings = [
@@ -170,3 +193,9 @@ def init_db() -> None:
         dcols = [r[1] for r in conn.execute("PRAGMA table_info(documents)").fetchall()]
         if "category" not in dcols:
             conn.execute("ALTER TABLE documents ADD COLUMN category TEXT NOT NULL DEFAULT 'Autres'")
+        if "security_status" not in dcols:
+            conn.execute("ALTER TABLE documents ADD COLUMN security_status TEXT NOT NULL DEFAULT 'pending'")
+        if "security_verdict" not in dcols:
+            conn.execute("ALTER TABLE documents ADD COLUMN security_verdict TEXT NOT NULL DEFAULT ''")
+        if "security_checked_at" not in dcols:
+            conn.execute("ALTER TABLE documents ADD COLUMN security_checked_at REAL")

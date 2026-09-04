@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Search, ClipboardList, RefreshCw } from "lucide-react";
 import { fetchAuditLog } from "../../api/client";
 import { useToast } from "../ToastProvider";
 import type { AuditLogEntry } from "../../types";
+import { AdminPagination } from "./AdminPagination";
+
+const PAGE_SIZE = 10;
 
 function actionBadgeColor(action: string): string {
   if (action.startsWith("user.")) return "bg-blue-500/10 text-blue-400 border-blue-500/20";
@@ -30,27 +33,35 @@ export function AdminAuditLog() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [offset, setOffset] = useState(0);
-  const LIMIT = 50;
+  const [page, setPage] = useState(1);
 
-  function load(newOffset = 0) {
+  const load = useCallback((nextPage: number, actionQuery: string) => {
     setLoading(true);
-    fetchAuditLog({ action: search || undefined, limit: LIMIT, offset: newOffset })
+    fetchAuditLog({
+      action: actionQuery || undefined,
+      limit: PAGE_SIZE,
+      offset: (nextPage - 1) * PAGE_SIZE,
+    })
       .then(({ logs: l, total: t }) => {
-        setLogs(newOffset === 0 ? l : [...logs, ...l]);
+        setLogs(l);
         setTotal(t);
-        setOffset(newOffset);
       })
       .catch(() => toast("Erreur lors du chargement du journal", "error"))
       .finally(() => setLoading(false));
-  }
+  }, [toast]);
 
   useEffect(() => {
-    load(0);
-  }, []);
+    load(1, "");
+  }, [load]);
 
   function handleSearch() {
-    load(0);
+    setPage(1);
+    load(1, search);
+  }
+
+  function handlePageChange(nextPage: number) {
+    setPage(nextPage);
+    load(nextPage, search);
   }
 
   return (
@@ -63,7 +74,10 @@ export function AdminAuditLog() {
           </p>
         </div>
         <button
-          onClick={() => load(0)}
+          onClick={() => {
+            setPage(1);
+            load(1, search);
+          }}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-1 border border-hairline rounded-lg hover:bg-surface-3 text-fg-secondary transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
@@ -91,6 +105,14 @@ export function AdminAuditLog() {
           Filtrer
         </button>
       </div>
+
+      <AdminPagination
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={total}
+        loading={loading}
+        onPageChange={handlePageChange}
+      />
 
       {/* Table */}
       <div className="bg-surface-1 rounded-2xl border border-hairline shadow-soft overflow-hidden">
@@ -149,18 +171,13 @@ export function AdminAuditLog() {
           </table>
         </div>
 
-        {/* Load more */}
-        {logs.length < total && (
-          <div className="border-t border-hairline px-4 py-3 flex justify-center">
-            <button
-              onClick={() => load(offset + LIMIT)}
-              disabled={loading}
-              className="text-sm text-accent hover:text-accent-hover font-medium transition-colors disabled:opacity-50"
-            >
-              {loading ? "Chargement..." : `Charger plus (${logs.length}/${total})`}
-            </button>
-          </div>
-        )}
+        <AdminPagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          loading={loading}
+          onPageChange={handlePageChange}
+        />
       </div>
 
       {loading && logs.length === 0 && (

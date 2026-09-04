@@ -5,30 +5,30 @@ interface Props {
   docId: string;
   docName: string;
   onClose: () => void;
+  loadFile?: (docId: string) => Promise<string>;
 }
 
-export function DocumentPreviewModal({ docId, docName, onClose }: Props) {
+export function DocumentPreviewModal({ docId, docName, onClose, loadFile = fetchDocumentFile }: Props) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let objectUrl: string | null = null;
     setLoading(true);
     setError(null);
-    fetchDocumentFile(docId)
+    loadFile(docId)
       .then((url) => {
+        objectUrl = url;
         setPdfUrl(url);
       })
       .catch(() => setError("Unable to load document preview."))
       .finally(() => setLoading(false));
 
     return () => {
-      // Cleanup object URL
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-      }
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [docId]);
+  }, [docId, loadFile]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -77,7 +77,7 @@ export function DocumentPreviewModal({ docId, docName, onClose }: Props) {
           {loading ? (
             <div className="flex h-full flex-col items-center justify-center">
               <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mb-4" />
-              <p className="text-xs text-white/50 uppercase tracking-widest">Loading Document...</p>
+              <p className="text-xs text-white/50 uppercase tracking-widest">Chargement du document...</p>
             </div>
           ) : error ? (
             <div className="flex h-full flex-col items-center justify-center text-center p-8">
@@ -101,4 +101,3 @@ export function DocumentPreviewModal({ docId, docName, onClose }: Props) {
     </div>
   );
 }
-

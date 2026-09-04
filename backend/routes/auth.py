@@ -1,6 +1,11 @@
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, make_response
 
 from middleware.auth import require_auth
+from services.cookie_auth import (
+    set_auth_cookies,
+    clear_auth_cookies,
+    token_from_request,
+)
 from services.auth_service import (
     register_user, 
     authenticate_user, 
@@ -31,7 +36,8 @@ def register():
         return jsonify({"error": str(e)}), e.status
 
     token = create_jwt(user)
-    return jsonify({"token": token, "user": user.to_dict()}), 201
+    resp = make_response(jsonify({"user": user.to_dict()}), 201)
+    return set_auth_cookies(resp, token)
 
 
 @auth_bp.post("/api/auth/login")
@@ -49,7 +55,8 @@ def login():
         return jsonify({"error": str(e)}), e.status
 
     token = create_jwt(user)
-    return jsonify({"token": token, "user": user.to_dict()}), 200
+    resp = make_response(jsonify({"user": user.to_dict()}), 200)
+    return set_auth_cookies(resp, token)
 
 
 @auth_bp.get("/api/auth/me")
@@ -61,10 +68,11 @@ def me():
 @auth_bp.post("/api/auth/logout")
 @require_auth
 def logout():
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        revoke_token(auth_header[7:])
-    return jsonify({"ok": True}), 200
+    token, _ = token_from_request()
+    if token:
+        revoke_token(token)
+    resp = make_response(jsonify({"ok": True}), 200)
+    return clear_auth_cookies(resp)
 
 
 @auth_bp.put("/api/auth/profile")
@@ -79,8 +87,10 @@ def update_profile():
     except AuthError as e:
         return jsonify({"error": str(e)}), e.status
 
+    # Re-issue the token so the name/avatar in the payload stay current.
     token = create_jwt(updated_user)
-    return jsonify({"token": token, "user": updated_user.to_dict()}), 200
+    resp = make_response(jsonify({"user": updated_user.to_dict()}), 200)
+    return set_auth_cookies(resp, token)
 
 
 @auth_bp.put("/api/auth/password")

@@ -158,7 +158,9 @@ def update_user_profile(user_id: str, name: str | None, avatar_url: str | None) 
         if not user:
             raise AuthError("User not found", 404)
         
-        new_name = name if name is not None else user.name
+        new_name = name.strip() if isinstance(name, str) else user.name
+        if not new_name:
+            raise AuthError("Display name cannot be empty", 400)
         new_avatar_url = avatar_url if avatar_url is not None else user.avatar_url
         
         conn.execute(

@@ -2,8 +2,9 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: "student" | "professor" | "admin";
+  role: string;
   avatar_url?: string;
+  permissions?: string[];
 }
 
 export interface DocumentRecord {
@@ -89,7 +90,7 @@ export interface AdminUser {
   id: string;
   email: string;
   name: string;
-  role: "student" | "professor" | "admin";
+  role: string;
   created_at: number;
   last_seen: number;
   is_suspended: boolean;
@@ -114,6 +115,9 @@ export interface AdminDocument {
   chunk_count: number;
   scope: "private" | "shared";
   category: string;
+  security_status: "pending" | "clean" | "warning" | "blocked" | "failed";
+  security_verdict: string;
+  security_checked_at: number | null;
   uploaded_at: number;
   uploader_name: string;
   uploader_email: string;
@@ -173,4 +177,3 @@ export interface Announcement {
   created_at: number;
   expires_at: number | null;
 }
-

@@ -40,14 +40,14 @@ export function LibrarySidebar({
         <button
           onClick={onCollapseToggle}
           className="p-2 text-gray-500 hover:text-white rounded-sm hover:bg-surface-dim transition-colors mb-4"
-          title="Open Library"
+          title="Ouvrir la bibliothèque"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
         <button
           onClick={onAddMore}
           className="p-2 text-gray-500 hover:text-white rounded-sm hover:bg-surface-dim transition-colors"
-          title="Add Document"
+          title="Ajouter un document"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
         </button>
@@ -101,7 +101,7 @@ export function LibrarySidebar({
                           setPreviewDoc({ id: doc.doc_id, name: doc.name });
                         }}
                         className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-white transition-all"
-                        title="View PDF"
+                        title="Voir le PDF"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
@@ -112,7 +112,7 @@ export function LibrarySidebar({
                             onDeleteDoc(doc.doc_id);
                           }}
                           className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-400 transition-all"
-                          title="Remove"
+                          title="Retirer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -131,14 +131,14 @@ export function LibrarySidebar({
   return (
     <aside className="w-80 border-l border-border-subtle flex flex-col h-full bg-[#0e0e0e] shrink-0 z-20 font-mono">
       <div className="p-4 border-b border-border-subtle flex justify-between items-center">
-        <div className="text-xs font-bold uppercase tracking-widest text-white">Reference Materials</div>
+        <div className="text-xs font-bold uppercase tracking-widest text-white">Documents de référence</div>
         <div className="flex items-center gap-2">
           {documents.length > 0 && onSetSelection && (
             <button
               onClick={handleToggleAll}
               className="text-[10px] text-gray-400 hover:text-white uppercase tracking-widest"
             >
-              {allSelected ? "Deselect All" : "Select All"}
+              {allSelected ? "Tout désélectionner" : "Tout sélectionner"}
             </button>
           )}
           {onCollapseToggle && (
@@ -155,12 +155,12 @@ export function LibrarySidebar({
               <div className="w-10 h-10 border border-border-subtle rounded-full flex items-center justify-center mx-auto mb-3">
                 <FileText className="w-4 h-4 text-gray-500" />
               </div>
-              <p className="text-xs text-gray-500">No documents attached.</p>
+              <p className="text-xs text-gray-500">Aucun document joint.</p>
             </div>
         ) : (
             <div>
-              {renderDocGroup(privateDocs, "Personal Documents")}
-              {renderDocGroup(sharedDocs, "Shared Documents")}
+              {renderDocGroup(privateDocs, "Documents personnels")}
+              {renderDocGroup(sharedDocs, "Documents partagés")}
             </div>
         )}
       </div>
@@ -170,7 +170,7 @@ export function LibrarySidebar({
           onClick={onAddMore}
           className="w-full py-2 border border-border-heavy text-xs text-white uppercase tracking-widest hover:bg-white hover:text-black transition-all"
         >
-          Add Document
+          Ajouter un document
         </button>
       </div>
 

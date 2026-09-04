@@ -1,9 +1,14 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Save, User, Key, Image as ImageIcon } from "lucide-react";
 import { useToast } from "./ToastProvider";
 import { changePassword } from "../api/client";
+
+function visibleName(name: string | null | undefined, email: string): string {
+  const trimmed = name?.trim();
+  return trimmed || email.split("@")[0] || "Utilisateur";
+}
 
 export function SettingsPage() {
   const { user, updateUser } = useAuth();
@@ -21,7 +26,14 @@ export function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (!user) return;
+    setNameInput(visibleName(user.name, user.email));
+    setAvatarInput(user.avatar_url || null);
+  }, [user]);
+
   if (!user) return null;
+  const displayName = visibleName(user.name, user.email);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -35,9 +47,20 @@ export function SettingsPage() {
   };
 
   const handleSaveProfile = async () => {
+    const nextName = nameInput.trim();
+    if (!nextName) {
+      toast("Le nom affiché ne peut pas être vide", "error");
+      setNameInput(displayName);
+      return;
+    }
+
     setIsSaving(true);
     try {
-      await updateUser(nameInput, avatarInput || undefined);
+      await updateUser(nextName, avatarInput || undefined);
+      setNameInput(nextName);
+      toast("Profil mis à jour", "success");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Échec de la mise à jour du profil", "error");
     } finally {
       setIsSaving(false);
     }
@@ -45,23 +68,23 @@ export function SettingsPage() {
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast("Passwords do not match", "error");
+      toast("Les mots de passe ne correspondent pas", "error");
       return;
     }
     if (!currentPassword || !newPassword) {
-      toast("Please fill in all fields", "error");
+      toast("Veuillez remplir tous les champs", "error");
       return;
     }
     
     setIsChangingPassword(true);
     try {
       await changePassword(currentPassword, newPassword);
-      toast("Password changed successfully", "success");
+      toast("Mot de passe modifié", "success");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (err: any) {
-      toast(err.message || "Failed to change password", "error");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Échec de la modification du mot de passe", "error");
     } finally {
       setIsChangingPassword(false);
     }
@@ -75,7 +98,7 @@ export function SettingsPage() {
             <ArrowLeft className="w-5 h-5 text-gray-400 group-hover:text-white" />
           </Link>
           <h1 className="text-sm font-bold uppercase tracking-widest">
-            Settings
+            Paramètres
           </h1>
         </div>
       </header>
@@ -93,7 +116,7 @@ export function SettingsPage() {
               }`}
             >
               <User className="w-4 h-4" />
-              Profile
+              Profil
             </button>
             <button
               onClick={() => setActiveTab("security")}
@@ -104,7 +127,7 @@ export function SettingsPage() {
               }`}
             >
               <Key className="w-4 h-4" />
-              Security
+              Sécurité
             </button>
           </nav>
         </div>
@@ -115,21 +138,21 @@ export function SettingsPage() {
             <div className="space-y-8 animate-fade-in">
               <div>
                 <h2 className="text-xl font-bold uppercase tracking-widest mb-6 border-b border-white/20 pb-4">
-                  Profile Information
+                  Informations du profil
                 </h2>
                 <div className="flex items-start gap-8">
                   <div className="w-32 h-32 rounded-sm bg-surface-bright flex items-center justify-center border border-white/20 overflow-hidden shrink-0 group relative">
                     {avatarInput ? (
-                      <img src={avatarInput} alt={user.name} className="w-full h-full object-cover" />
+                      <img src={avatarInput} alt={displayName} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-4xl font-bold text-white/50">{user.name.charAt(0).toUpperCase()}</span>
+                      <span className="text-4xl font-bold text-white/50">{displayName.charAt(0).toUpperCase()}</span>
                     )}
                     <div 
                       className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <ImageIcon className="w-6 h-6 text-white mb-2" />
-                      <span className="text-[10px] uppercase tracking-wider text-white">Change</span>
+                      <span className="text-[10px] uppercase tracking-wider text-white">Modifier</span>
                     </div>
                     <input 
                       type="file" 
@@ -143,7 +166,7 @@ export function SettingsPage() {
                   <div className="flex-1 space-y-6">
                     <div>
                       <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
-                        Display Name
+                        Nom affiché
                       </label>
                       <input
                         type="text"
@@ -154,7 +177,7 @@ export function SettingsPage() {
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
-                        Email Address
+                        Adresse e-mail
                       </label>
                       <input
                         type="email"
@@ -162,11 +185,11 @@ export function SettingsPage() {
                         readOnly
                         className="w-full bg-white/5 border border-white/10 px-4 py-3 text-sm text-gray-400 focus:outline-none cursor-not-allowed"
                       />
-                      <p className="mt-2 text-[10px] text-gray-500">Email cannot be changed.</p>
+                      <p className="mt-2 text-[10px] text-gray-500">L'adresse e-mail ne peut pas être modifiée.</p>
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
-                        Role
+                        Rôle
                       </label>
                       <div className="inline-block px-3 py-1 border border-white/20 text-xs uppercase tracking-widest text-white/70">
                         {user.role}
@@ -179,7 +202,7 @@ export function SettingsPage() {
                         className="flex items-center gap-2 px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors disabled:opacity-50"
                       >
                         <Save className="w-4 h-4" />
-                        {isSaving ? "Saving..." : "Save Changes"}
+                        {isSaving ? "Saving..." : "Enregistrer"}
                       </button>
                     </div>
                   </div>
@@ -192,19 +215,19 @@ export function SettingsPage() {
             <div className="space-y-8 animate-fade-in">
               <div>
                 <h2 className="text-xl font-bold uppercase tracking-widest mb-6 border-b border-white/20 pb-4">
-                  Security
+                  Sécurité
                 </h2>
                 <div className="max-w-md space-y-6">
                   <div>
                     <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
-                      Current Password
+                      Mot de passe actuel
                     </label>
                     <div className="relative">
                       <input
                         type={showCurrentPassword ? "text" : "password"}
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder="Mot de passe actuel"
                         className="w-full bg-transparent border border-white/20 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors pr-10"
                       />
                       <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
@@ -214,14 +237,14 @@ export function SettingsPage() {
                   </div>
                   <div>
                     <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
-                      New Password
+                      Nouveau mot de passe
                     </label>
                     <div className="relative">
                       <input
                         type={showNewPassword ? "text" : "password"}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder="Nouveau mot de passe"
                         className="w-full bg-transparent border border-white/20 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors pr-10"
                       />
                       <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
@@ -231,14 +254,14 @@ export function SettingsPage() {
                   </div>
                   <div>
                     <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
-                      Confirm New Password
+                      Confirmer le nouveau mot de passe
                     </label>
                     <div className="relative">
                       <input
                         type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder="Confirmer le mot de passe"
                         className="w-full bg-transparent border border-white/20 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors pr-10"
                       />
                       <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
@@ -253,7 +276,7 @@ export function SettingsPage() {
                       className="flex items-center gap-2 px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors disabled:opacity-50"
                     >
                       <Key className="w-4 h-4" />
-                      {isChangingPassword ? "Updating..." : "Update Password"}
+                      {isChangingPassword ? "Updating..." : "Mettre à jour le mot de passe"}
                     </button>
                   </div>
                 </div>

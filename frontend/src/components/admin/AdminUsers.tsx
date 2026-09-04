@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search, Ban, Trash2, UserCheck, AlertTriangle } from "lucide-react";
 import type { AdminUser } from "../../types";
-import { fetchAdminUsers, updateUserRole, suspendUser, deleteAdminUser } from "../../api/client";
+import { fetchAdminUsers, updateUserRole, suspendUser, deleteAdminUser, fetchAdminRoles } from "../../api/client";
+import { AdminPagination } from "./AdminPagination";
 import { useToast } from "../ToastProvider";
 
 type ExtendedAdminUser = AdminUser;
@@ -21,27 +23,70 @@ function timeAgo(ts: number): string {
   return new Date(ts * 1000).toLocaleDateString("fr-FR");
 }
 
+const PAGE_SIZE = 10;
+
 export function AdminUsers() {
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<ExtendedAdminUser[]>([]);
+  const [roles, setRoles] = useState<string[]>(["student", "professor", "admin"]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "student" | "professor" | "admin">("all");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>(searchParams.get("role") || "all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
+  const [page, setPage] = useState(1);
+  const [roleCounts, setRoleCounts] = useState<Record<string, number>>({});
+  const [statusCounts, setStatusCounts] = useState({ all: 0, active: 0, suspended: 0 });
 
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
-    loadUsers();
+    fetchAdminRoles()
+      .then((data) => setRoles(data.roles.map((r) => r.name)))
+      .catch(() => {});
   }, []);
 
-  function loadUsers() {
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+    loadUsers(1);
+  }, [roleFilter, statusFilter, debouncedSearch]);
+
+  function loadUsers(nextPage = page) {
     setLoading(true);
-    fetchAdminUsers()
-      .then(setUsers)
+    fetchAdminUsers({
+      limit: PAGE_SIZE,
+      offset: (nextPage - 1) * PAGE_SIZE,
+      role: roleFilter === "all" ? undefined : roleFilter,
+      status: statusFilter,
+      search: debouncedSearch || undefined,
+    })
+      .then(({ users: page, total: t, role_counts, status_counts }) => {
+        setTotal(t);
+        setRoleCounts(role_counts);
+        setStatusCounts(status_counts);
+        setUsers(page);
+      })
       .catch(() => toast("Erreur lors du chargement", "error"))
       .finally(() => setLoading(false));
+  }
+
+  function handlePageChange(nextPage: number) {
+    setPage(nextPage);
+    loadUsers(nextPage);
+  }
+
+  function selectRoleFilter(role: string) {
+    setRoleFilter(role);
+    if (role === "all") setSearchParams({});
+    else setSearchParams({ role });
   }
 
   async function handleRoleChange(userId: string, newRole: string) {
@@ -80,6 +125,7 @@ export function AdminUsers() {
     try {
       await deleteAdminUser(userId);
       setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setTotal((prev) => Math.max(0, prev - 1));
       toast("Utilisateur supprimé", "success");
     } catch {
       toast("Erreur lors de la suppression", "error");
@@ -88,30 +134,6 @@ export function AdminUsers() {
       setDeleteConfirm(null);
     }
   }
-
-  const filtered = users.filter((u) => {
-    const matchSearch =
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === "all" || u.role === roleFilter;
-    const matchStatus = 
-      statusFilter === "all" || 
-      (statusFilter === "suspended" ? u.is_suspended : !u.is_suspended);
-    return matchSearch && matchRole && matchStatus;
-  });
-
-  const roleCounts = {
-    all:       users.length,
-    student:   users.filter((u) => u.role === "student").length,
-    professor: users.filter((u) => u.role === "professor").length,
-    admin:     users.filter((u) => u.role === "admin").length,
-  };
-
-  const statusCounts = {
-    all:       users.length,
-    active:    users.filter((u) => !u.is_suspended).length,
-    suspended: users.filter((u) => u.is_suspended).length,
-  };
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
@@ -137,10 +159,10 @@ export function AdminUsers() {
         
         {/* Role Filter */}
         <div className="flex items-center gap-1 bg-surface-2 border border-hairline rounded-xl p-1 overflow-x-auto">
-          {(["all", "student", "professor", "admin"] as const).map((r) => (
+          {(["all", ...roles]).map((r) => (
             <button
               key={r}
-              onClick={() => setRoleFilter(r)}
+              onClick={() => selectRoleFilter(r)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                 roleFilter === r
                   ? "bg-surface-1 text-fg shadow-soft"
@@ -148,7 +170,7 @@ export function AdminUsers() {
               }`}
             >
               {r === "all" ? "Tous" : r}{" "}
-              <span className="text-fg-muted">({roleCounts[r]})</span>
+              <span className="text-fg-muted">({r === "all" ? statusCounts.all : roleCounts[r] ?? 0})</span>
             </button>
           ))}
         </div>
@@ -172,6 +194,14 @@ export function AdminUsers() {
         </div>
       </div>
 
+      <AdminPagination
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={total}
+        loading={loading}
+        onPageChange={handlePageChange}
+      />
+
       {/* Table */}
       <div className="bg-surface-1 rounded-2xl border border-hairline shadow-soft overflow-hidden overflow-x-auto">
         {loading ? (
@@ -192,7 +222,7 @@ export function AdminUsers() {
               </tr>
             </thead>
             <tbody className="divide-y divide-hairline">
-              {filtered.map((user) => (
+              {users.map((user) => (
                 <tr key={user.id} className={`hover:bg-surface-2/40 transition-colors ${user.is_suspended ? 'opacity-75' : ''}`}>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
@@ -225,11 +255,11 @@ export function AdminUsers() {
                       onChange={(e) => handleRoleChange(user.id, e.target.value)}
                       className={`text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer bg-transparent
                         focus:outline-none focus:ring-2 focus:ring-accent/30
-                        ${ROLE_STYLES[user.role]} ${updating === user.id ? "opacity-50 cursor-wait" : ""}`}
+                      ${ROLE_STYLES[user.role] ?? "bg-surface-3 text-fg-muted border-hairline"} ${updating === user.id ? "opacity-50 cursor-wait" : ""}`}
                     >
-                      <option value="student">student</option>
-                      <option value="professor">professor</option>
-                      <option value="admin">admin</option>
+                      {roles.map((role) => (
+                        <option key={role} value={role}>{role}</option>
+                      ))}
                     </select>
                   </td>
                   <td className="px-4 py-3.5">
@@ -292,7 +322,7 @@ export function AdminUsers() {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {users.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-5 py-12 text-center text-sm text-fg-muted">
                     Aucun utilisateur trouvé
@@ -302,8 +332,14 @@ export function AdminUsers() {
             </tbody>
           </table>
         )}
+        <AdminPagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          loading={loading}
+          onPageChange={handlePageChange}
+        />
       </div>
     </div>
   );
 }
-

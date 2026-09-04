@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from "./hooks/useSession";
 import { useDocuments } from "./hooks/useDocuments";
 import { useChat } from "./hooks/useChat";
@@ -31,6 +31,7 @@ import { AdminAuditLog } from "./components/admin/AdminAuditLog";
 import { AdminAnnouncements } from "./components/admin/AdminAnnouncements";
 import { LibraryPage } from "./components/LibraryPage";
 import { AnnouncementBanner } from "./components/AnnouncementBanner";
+import { ForbiddenPage } from "./components/ForbiddenPage";
 import { LandingPage } from "./pages/LandingPage";
 import { PrimitivePlayground } from "./pages/PrimitivePlayground";
 import {
@@ -38,20 +39,16 @@ import {
   updateConversationTitle,
   deleteConversationApi,
 } from "./api/client";
-import type { Conversation, Provider, SelectedModel } from "./types";
+import type { Conversation, Provider, SelectedModel, User } from "./types";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface ThemeState {
-  theme: "dark" | "light";
-  toggle: () => void;
-}
-
 interface AuthState {
-  user: { id: string; name: string; role: string } | null;
+  user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  isRole: (...roles: ("student" | "professor" | "admin")[]) => boolean;
+  isRole: (...roles: string[]) => boolean;
+  hasPermission: (permission: string) => boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, name: string, password: string) => Promise<void>;
   logout: () => void;
@@ -163,7 +160,10 @@ function ChatArea({
   }
 
   function handleEditMessage(id: string, text: string) {
-    if (!selected) return;
+    if (!selected) {
+      toast("Choisissez un modèle avant de renvoyer le message modifié", "error");
+      return;
+    }
     editMessage(id, text, Array.from(selectedDocIds), selected);
   }
 
@@ -191,6 +191,12 @@ function ChatArea({
     } catch (e) {
       console.error("Failed to create conversation", e);
     }
+  }
+
+  function handleClearConversation() {
+    if (!messages.length) return;
+    const confirmed = window.confirm("Effacer cette conversation et démarrer une nouvelle session ?");
+    if (confirmed) void handleNewConversation(true);
   }
 
   function handleSwitchConversation(conv: Conversation) {
@@ -325,20 +331,9 @@ function ChatArea({
       </div>
 
       <div className="flex flex-col flex-1 overflow-hidden bg-[#000000] paper-texture relative min-h-0">
-        {/* Toggle Left Sidebar */}
-        <button 
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`absolute top-4 z-10 p-1.5 glass border border-border-subtle rounded-md text-white/50 hover:text-white transition-all hidden md:block ${sidebarOpen ? 'left-4' : 'left-4'}`}
-          title={sidebarOpen ? "Hide conversations" : "Show conversations"}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-        </button>
-
-        {/* Floating toggle for left sidebar still here if needed */}
-
         <ChatWindow
           messages={messages}
-          userName={auth.user!.name}
+          userName={auth.user!.name?.trim() || auth.user!.email.split("@")[0] || "Utilisateur"}
           onSuggestion={(text) => handleSend(text)}
           documents={documents}
           onUpload={handleAttach}
@@ -347,7 +342,7 @@ function ChatArea({
           onRegenerate={handleRegenerate}
           onEditMessage={handleEditMessage}
           onExport={handleExportConversation}
-          onClear={() => handleNewConversation(true)}
+          onClear={handleClearConversation}
           toolbar={
             <ModelSelector
               providers={providerState.providers}
@@ -443,7 +438,7 @@ function ChatArea({
         onClose={() => setPaletteOpen(false)}
         onNewConversation={handleNewConversation}
         onExportConversation={handleExportConversation}
-        onClearMessages={clearMessages}
+        onClearMessages={handleClearConversation}
         onToggleTheme={onToggleTheme}
         onOpenCheatsheet={onOpenCheatsheet}
         conversations={conversations}
@@ -452,166 +447,14 @@ function ChatArea({
         documents={documents}
         selectedDocIds={selectedDocIds}
         onToggleDoc={toggleSelection}
-        canAccessLibrary={auth.isRole("professor", "admin")}
-        canAccessAdmin={auth.isRole("admin")}
+        canAccessLibrary={auth.hasPermission("library.view") || auth.isRole("professor", "admin")}
+        canAccessAdmin={
+          auth.isRole("admin") ||
+          !!auth.user?.permissions?.some((p) => p.startsWith("admin."))
+        }
         hasMessages={messages.length > 0}
       />
     </div>
-  );
-}
-
-// ─── Header ──────────────────────────────────────────────────────────────────
-
-function AppHeader({
-  auth,
-  providerState,
-  themeState,
-  onOpenCheatsheet,
-}: {
-  auth: AuthState;
-  providerState: ProviderState;
-  themeState: ThemeState;
-  onOpenCheatsheet: () => void;
-}) {
-  const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith("/admin");
-  const isLibraryRoute = location.pathname === "/library";
-  const isDark = themeState.theme === "dark";
-
-  const navLink = (active: boolean) =>
-    `text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-150 ${
-      active
-        ? "bg-accent text-accent-contrast shadow-glow"
-        : "text-white-muted hover:text-white hover:bg-surface-bright"
-    }`;
-
-  return (
-    <header className="glass flex items-center justify-between px-4 py-2.5 border-b border-border-subtle flex-shrink-0 z-20">
-      <div className="flex items-center gap-2.5">
-        <div className="relative w-8 h-8 rounded-xl bg-accent flex items-center justify-center shadow-glow overflow-hidden">
-          <img src="/logo.svg" alt="Logo" className="w-full h-full object-cover" />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Link
-            to="/"
-            className="font-display text-white font-bold text-[15px] tracking-tight hover:text-accent transition-colors"
-          >
-            ENSET AI
-          </Link>
-          <div className="w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_8px_rgb(var(--gold))]" />
-        </div>
-        {auth.isRole("admin", "professor") && (
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-accent-soft text-accent border border-accent/30">
-            {auth.user!.role}
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        {/* Nav */}
-        <nav className="flex items-center gap-1 mr-2">
-          <Link to="/" className={navLink(!isAdminRoute && !isLibraryRoute)}>
-            Chat
-          </Link>
-          {auth.isRole("professor", "admin") && (
-            <Link to="/library" className={navLink(isLibraryRoute)}>
-              Bibliothèque
-            </Link>
-          )}
-          {auth.isRole("admin") && (
-            <Link to="/admin/dashboard" className={navLink(isAdminRoute)}>
-              Admin
-            </Link>
-          )}
-        </nav>
-
-        {/* Model selector — only in chat */}
-        {!isAdminRoute && !isLibraryRoute && (
-          <ModelSelector
-            providers={providerState.providers}
-            selected={providerState.selected}
-            onSelect={providerState.select}
-            loading={providerState.loading}
-          />
-        )}
-
-        {/* User + controls */}
-        <div className="flex items-center gap-2 ml-1 pl-2 border-l border-border-subtle">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center text-accent-contrast text-xs font-bold flex-shrink-0 shadow-glow">
-            {auth.user!.name.charAt(0).toUpperCase()}
-          </div>
-          <span className="text-xs text-white-secondary hidden sm:block max-w-[120px] truncate">
-            {auth.user!.name}
-          </span>
-
-          {/* Shortcut cheatsheet trigger */}
-          <button
-            onClick={onOpenCheatsheet}
-            title="Raccourcis clavier (?)"
-            className="p-1.5 rounded-lg text-white-muted hover:text-white hover:bg-surface-bright transition-colors text-xs font-semibold"
-          >
-            ?
-          </button>
-
-          {/* Theme toggle */}
-          <button
-            onClick={themeState.toggle}
-            title={isDark ? "Mode clair" : "Mode sombre"}
-            className="p-1.5 rounded-lg text-white-muted hover:text-white hover:bg-surface-bright transition-colors"
-          >
-            {isDark ? (
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                />
-              </svg>
-            )}
-          </button>
-
-          <button
-            onClick={auth.logout}
-            title="Se déconnecter"
-            className="p-1.5 rounded-lg text-white-muted hover:text-danger hover:bg-surface-bright transition-colors"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </header>
   );
 }
 
@@ -619,10 +462,24 @@ function AppHeader({
 
 export default function App() {
   const auth = useAuth();
-  const providerState = useProviders();
+  const providerState = useProviders(auth.isAuthenticated);
   const themeState = useTheme();
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
-  const location = useLocation();
+  const can = (permission: string) => auth.isRole("admin") || auth.hasPermission(permission);
+  const canAccessAdmin =
+    auth.isRole("admin") || !!auth.user?.permissions?.some((p) => p.startsWith("admin."));
+  const adminDefault =
+    [
+      ["admin.dashboard.view", "/admin/dashboard"],
+      ["admin.users.manage", "/admin/users"],
+      ["admin.roles.manage", "/admin/roles"],
+      ["admin.documents.manage", "/admin/documents"],
+      ["admin.conversations.manage", "/admin/conversations"],
+      ["admin.audit.view", "/admin/audit-log"],
+      ["admin.announcements.manage", "/admin/announcements"],
+      ["admin.chatbot.test", "/admin/chatbot"],
+      ["admin.settings.manage", "/admin/settings"],
+    ].find(([permission]) => can(permission))?.[1] ?? "/admin/dashboard";
 
   useKeyboardShortcuts([
     {
@@ -661,34 +518,35 @@ export default function App() {
     <ToastProvider>
       <div className="flex flex-col h-[100dvh] bg-[#000000] paper-texture">
         <AnnouncementBanner />
-        {location.pathname.startsWith("/admin") && (
-          <AppHeader
-            auth={auth}
-            providerState={providerState}
-            themeState={themeState}
-            onOpenCheatsheet={() => setCheatsheetOpen(true)}
-          />
-        )}
 
         <Routes>
-          {auth.isRole("admin") && (
+          {!canAccessAdmin && (
+            <Route path="/admin/*" element={<ForbiddenPage requiredRole="administrateur" />} />
+          )}
+          {!can("library.view") && !auth.isRole("professor") && (
+            <Route
+              path="/library"
+              element={<ForbiddenPage requiredRole="professeur ou administrateur" />}
+            />
+          )}
+          {canAccessAdmin && (
             <Route path="/admin" element={<AdminLayout />}>
               <Route
                 index
-                element={<Navigate to="/admin/dashboard" replace />}
+                element={<Navigate to={adminDefault} replace />}
               />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="documents" element={<AdminDocuments />} />
-              <Route path="conversations" element={<AdminConversations />} />
-              <Route path="settings" element={<AdminSettings />} />
-              <Route path="chatbot" element={<AdminChatTest />} />
-              <Route path="roles" element={<AdminRoles />} />
-              <Route path="audit-log" element={<AdminAuditLog />} />
-              <Route path="announcements" element={<AdminAnnouncements />} />
+              <Route path="dashboard" element={can("admin.dashboard.view") ? <AdminDashboard /> : <ForbiddenPage requiredRole="permission tableau de bord" />} />
+              <Route path="users" element={can("admin.users.manage") ? <AdminUsers /> : <ForbiddenPage requiredRole="permission utilisateurs" />} />
+              <Route path="documents" element={can("admin.documents.manage") ? <AdminDocuments /> : <ForbiddenPage requiredRole="permission documents" />} />
+              <Route path="conversations" element={can("admin.conversations.manage") ? <AdminConversations /> : <ForbiddenPage requiredRole="permission conversations" />} />
+              <Route path="settings" element={can("admin.settings.manage") ? <AdminSettings /> : <ForbiddenPage requiredRole="permission paramètres" />} />
+              <Route path="chatbot" element={can("admin.chatbot.test") ? <AdminChatTest /> : <ForbiddenPage requiredRole="permission test chatbot" />} />
+              <Route path="roles" element={can("admin.roles.manage") ? <AdminRoles /> : <ForbiddenPage requiredRole="permission rôles" />} />
+              <Route path="audit-log" element={can("admin.audit.view") ? <AdminAuditLog /> : <ForbiddenPage requiredRole="permission audit" />} />
+              <Route path="announcements" element={can("admin.announcements.manage") ? <AdminAnnouncements /> : <ForbiddenPage requiredRole="permission annonces" />} />
             </Route>
           )}
-          {auth.isRole("professor", "admin") && (
+          {(can("library.view") || auth.isRole("professor")) && (
             <Route
               path="/library"
               element={<LibraryPage user={auth.user!} isRole={auth.isRole} />}

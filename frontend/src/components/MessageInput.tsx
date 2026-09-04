@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import type { ComponentType, RefObject } from "react";
 import { Send, Square, Paperclip } from "lucide-react";
 
 interface Props {
@@ -9,8 +10,8 @@ interface Props {
   onChange: (v: string) => void;
   isStreaming?: boolean;
   onStop?: () => void;
-  focusRef?: any;
-  suggestions?: { label: string; prompt: string; icon?: any }[];
+  focusRef?: RefObject<HTMLTextAreaElement | null>;
+  suggestions?: { label: string; prompt: string; icon?: ComponentType<{ className?: string }> }[];
   onSuggestion?: (prompt: string) => void;
 }
 
@@ -86,7 +87,7 @@ export function MessageInput({
                 handleSend();
               }
             }}
-            placeholder="Type your query here..."
+            placeholder="Saisissez votre question ici..."
             className="flex-1 max-h-[200px] bg-transparent text-white placeholder-gray-600 outline-none resize-none py-3 px-2 font-mono text-sm min-h-[44px]"
             rows={1}
             disabled={disabled && !isStreaming}
@@ -96,7 +97,7 @@ export function MessageInput({
             <button
               onClick={onStop}
               className="p-3 text-white hover:text-red-400 transition-colors shrink-0"
-              title="Stop"
+              title="Arrêter"
             >
               <Square className="w-5 h-5 fill-current" />
             </button>
@@ -105,14 +106,14 @@ export function MessageInput({
               onClick={handleSend}
               disabled={disabled || !value.trim()}
               className="p-3 text-gray-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-              title="Send"
+              title="Envoyer"
             >
               <Send className="w-5 h-5" />
             </button>
           )}
         </div>
         <div className="text-center mt-2 text-[10px] text-gray-600 font-mono uppercase tracking-widest">
-          Sovereign Intelligence Systems may generate inaccurate info.
+          Une IA peut générer des informations inexactes. Vérifiez les réponses importantes.
         </div>
       </div>
     </div>

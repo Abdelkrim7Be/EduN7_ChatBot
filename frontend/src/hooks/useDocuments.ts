@@ -123,7 +123,7 @@ export function useDocuments(sessionId: string) {
           collection_name: "",
           page_count: 0,
           chunk_count: 0,
-          uploaded_at: new Date().toISOString(),
+          uploaded_at: Date.now() / 1000,
           scope,
           status: "uploading"
         }));

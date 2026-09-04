@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { Plus, Trash2, Edit2, LogOut, PanelLeftOpen, Settings, Library, Check, X, Home, Shield } from "lucide-react";
+import { Plus, Trash2, Edit2, LogOut, PanelLeftClose, PanelLeftOpen, Settings, Library, Check, X, Home, Shield } from "lucide-react";
 import { ProfileModal } from "./ProfileModal";
 import type { Conversation } from "../types";
+import { conversationTitle } from "../utils/conversationTitle";
 
 interface Props {
   conversations: Conversation[];
@@ -15,15 +16,15 @@ interface Props {
 
   collapsed: boolean;
   onCollapseToggle: () => void;
-  user?: { name: string; role: string; avatar_url?: string } | null;
+  user?: { name: string; email?: string; role: string; avatar_url?: string } | null;
 }
 
 function relativeTime(ts: number): string {
   const delta = Date.now() / 1000 - ts;
-  if (delta < 60) return "Just now";
-  if (delta < 3600) return `${Math.floor(delta / 60)}m ago`;
-  if (delta < 86400) return `${Math.floor(delta / 3600)}h ago`;
-  return `${Math.floor(delta / 86400)}d ago`;
+  if (delta < 60) return "À l'instant";
+  if (delta < 3600) return `il y a ${Math.floor(delta / 60)} min`;
+  if (delta < 86400) return `il y a ${Math.floor(delta / 3600)} h`;
+  return `il y a ${Math.floor(delta / 86400)} j`;
 }
 
 type Group = { label: string; items: Conversation[] };
@@ -31,17 +32,17 @@ type Group = { label: string; items: Conversation[] };
 function groupByRecency(conversations: Conversation[]): Group[] {
   const now = Date.now() / 1000;
   const buckets: Record<string, Conversation[]> = {
-    "Today": [],
-    "Yesterday": [],
+    "Aujourd'hui": [],
+    "Hier": [],
     "Last 7 Days": [],
-    "Older": [],
+    "Plus ancien": [],
   };
   for (const c of conversations) {
     const delta = now - c.last_active;
-    if (delta < 86400) buckets["Today"].push(c);
-    else if (delta < 172800) buckets["Yesterday"].push(c);
+    if (delta < 86400) buckets["Aujourd'hui"].push(c);
+    else if (delta < 172800) buckets["Hier"].push(c);
     else if (delta < 604800) buckets["Last 7 Days"].push(c);
-    else buckets["Older"].push(c);
+    else buckets["Plus ancien"].push(c);
   }
   return Object.entries(buckets)
     .filter(([, items]) => items.length > 0)
@@ -98,12 +99,13 @@ export function ConversationSidebar({
   onCollapseToggle,
   user,
 }: Props) {
-  const { logout, isRole } = useAuth();
+  const { logout, isRole, hasPermission } = useAuth();
   const navigate = useNavigate();
   const groups = groupByRecency(conversations);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const displayName = user?.name?.trim() || user?.email?.split("@")[0] || "Utilisateur";
 
   if (collapsed) {
     return (
@@ -111,7 +113,7 @@ export function ConversationSidebar({
         <button
           onClick={onCollapseToggle}
           className="p-2 text-gray-500 hover:text-white rounded-sm hover:bg-surface-dim transition-colors mb-4"
-          title="Ouvrir le panneau"
+          title="Show conversations"
         >
           <PanelLeftOpen className="w-5 h-5" />
         </button>
@@ -130,8 +132,12 @@ export function ConversationSidebar({
     <aside className="w-64 border-r border-border-subtle flex flex-col h-full bg-black shrink-0 relative z-20 font-mono">
       <div className="p-6 flex items-center justify-between">
         <div className="text-xl font-bold tracking-tighter text-white">ENSET AI</div>
-        <button onClick={onCollapseToggle} className="text-gray-500 hover:text-white transition-colors">
-            <div className="w-2 h-2 bg-white rounded-full"></div>
+        <button
+          onClick={onCollapseToggle}
+          className="p-1.5 text-gray-500 hover:text-white rounded-sm hover:bg-surface-dim transition-colors"
+          title="Hide conversations"
+        >
+          <PanelLeftClose className="w-4 h-4" />
         </button>
       </div>
 
@@ -144,7 +150,7 @@ export function ConversationSidebar({
             + NEW SESSION
           </button>
           
-          {isRole("admin") && (
+          {(isRole("admin") || hasPermission("admin.dashboard.view")) && (
             <button
               onClick={() => navigate("/admin/dashboard")}
               className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-3 text-sm font-bold text-accent bg-accent/10 hover:bg-accent/20 border border-accent/20 hover:border-accent/40 transition-all duration-300 rounded-sm uppercase tracking-widest"
@@ -173,7 +179,7 @@ export function ConversationSidebar({
                     {isRenaming ? (
                         <div className="px-3 w-full">
                           <RenameInput
-                            initial={c.title || "Conversation"}
+                            initial={conversationTitle(c.title)}
                             onSave={(val) => {
                               if (val.trim()) onRenameConversation(c.session_id, val);
                               setRenamingId(null);
@@ -184,7 +190,7 @@ export function ConversationSidebar({
                       ) : (
                         <div className="flex-1 min-w-0 pr-2">
                             <div className={`px-3 text-sm font-medium truncate ${isActive ? "text-white" : ""}`}>
-                                {c.title || "Conversation"}
+                                {conversationTitle(c.title)}
                             </div>
                             <div className="px-3 text-[11px] text-gray-600">{relativeTime(c.last_active)}</div>
                         </div>
@@ -226,13 +232,13 @@ export function ConversationSidebar({
       <div className="p-4 border-t border-border-subtle flex items-center gap-3 relative">
         <div className="w-8 h-8 rounded-sm bg-surface-bright flex items-center justify-center overflow-hidden">
           {user?.avatar_url ? (
-            <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+            <img src={user.avatar_url} alt={displayName} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-[10px] font-bold text-white">{user?.name?.charAt(0).toUpperCase() || "U"}</span>
+            <span className="text-[10px] font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-bold truncate text-white">{user?.name}</div>
+          <div className="text-xs font-bold truncate text-white">{displayName}</div>
         </div>
         <div className="text-gray-600 cursor-pointer hover:text-white px-2 py-1" onClick={() => setShowMenu(!showMenu)}>
           ⁝
@@ -242,13 +248,13 @@ export function ConversationSidebar({
                 <div className="px-4 py-2 border-b border-border-subtle flex items-center gap-3">
                   <div className="w-8 h-8 rounded-sm bg-surface-bright flex items-center justify-center overflow-hidden">
                     {user?.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+                      <img src={user.avatar_url} alt={displayName} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-[10px] font-bold text-white">{user?.name?.charAt(0).toUpperCase() || "U"}</span>
+                      <span className="text-[10px] font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-white truncate">{user?.name}</div>
+                    <div className="text-xs font-bold text-white truncate">{displayName}</div>
                     <div className="text-[10px] text-gray-500 capitalize">{user?.role}</div>
                   </div>
                 </div>
@@ -275,20 +281,20 @@ export function ConversationSidebar({
                     Paramètres
                 </button>
                 
-                {isRole("professor", "admin") && (
+                {(isRole("professor", "admin") || hasPermission("library.view")) && (
                   <button
                       onClick={() => {
                           setShowMenu(false);
                           navigate("/library");
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-surface-bright flex items-center gap-2 ${isRole("admin") ? "" : "border-b border-border-subtle"}`}
+                      className={`w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-surface-bright flex items-center gap-2 ${isRole("admin") || hasPermission("admin.dashboard.view") ? "" : "border-b border-border-subtle"}`}
                   >
                       <Library className="w-4 h-4" />
                       Bibliothèque
                   </button>
                 )}
                 
-                {isRole("admin") && (
+                {(isRole("admin") || hasPermission("admin.dashboard.view")) && (
                   <button
                       onClick={() => {
                           setShowMenu(false);

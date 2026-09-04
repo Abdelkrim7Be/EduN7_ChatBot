@@ -3,16 +3,19 @@ from flask import request, jsonify, g
 
 import database
 from services.auth_service import decode_jwt, AuthError
+from services.cookie_auth import token_from_request, csrf_ok
+from services.permissions_service import ENDPOINT_PERMISSIONS, role_has_permission
 from models.user import UserRecord
 
 
 def require_auth(f):
     @functools.wraps(f)
     def wrapped(*args, **kwargs):
-        auth_header = request.headers.get("Authorization", "")
-        if not auth_header.startswith("Bearer "):
-            return jsonify({"error": "Missing or invalid Authorization header"}), 401
-        token = auth_header[7:]
+        token, from_cookie = token_from_request()
+        if not token:
+            return jsonify({"error": "Not authenticated"}), 401
+        if from_cookie and not csrf_ok():
+            return jsonify({"error": "Invalid or missing CSRF token"}), 403
         try:
             payload = decode_jwt(token)
         except AuthError as e:
@@ -44,8 +47,13 @@ def require_role(*roles):
     def decorator(f):
         @functools.wraps(f)
         def wrapped(*args, **kwargs):
-            if not hasattr(g, "user") or g.user.role not in roles:
+            if not hasattr(g, "user"):
                 return jsonify({"error": "Forbidden"}), 403
-            return f(*args, **kwargs)
+            if g.user.role in roles:
+                return f(*args, **kwargs)
+            permission = ENDPOINT_PERMISSIONS.get(request.endpoint or "")
+            if permission and role_has_permission(g.user.role, permission):
+                return f(*args, **kwargs)
+            return jsonify({"error": "Forbidden"}), 403
         return wrapped
     return decorator
