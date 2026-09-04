@@ -403,9 +403,16 @@ export interface Setting {
   value: string;
   label: string;
   description: string;
-  kind: "text" | "number" | "boolean";
+  kind: "text" | "textarea" | "number" | "boolean" | "select";
   updated_at: number | null;
   updated_by: string | null;
+}
+
+export interface PublicAssistantModelOption {
+  provider: string;
+  model: string;
+  label: string;
+  available: boolean;
 }
 
 export async function fetchSettings(): Promise<Setting[]> {
@@ -422,6 +429,33 @@ export async function updateSetting(key: string, value: string): Promise<void> {
     body: JSON.stringify({ value }),
   });
   if (!res.ok) throw new Error("Failed to update setting");
+}
+
+export async function fetchPublicAssistantModelOptions(): Promise<PublicAssistantModelOption[]> {
+  const res = await apiFetch("/api/admin/public-assistant/model-options");
+  if (!res.ok) throw new Error("Failed to fetch public assistant model options");
+  const data = await res.json();
+  return data.options as PublicAssistantModelOption[];
+}
+
+export interface PublicAssistantConfig {
+  enabled: boolean;
+  greeting?: string;
+  placeholder?: string;
+  suggested_questions?: string[];
+}
+
+export interface PublicAssistantHistoryTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export async function fetchPublicAssistantConfig(): Promise<PublicAssistantConfig> {
+  const res = await fetch(`${BASE}/api/public-assistant/config`, {
+    credentials: "include",
+  });
+  if (!res.ok) return { enabled: false };
+  return res.json() as Promise<PublicAssistantConfig>;
 }
 
 export interface StreamEvent {
@@ -491,6 +525,50 @@ export async function* streamChat(
         } catch {
           // skip malformed
         }
+      }
+    }
+  }
+}
+
+export async function* streamPublicAssistant(
+  message: string,
+  history: PublicAssistantHistoryTurn[],
+  signal?: AbortSignal,
+): AsyncGenerator<StreamEvent> {
+  const res = await fetch(`${BASE}/api/public-assistant/stream`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ message, history }),
+    signal,
+  });
+
+  if (!res.ok || !res.body) {
+    throw new Error(`Assistant request failed: ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const json = line.slice(6).trim();
+      if (!json) continue;
+      try {
+        yield JSON.parse(json) as StreamEvent;
+      } catch {
+        // ignore malformed stream events
       }
     }
   }

@@ -97,6 +97,7 @@ ENDPOINT_PERMISSIONS = {
     "admin.delete_conversation": "admin.conversations.manage",
     "admin.get_settings": "admin.settings.manage",
     "admin.update_setting": "admin.settings.manage",
+    "admin.public_assistant_model_options": "admin.settings.manage",
     "admin.get_audit_log": "admin.audit.view",
     "admin.list_announcements": "admin.announcements.manage",
     "admin.create_announcement": "admin.announcements.manage",

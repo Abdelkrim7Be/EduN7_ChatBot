@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import { useAuth } from "../hooks/useAuth";
+import { LandingAssistant } from "../components/LandingAssistant";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 15 },
@@ -131,6 +132,7 @@ export function LandingPage() {
               </a>
             </motion.div>
           </motion.div>
+          <LandingAssistant />
         </section>
 
         {/* About */}

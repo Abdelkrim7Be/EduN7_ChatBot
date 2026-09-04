@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Info, Save, Settings2 } from "lucide-react";
-import type { Setting, AdminRole } from "../../api/client";
-import { fetchAdminRoles, fetchSettings, updateSetting } from "../../api/client";
+import type { Setting, AdminRole, PublicAssistantModelOption } from "../../api/client";
+import {
+  fetchAdminRoles,
+  fetchPublicAssistantModelOptions,
+  fetchSettings,
+  updateSetting,
+} from "../../api/client";
 import { useToast } from "../ToastProvider";
 
 const GROUPS: Record<string, string> = {
@@ -10,6 +15,16 @@ const GROUPS: Record<string, string> = {
   allow_registration: "Accès",
   default_role: "Accès",
   system_prompt: "IA",
+  public_assistant_enabled: "Assistant public",
+  public_assistant_context: "Assistant public",
+  public_assistant_instructions: "Assistant public",
+  public_assistant_greeting: "Assistant public",
+  public_assistant_placeholder: "Assistant public",
+  public_assistant_fallback_message: "Assistant public",
+  public_assistant_suggested_questions: "Assistant public",
+  public_assistant_provider: "Assistant public",
+  public_assistant_model: "Assistant public",
+  public_assistant_rate_limit_per_hour: "Assistant public",
 };
 
 const LABELS: Record<string, string> = {
@@ -18,6 +33,16 @@ const LABELS: Record<string, string> = {
   allow_registration: "Allow Registration",
   default_role: "Default Role",
   system_prompt: "System Prompt",
+  public_assistant_enabled: "Assistant public activé",
+  public_assistant_context: "Contexte public",
+  public_assistant_instructions: "Instructions",
+  public_assistant_greeting: "Message d'accueil",
+  public_assistant_placeholder: "Placeholder",
+  public_assistant_fallback_message: "Message de refus",
+  public_assistant_suggested_questions: "Questions suggérées",
+  public_assistant_provider: "Provider public",
+  public_assistant_model: "Modèle public",
+  public_assistant_rate_limit_per_hour: "Limite horaire",
 };
 
 function formatDate(ts: number | null): string {
@@ -35,11 +60,13 @@ function SettingControl({
   setting,
   draft,
   roles,
+  publicAssistantOptions,
   onChange,
 }: {
   setting: Setting;
   draft: string;
   roles: AdminRole[];
+  publicAssistantOptions: PublicAssistantModelOption[];
   onChange: (value: string) => void;
 }) {
   if (setting.key === "allow_registration" || setting.kind === "boolean") {
@@ -71,7 +98,40 @@ function SettingControl({
     );
   }
 
-  if (setting.key === "system_prompt") {
+  if (setting.key === "public_assistant_provider") {
+    const providers = [...new Set(publicAssistantOptions.map((option) => option.provider))];
+    return (
+      <select
+        value={draft}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-64 border border-hairline bg-surface-2 px-3 text-sm text-fg"
+      >
+        {providers.map((provider) => (
+          <option key={provider} value={provider}>
+            {provider === "auto" ? "Auto fallback" : provider}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (setting.key === "public_assistant_model") {
+    return (
+      <select
+        value={draft}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-full border border-hairline bg-surface-2 px-3 text-sm text-fg"
+      >
+        {publicAssistantOptions.map((option) => (
+          <option key={`${option.provider}:${option.model}`} value={option.model}>
+            {option.label}{option.available ? "" : " (non configuré)"}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (setting.key === "system_prompt" || setting.kind === "textarea") {
     return (
       <textarea
         value={draft}
@@ -87,7 +147,7 @@ function SettingControl({
     setting.key === "max_upload_size_mb" ||
     setting.key === "max_docs_per_session"
   ) {
-    const unit = setting.key === "max_upload_size_mb" ? "MB" : "";
+  const unit = setting.key === "max_upload_size_mb" ? "MB" : "";
     return (
       <div className="flex h-9 w-44 items-center border border-hairline bg-surface-2">
         <input
@@ -119,17 +179,19 @@ function SettingControl({
 function SettingRow({
   setting,
   roles,
+  publicAssistantOptions,
   onSaved,
 }: {
   setting: Setting;
   roles: AdminRole[];
+  publicAssistantOptions: PublicAssistantModelOption[];
   onSaved: (key: string, value: string) => void;
 }) {
   const { toast } = useToast();
   const [draft, setDraft] = useState(setting.value);
   const [saving, setSaving] = useState(false);
   const dirty = draft !== setting.value;
-  const isPrompt = setting.key === "system_prompt";
+  const isWide = setting.key === "system_prompt" || setting.kind === "textarea";
 
   useEffect(() => {
     setDraft(setting.value);
@@ -150,7 +212,7 @@ function SettingRow({
   }
 
   return (
-    <div className={`border border-hairline bg-surface-1 p-4 ${isPrompt ? "md:col-span-2" : ""}`}>
+    <div className={`border border-hairline bg-surface-1 p-4 ${isWide ? "md:col-span-2" : ""}`}>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-bold text-fg">{LABELS[setting.key] ?? setting.label}</p>
@@ -175,6 +237,7 @@ function SettingRow({
         setting={setting}
         draft={draft}
         roles={roles}
+        publicAssistantOptions={publicAssistantOptions}
         onChange={setDraft}
       />
     </div>
@@ -185,15 +248,19 @@ export function AdminSettings() {
   const { toast } = useToast();
   const [settings, setSettings] = useState<Setting[]>([]);
   const [roles, setRoles] = useState<AdminRole[]>([]);
+  const [publicAssistantOptions, setPublicAssistantOptions] = useState<PublicAssistantModelOption[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchSettings()
-      .then((loadedSettings) => {
+    Promise.all([
+      fetchSettings(),
+      fetchAdminRoles().catch(() => ({ roles: [] as AdminRole[], permissions: [] })),
+      fetchPublicAssistantModelOptions().catch(() => [] as PublicAssistantModelOption[]),
+    ])
+      .then(([loadedSettings, roleData, modelOptions]) => {
         setSettings(loadedSettings);
-        return fetchAdminRoles()
-          .then((roleData) => setRoles(roleData.roles))
-          .catch(() => setRoles([]));
+        setRoles(roleData.roles);
+        setPublicAssistantOptions(modelOptions);
       })
       .catch(() => toast("Erreur chargement des paramètres", "error"))
       .finally(() => setLoading(false));
@@ -243,6 +310,7 @@ export function AdminSettings() {
                       key={setting.key}
                       setting={setting}
                       roles={roles}
+                      publicAssistantOptions={publicAssistantOptions}
                       onSaved={handleSaved}
                     />
                   ))}

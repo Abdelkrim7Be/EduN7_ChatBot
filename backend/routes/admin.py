@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify, send_file
 import database
 from middleware.auth import require_auth, require_role
 from services import document_service, audit_service
+from services import public_assistant_service
 from services.permissions_service import (
     PERMISSIONS,
     get_role_permissions,
@@ -413,6 +414,13 @@ def get_settings():
     return jsonify({
         "settings": [dict(r) for r in rows]
     }), 200
+
+
+@admin_bp.get("/api/admin/public-assistant/model-options")
+@require_auth
+@require_role("admin")
+def public_assistant_model_options():
+    return jsonify({"options": public_assistant_service.public_model_options()}), 200
 
 
 @admin_bp.put("/api/admin/settings/<key>")
