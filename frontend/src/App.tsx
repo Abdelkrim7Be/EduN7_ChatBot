@@ -476,7 +476,7 @@ export default function App() {
       ["admin.conversations.manage", "/admin/conversations"],
       ["admin.audit.view", "/admin/audit-log"],
       ["admin.announcements.manage", "/admin/announcements"],
-      ["admin.chatbot.test", "/admin/chatbot"],
+      ["admin.ai.test", "/admin/ai-test"],
       ["admin.settings.manage", "/admin/settings"],
     ].find(([permission]) => can(permission))?.[1] ?? "/admin/dashboard";
 
@@ -539,7 +539,7 @@ export default function App() {
               <Route path="documents" element={can("admin.documents.manage") ? <AdminDocuments /> : <ForbiddenPage requiredRole="permission documents" />} />
               <Route path="conversations" element={can("admin.conversations.manage") ? <AdminConversations /> : <ForbiddenPage requiredRole="permission conversations" />} />
               <Route path="settings" element={can("admin.settings.manage") ? <AdminSettings /> : <ForbiddenPage requiredRole="permission paramètres" />} />
-              <Route path="chatbot" element={can("admin.chatbot.test") ? <AdminChatTest /> : <ForbiddenPage requiredRole="permission test chatbot" />} />
+              <Route path="ai-test" element={can("admin.ai.test") ? <AdminChatTest /> : <ForbiddenPage requiredRole="permission test ENSET AI" />} />
               <Route path="roles" element={can("admin.roles.manage") ? <AdminRoles /> : <ForbiddenPage requiredRole="permission rôles" />} />
               <Route path="audit-log" element={can("admin.audit.view") ? <AdminAuditLog /> : <ForbiddenPage requiredRole="permission audit" />} />
               <Route path="announcements" element={can("admin.announcements.manage") ? <AdminAnnouncements /> : <ForbiddenPage requiredRole="permission annonces" />} />

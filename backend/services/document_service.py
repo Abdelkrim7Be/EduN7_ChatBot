@@ -1,19 +1,17 @@
+import logging
 import re
 import time
 import uuid
-import logging
 from pathlib import Path
 
-import chromadb
 import pymupdf
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
 
 import config
 import database
 from models.document import DocumentRecord
-from services.embedding_service import get_embedding_function
+from services import document_storage, vector_store_service
 
 logger = logging.getLogger(__name__)
 
@@ -116,10 +114,6 @@ def is_security_blocking(scan: dict) -> bool:
     return scan.get("status") in {"blocked", "failed", "warning"}
 
 
-def uploaded_path(doc_id: str, original_filename: str) -> Path:
-    return Path(config.UPLOAD_DIR) / f"{doc_id}_{original_filename}"
-
-
 def _record_from_row(row) -> DocumentRecord:
     return DocumentRecord(
         doc_id=row["doc_id"],
@@ -155,7 +149,38 @@ def ensure_security_scan(doc_id: str, original_filename: str, current_status: st
                 "checked_at": row["security_checked_at"],
             }
 
-    scan = scan_pdf_security(str(uploaded_path(doc_id, original_filename)))
+    stored = document_storage.read_pdf(doc_id, original_filename)
+    if stored is None:
+        scan = {
+            "status": "failed",
+            "verdict": "Document file not found",
+            "checked_at": time.time(),
+        }
+    elif isinstance(stored, Path):
+        scan = scan_pdf_security(str(stored))
+    else:
+        data = stored.getvalue()
+        if not data.startswith(b"%PDF-"):
+            scan = {
+                "status": "blocked",
+                "verdict": "Fichier rejeté: signature PDF invalide",
+                "checked_at": time.time(),
+            }
+        else:
+            found = []
+            lowered = data.lower()
+            for pattern, label in _PDF_RISK_PATTERNS:
+                if pattern.lower() in lowered:
+                    found.append(label)
+            scan = {
+                "status": "warning",
+                "verdict": "Contenu actif détecté: " + ", ".join(sorted(set(found))),
+                "checked_at": time.time(),
+            } if found else {
+                "status": "clean",
+                "verdict": "PDF vérifié: aucun contenu actif connu détecté",
+                "checked_at": time.time(),
+            }
     with database.get_db() as conn:
         conn.execute(
             "UPDATE documents SET security_status=?, security_verdict=?, security_checked_at=? WHERE doc_id=?",
@@ -171,23 +196,17 @@ _splitter = RecursiveCharacterTextSplitter(
 )
 
 
-def _chroma_client() -> chromadb.HttpClient:
-    return chromadb.HttpClient(host=config.CHROMA_HOST, port=config.CHROMA_PORT)
-
-
 def ingest(file_path: str, original_filename: str, user_id: str, scope: str = "private") -> DocumentRecord:
     doc_id = str(uuid.uuid4())[:8]
 
-    new_path = Path(file_path).parent / f"{doc_id}_{original_filename}"
-    Path(file_path).rename(new_path)
-    file_path = str(new_path)
+    working_path = Path(file_path)
 
-    security = scan_pdf_security(file_path)
+    security = scan_pdf_security(str(working_path))
     if is_security_blocking(security):
-        Path(file_path).unlink(missing_ok=True)
+        working_path.unlink(missing_ok=True)
         raise ValueError(security["verdict"])
 
-    pages = PyMuPDFLoader(file_path).load()
+    pages = PyMuPDFLoader(str(working_path)).load()
     chunks = _splitter.split_documents(pages)
 
     for i, chunk in enumerate(chunks):
@@ -198,12 +217,9 @@ def ingest(file_path: str, original_filename: str, user_id: str, scope: str = "p
             "chunk_index": i,
         })
 
-    Chroma.from_documents(
-        documents=chunks,
-        embedding=get_embedding_function(),
-        collection_name=f"doc_{doc_id}",
-        client=_chroma_client(),
-    )
+    vector_store_service.index_documents(chunks, doc_id)
+
+    document_storage.save_pdf(working_path, doc_id, original_filename)
 
     category = detect_category(original_filename)
     record = DocumentRecord.create(
@@ -260,14 +276,9 @@ def delete(doc_id: str, user_id: str, role: str = "student") -> bool:
 
         conn.execute("DELETE FROM documents WHERE doc_id=?", (doc_id,))
 
-    try:
-        _chroma_client().delete_collection(row["collection_name"])
-    except Exception as e:
-        logger.warning("Could not delete ChromaDB collection %s: %s", row["collection_name"], e)
+    vector_store_service.delete_collection(row["collection_name"])
 
-    path = uploaded_path(doc_id, row["original_filename"])
-    if path.exists():
-        path.unlink()
+    document_storage.delete_pdf(doc_id, row["original_filename"])
     return True
 
 
@@ -284,13 +295,9 @@ def list_accessible(user_id: str) -> list[DocumentRecord]:
     records = []
     stale_ids = []
     for r in rows:
-        path = uploaded_path(r["doc_id"], r["original_filename"])
-        if not path.exists():
+        if not document_storage.pdf_exists(r["doc_id"], r["original_filename"]):
             stale_ids.append(r["doc_id"])
-            try:
-                _chroma_client().delete_collection(r["collection_name"])
-            except Exception:
-                pass
+            vector_store_service.delete_collection(r["collection_name"])
             continue
         if (r["security_status"] or "pending") == "pending":
             ensure_security_scan(r["doc_id"], r["original_filename"], r["security_status"])

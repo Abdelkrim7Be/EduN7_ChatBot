@@ -1,62 +1,15 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
-
-import chromadb
-from langchain_chroma import Chroma
 
 import config
-from services.embedding_service import get_embedding_function
+from services import vector_store_service
+from services.retrieval_types import ChunkResult
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ChunkResult:
-    text: str
-    score: float
-    doc_id: str
-    doc_name: str
-    page_number: int
-    chunk_index: int
-
-    def to_dict(self) -> dict:
-        return {
-            "doc_id": self.doc_id,
-            "doc_name": self.doc_name,
-            "page_number": self.page_number,
-            "chunk_index": self.chunk_index,
-            "excerpt": self.text[:300],
-        }
-
-
-def _chroma_client() -> chromadb.HttpClient:
-    return chromadb.HttpClient(host=config.CHROMA_HOST, port=config.CHROMA_PORT)
-
-
 def _query_collection(doc_id: str, query: str, top_k: int) -> list[ChunkResult]:
-    try:
-        store = Chroma(
-            collection_name=f"doc_{doc_id}",
-            embedding_function=get_embedding_function(),
-            client=_chroma_client(),
-        )
-        results = store.similarity_search_with_score(query, k=top_k)
-        chunks = []
-        for doc, score in results:
-            m = doc.metadata
-            chunks.append(ChunkResult(
-                text=doc.page_content,
-                score=float(score),
-                doc_id=m.get("doc_id", doc_id),
-                doc_name=m.get("doc_name", "unknown"),
-                page_number=int(m.get("page_number", 1)),
-                chunk_index=int(m.get("chunk_index", 0)),
-            ))
-        return chunks
-    except Exception as e:
-        logger.warning("Failed to query collection doc_%s: %s", doc_id, e)
-        return []
+    return vector_store_service.query_collection(doc_id, query, top_k)
 
 
 def retrieve(query: str, doc_ids: list[str], top_k: int | None = None) -> list[ChunkResult]:

@@ -1,4 +1,5 @@
 import logging
+
 import database
 
 logger = logging.getLogger(__name__)

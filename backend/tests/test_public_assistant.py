@@ -1,5 +1,6 @@
-import database
 import pytest
+
+import database
 from limiter_instance import limiter
 from models.user import UserRecord
 from services import public_assistant_service
@@ -117,7 +118,7 @@ def test_public_assistant_config_hides_context(client):
 
 def test_public_assistant_config_disabled_without_available_model(client, monkeypatch):
     set_public_assistant("true", "Public ENSET AI facts.")
-    monkeypatch.setattr(public_assistant_service, "get_available_providers", lambda: [])
+    monkeypatch.setattr(public_assistant_service, "get_available_providers", list)
 
     response = client.get("/api/public-assistant/config")
 

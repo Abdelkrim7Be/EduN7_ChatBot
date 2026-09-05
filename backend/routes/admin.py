@@ -1,18 +1,22 @@
-import time
 import re
-from flask import Blueprint, request, jsonify, send_file
+import time
+
+from flask import Blueprint, g, jsonify, request, send_file
 
 import database
 from middleware.auth import require_auth, require_role
-from services import document_service, audit_service
-from services import public_assistant_service
+from services import (
+    audit_service,
+    document_service,
+    document_storage,
+    public_assistant_service,
+)
 from services.permissions_service import (
     PERMISSIONS,
     get_role_permissions,
     normalize_permissions,
     set_role_permissions,
 )
-from flask import g
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -158,7 +162,7 @@ def list_users():
             status_count_params,
         ).fetchone()
 
-        rows = conn.execute("""
+        rows = conn.execute(f"""
             SELECT
                 u.id, u.email, u.name, u.role, u.created_at, u.last_seen, u.is_suspended,
                 COUNT(DISTINCT c.session_id) AS conversation_count,
@@ -170,7 +174,7 @@ def list_users():
             GROUP BY u.id
             ORDER BY u.last_seen DESC
             LIMIT ? OFFSET ?
-        """.format(where=where), (*params, limit, offset)).fetchall()
+        """, (*params, limit, offset)).fetchall()
     role_counts = {r["role"]: r["c"] for r in role_rows}
     return jsonify({
         "total": total,
@@ -352,11 +356,11 @@ def preview_document_file(doc_id: str):
     doc = document_service.get(doc_id, None)
     if not doc:
         return jsonify({"error": "Document not found"}), 404
-    path = document_service.uploaded_path(doc.doc_id, doc.original_filename)
-    if not path.exists():
+    stored_pdf = document_storage.read_pdf(doc.doc_id, doc.original_filename)
+    if stored_pdf is None:
         return jsonify({"error": "Document file not found"}), 404
     response = send_file(
-        path,
+        stored_pdf,
         mimetype="application/pdf",
         as_attachment=False,
         download_name=doc.original_filename,

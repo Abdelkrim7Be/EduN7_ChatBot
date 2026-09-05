@@ -1,5 +1,6 @@
 import logging
 import os
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 
@@ -28,12 +29,12 @@ def create_app() -> Flask:
     from limiter_instance import limiter
     limiter.init_app(app)
 
-    from routes.auth import auth_bp
-    from routes.documents import documents_bp
-    from routes.chat import chat_bp
-    from routes.providers import providers_bp
-    from routes.conversations import conversations_bp
     from routes.admin import admin_bp
+    from routes.auth import auth_bp
+    from routes.chat import chat_bp
+    from routes.conversations import conversations_bp
+    from routes.documents import documents_bp
+    from routes.providers import providers_bp
     from routes.public_assistant import public_assistant_bp
 
     app.register_blueprint(auth_bp)
@@ -73,5 +74,5 @@ def create_app() -> Flask:
 
 if __name__ == "__main__":
     app = create_app()
-    port = int(os.getenv("PORT", 8080))
+    port = int(os.getenv("PORT", "8080"))
     app.run(host="0.0.0.0", port=port, threaded=True, debug=False)

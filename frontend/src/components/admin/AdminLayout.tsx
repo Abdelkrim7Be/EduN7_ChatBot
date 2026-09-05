@@ -27,7 +27,7 @@ const NAV: NavItem[] = [
   { to: "/admin/conversations", label: "Conversations", permission: "admin.conversations.manage", icon: <MessageSquare className="w-4 h-4" /> },
   { to: "/admin/audit-log", label: "Journal d'audit", permission: "admin.audit.view", icon: <ClipboardList className="w-4 h-4" /> },
   { to: "/admin/announcements", label: "Annonces", permission: "admin.announcements.manage", icon: <Megaphone className="w-4 h-4" /> },
-  { to: "/admin/chatbot",   label: "Test Chatbot",    permission: "admin.chatbot.test", icon: <Bot className="w-4 h-4" /> },
+  { to: "/admin/ai-test",   label: "Test ENSET AI",   permission: "admin.ai.test", icon: <Bot className="w-4 h-4" /> },
   { to: "/admin/settings",  label: "Paramètres",      permission: "admin.settings.manage", icon: <Settings className="w-4 h-4" /> },
 ];
 

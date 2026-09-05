@@ -1,19 +1,19 @@
-from flask import Blueprint, request, jsonify, g, make_response
+from flask import Blueprint, g, jsonify, make_response, request
 
 from middleware.auth import require_auth
-from services.cookie_auth import (
-    set_auth_cookies,
-    clear_auth_cookies,
-    token_from_request,
-)
 from services.auth_service import (
-    register_user, 
-    authenticate_user, 
-    create_jwt, 
-    AuthError, 
+    AuthError,
+    authenticate_user,
+    change_password,
+    create_jwt,
+    register_user,
     revoke_token,
     update_user_profile,
-    change_password
+)
+from services.cookie_auth import (
+    clear_auth_cookies,
+    set_auth_cookies,
+    token_from_request,
 )
 
 auth_bp = Blueprint("auth", __name__)

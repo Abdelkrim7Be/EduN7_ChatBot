@@ -1,11 +1,11 @@
 import logging
 
-from flask import Blueprint, request, jsonify, Response, stream_with_context, g
+from flask import Blueprint, Response, g, jsonify, request, stream_with_context
 
 import config
 from limiter_instance import limiter
 from middleware.auth import require_auth
-from services import session_service, chat_service, document_service
+from services import chat_service, document_service, session_service
 
 logger = logging.getLogger(__name__)
 chat_bp = Blueprint("chat", __name__)

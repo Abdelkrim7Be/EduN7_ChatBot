@@ -62,7 +62,7 @@ export function AdminChatTest() {
       <div className="mb-4">
         <h1 className="text-xl font-bold text-fg flex items-center gap-2">
           <Bot className="w-5 h-5 text-accent" />
-          Test Chatbot
+          Test ENSET AI
         </h1>
         <p className="text-sm text-fg-secondary mt-0.5">
           Interface de test du RAG avec sélection personnalisée

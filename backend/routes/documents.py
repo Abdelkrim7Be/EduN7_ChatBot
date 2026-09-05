@@ -1,14 +1,14 @@
-import os
 import logging
+import os
 from pathlib import Path
 
-from flask import Blueprint, request, jsonify, g, send_file
+from flask import Blueprint, g, jsonify, request, send_file
 
 import config
 from limiter_instance import limiter
 from middleware.auth import require_auth
+from services import document_service, document_storage, session_service
 from services.permissions_service import role_has_permission
-from services import document_service, session_service
 
 logger = logging.getLogger(__name__)
 documents_bp = Blueprint("documents", __name__)
@@ -130,11 +130,11 @@ def document_file(doc_id: str):
     doc = document_service.get(doc_id, g.user.id)
     if not doc:
         return jsonify({"error": "Document not found"}), 404
-    path = document_service.uploaded_path(doc.doc_id, doc.original_filename)
-    if not path.exists():
+    stored_pdf = document_storage.read_pdf(doc.doc_id, doc.original_filename)
+    if stored_pdf is None:
         return jsonify({"error": "Document file not found"}), 404
     response = send_file(
-        path,
+        stored_pdf,
         mimetype="application/pdf",
         as_attachment=False,
         download_name=doc.original_filename,

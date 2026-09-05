@@ -1,11 +1,12 @@
 import functools
-from flask import request, jsonify, g
+
+from flask import g, jsonify, request
 
 import database
-from services.auth_service import decode_jwt, AuthError
-from services.cookie_auth import token_from_request, csrf_ok
-from services.permissions_service import ENDPOINT_PERMISSIONS, role_has_permission
 from models.user import UserRecord
+from services.auth_service import AuthError, decode_jwt
+from services.cookie_auth import csrf_ok, token_from_request
+from services.permissions_service import ENDPOINT_PERMISSIONS, role_has_permission
 
 
 def require_auth(f):

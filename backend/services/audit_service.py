@@ -1,6 +1,7 @@
-import time
 import logging
-from flask import request, g
+import time
+
+from flask import g, request
 
 import database
 

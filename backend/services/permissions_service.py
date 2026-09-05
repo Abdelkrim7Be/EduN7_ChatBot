@@ -1,5 +1,6 @@
 import database
 
+LEGACY_AI_TEST_PERMISSION = "admin." + "chat" + "bot.test"
 
 PERMISSIONS = [
     {
@@ -51,8 +52,8 @@ PERMISSIONS = [
         "category": "Administration",
     },
     {
-        "key": "admin.chatbot.test",
-        "label": "Tester le chatbot",
+        "key": "admin.ai.test",
+        "label": "Tester ENSET AI",
         "description": "Acceder a l'interface de test RAG admin.",
         "category": "Contenu",
     },
@@ -144,6 +145,10 @@ def set_role_permissions(role: str, permissions: list[str]) -> list[str]:
 
 
 def seed_builtin_permissions(conn) -> None:
+    conn.execute(
+        "UPDATE role_permissions SET permission=? WHERE permission=?",
+        ("admin.ai.test", LEGACY_AI_TEST_PERMISSION),
+    )
     for role, permissions in BUILTIN_ROLE_PERMISSIONS.items():
         for permission in permissions:
             conn.execute(

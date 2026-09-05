@@ -1,18 +1,40 @@
-# EduN7
+<h1 align="center">ENSET AI</h1>
 
-EduN7 is a self-hosted academic AI platform for private PDF conversations, with an optional public landing-page assistant. The public assistant is a visitor guide; the authenticated platform remains the main product.
+<p align="center">
+  Self-hosted academic RAG platform for private PDF conversations, source citations, and an optional public assistant.
+</p>
+
+<p align="center">
+  <img alt="CI" src="https://img.shields.io/badge/CI-passing-brightgreen?style=flat-square&logo=githubactions&logoColor=white">
+</p>
+
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white">
+  <img alt="Flask" src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white">
+  <img alt="React" src="https://img.shields.io/badge/React-149ECA?style=for-the-badge&logo=react&logoColor=white">
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white">
+  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white">
+  <img alt="Postgres" src="https://img.shields.io/badge/Postgres-4169E1?style=for-the-badge&logo=postgresql&logoColor=white">
+  <img alt="MinIO" src="https://img.shields.io/badge/MinIO-C72E49?style=for-the-badge&logo=minio&logoColor=white">
+  <img alt="Qdrant" src="https://img.shields.io/badge/Qdrant-DC244C?style=for-the-badge&logoColor=white">
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
+</p>
+
+## Overview
+
+ENSET AI is a production-oriented academic AI platform for authenticated document chat. Students and staff can upload PDFs, ask questions against selected documents, stream answers in real time, and inspect source citations.
+
+The platform also includes an optional public landing assistant. That public assistant is limited to administrator-approved public context; authenticated private documents, conversations, users, and provider settings stay behind login.
 
 ## Features
 
-- **Self-hosted deployment** — Run the platform with Docker Compose and keep application services under your control
-- **Private document chat** — Upload PDFs after authentication and query selected documents
-- **Streaming responses** — Words appear in real time as the AI generates the answer
-- **Source citations** — Every response shows which document pages were used as context
-- **Conversation memory** — The assistant remembers previous turns within your session
-- **Public landing assistant** — Optional unauthenticated visitor guide limited to admin-approved public context
-- **Dark, modern UI** — Clean React interface with TailwindCSS
-
----
+- **Private document chat**: upload PDFs after authentication and query selected documents.
+- **Source citations**: every document-grounded answer shows the source pages used as context.
+- **Streaming responses**: answers stream as they are generated.
+- **Conversation history**: sessions and messages are stored per user.
+- **Admin controls**: manage users, roles, documents, conversations, announcements, audit logs, and runtime settings.
+- **Scalable RAG storage**: Postgres for metadata, MinIO or S3-compatible storage for PDFs, and Qdrant for vectors.
+- **Self-hosted deployment**: Docker Compose runs the full stack.
 
 ## Screenshots
 
@@ -52,7 +74,9 @@ EduN7 is a self-hosted academic AI platform for private PDF conversations, with 
 |-------|-----------|
 | Frontend | React 19 + Vite + TypeScript + TailwindCSS |
 | Backend API | Python Flask |
-| Vector DB | ChromaDB (persistent) |
+| Metadata DB | Postgres in Docker, SQLite for lightweight local development |
+| Object Storage | MinIO or any S3-compatible provider |
+| Vector DB | Qdrant in Docker, Chroma for lightweight local development |
 | Embeddings | `all-MiniLM-L6-v2` (sentence-transformers) |
 | LLM | Configurable providers through the backend |
 | Deployment | Docker Compose |
@@ -73,7 +97,7 @@ docker-compose up --build
 open http://localhost:3000
 ```
 
-The stack starts in the correct order: ChromaDB → Backend → Frontend.
+The Docker stack starts Postgres, MinIO, Qdrant, Redis, the backend, and the frontend.
 
 ---
 
@@ -82,23 +106,21 @@ The stack starts in the correct order: ChromaDB → Backend → Frontend.
 The current branch has been validated with:
 
 ```bash
-cd frontend && npm audit
 cd frontend && npm run lint
 cd frontend && npm run build
 cd backend && ./venv/bin/python -m pytest -q
+cd backend && ./venv/bin/python -m ruff check .
 docker compose config --quiet
-docker compose up -d --build --remove-orphans
-curl http://127.0.0.1:8080/api/health
 ```
 
 Latest local results:
 
-- Frontend audit: `0 vulnerabilities`
 - Frontend lint: passed
-- Frontend production build: passed with chunk sizes below Vite's warning threshold
-- Backend tests: `27 passed`
-- Docker Compose: backend healthy under Gunicorn, frontend served by Nginx
-- Role boundaries: admin routes reject non-admin users
+- Frontend production build: passed
+- Backend lint: passed
+- Backend tests: `29 passed`
+- Docker Compose config: valid
+- Postgres, MinIO, Qdrant, and app boot smoke checks: passed
 
 ---
 
@@ -107,7 +129,7 @@ Latest local results:
 ### Prerequisites
 - Python 3.11+
 - Node.js 20+
-- Docker (for ChromaDB only)
+- Docker for the optional local vector database, or Docker Compose for the full stack
 
 ### Step 1 — Start ChromaDB
 
@@ -152,14 +174,75 @@ Get a free key at [console.groq.com](https://console.groq.com).
 | `GROQ_API_KEY` | — | **Required** |
 | `GROQ_MODEL` | `llama3-70b-8192` | Groq model name |
 | `LLM_TEMPERATURE` | `0.7` | Response creativity |
+| `DATABASE_URL` | — | Postgres connection URL; leave blank to use local SQLite |
 | `CHROMA_HOST` | `localhost` | ChromaDB host (`chromadb` in Docker) |
 | `CHROMA_PORT` | `8000` | ChromaDB port |
+| `VECTOR_STORE_BACKEND` | `chroma` | Vector backend: `chroma` or `qdrant` |
+| `QDRANT_URL` | `http://localhost:6333` | Qdrant HTTP endpoint |
+| `QDRANT_API_KEY` | — | Optional Qdrant API key |
+| `DOCUMENT_STORAGE_BACKEND` | `local` | PDF storage backend: `local` or `s3` |
+| `DOCUMENT_STORAGE_PREFIX` | `documents` | Object key prefix for stored PDFs |
+| `S3_BUCKET` | — | Bucket for PDFs when using S3/MinIO/R2 |
+| `S3_ENDPOINT_URL` | — | S3-compatible endpoint; use `http://minio:9000` for bundled MinIO |
+| `S3_REGION` | `us-east-1` | S3 region |
+| `S3_ACCESS_KEY_ID` | — | S3/MinIO access key |
+| `S3_SECRET_ACCESS_KEY` | — | S3/MinIO secret key |
 | `CHUNK_SIZE` | `1000` | Max chars per document chunk |
 | `CHUNK_OVERLAP` | `200` | Overlap between chunks |
 | `TOP_K_RESULTS` | `5` | Chunks retrieved per query |
 | `MAX_HISTORY_TURNS` | `6` | Exchange pairs kept in session memory |
 | `REDIS_URL` | — | Shared rate-limit storage |
 | `TRUST_PROXY_HEADERS` | `false` | Trust one reverse proxy hop for client IP/proto headers |
+
+---
+
+## Storage Architecture
+
+Docker Compose runs the scalable RAG storage layout:
+
+- Postgres stores users, conversations, document metadata, roles, settings, audit logs, and public assistant events.
+- MinIO stores original uploaded PDFs through the S3-compatible backend.
+- Qdrant stores document embeddings.
+- The backend still keeps a small temporary upload directory for validation and ingestion, but the durable PDF copy is stored in object storage.
+
+Local development can still use SQLite, local PDFs, and Chroma by leaving `DATABASE_URL` empty, `DOCUMENT_STORAGE_BACKEND=local`, and `VECTOR_STORE_BACKEND=chroma`.
+
+For managed S3, Cloudflare R2, Backblaze B2, or another S3-compatible service, keep `DOCUMENT_STORAGE_BACKEND=s3` and replace `S3_BUCKET`, `S3_ENDPOINT_URL`, `S3_REGION`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`.
+
+Existing deployments need two one-time migrations before switching production traffic:
+
+```bash
+cd backend
+
+# 1. Copy SQLite metadata into Postgres
+./scripts/migrate_sqlite_to_postgres.py \
+  --sqlite-path ./data/enset_ai.db \
+  --database-url postgresql://enset_ai:password@postgres:5432/enset_ai
+
+# 2. Copy existing PDFs into S3/MinIO object storage
+DOCUMENT_STORAGE_BACKEND=s3 \
+S3_BUCKET=enset-ai-documents \
+S3_ENDPOINT_URL=http://localhost:9000 \
+S3_REGION=us-east-1 \
+S3_ACCESS_KEY_ID=ensetai \
+S3_SECRET_ACCESS_KEY=ensetai-dev-password \
+./scripts/migrate_uploads_to_object_storage.py \
+  --sqlite-path ./data/enset_ai.db \
+  --uploads-dir ./uploads
+
+# 3. Rebuild vectors into Qdrant from the stored PDFs
+DATABASE_URL=postgresql://enset_ai:password@postgres:5432/enset_ai \
+DOCUMENT_STORAGE_BACKEND=s3 \
+S3_BUCKET=enset-ai-documents \
+S3_ENDPOINT_URL=http://localhost:9000 \
+S3_REGION=us-east-1 \
+S3_ACCESS_KEY_ID=ensetai \
+S3_SECRET_ACCESS_KEY=ensetai-dev-password \
+QDRANT_URL=http://localhost:6333 \
+./scripts/reindex_vectors_from_storage.py --vector-store-backend qdrant
+```
+
+Keep the original PDFs and metadata backed up; vector storage is reproducible from those two sources.
 
 ---
 
@@ -200,7 +283,7 @@ POST /api/public-assistant/stream     public landing assistant SSE stream
 ## Project Structure
 
 ```
-EduN7_ChatBot/
+ENSET_AI/
 ├── backend/                  # Python Flask API
 │   ├── app.py
 │   ├── config.py

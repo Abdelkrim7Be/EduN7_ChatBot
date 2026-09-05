@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, g, jsonify, request
 
 import database
 from middleware.auth import require_auth

@@ -2,7 +2,7 @@ import hashlib
 import json
 import logging
 import time
-from typing import Generator
+from collections.abc import Generator
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
@@ -144,7 +144,7 @@ def _build_messages(message: str, history: list[dict[str, str]]) -> list:
     fallback = _setting_text("public_assistant_fallback_message")
     system = (
         "You are the public landing-page assistant for ENSET AI.\n"
-        "You are not a general-purpose chatbot.\n"
+        "You are not a general-purpose assistant.\n"
         "Use only the approved public context below to answer factual questions.\n"
         "If the approved context does not support the answer, say that you do not have enough information and redirect the visitor using the fallback guidance.\n"
         "You may explain that signing in is required for authenticated product actions only when that is relevant.\n"

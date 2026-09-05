@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 function makeMinimalPdf() {
-  const stream = 'BT /F1 14 Tf 72 720 Td (EduN7 E2E upload document) Tj ET';
+  const stream = 'BT /F1 14 Tf 72 720 Td (ENSET AI E2E upload document) Tj ET';
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# EduN7 — Deploy to a fresh Ubuntu 22.04/24.04 VPS
+# ENSET AI - Deploy to a fresh Ubuntu 22.04/24.04 VPS
 # Tested on: Oracle Cloud Free Tier (ARM), Hetzner CX32
 # Usage: sudo bash deploy.sh
 set -euo pipefail
@@ -22,9 +22,9 @@ apt-get install -y -qq docker.io docker-compose-v2 certbot curl git
 systemctl enable --now docker
 
 # ── 3. Clone repo ──────────────────────────────────────────────────────────────
-REPO_DIR="/opt/edun7"
+REPO_DIR="/opt/enset-ai"
 if [[ -d "$REPO_DIR/.git" ]]; then
-    info "Repo exists — pulling latest..."
+    info "Repo exists - pulling latest..."
     git -C "$REPO_DIR" pull
 else
     read -rp "Git repository URL (or press Enter to skip if files are already here): " REPO_URL
@@ -37,7 +37,7 @@ cd "${REPO_DIR:-$(pwd)}"
 # ── 4. Environment variables ───────────────────────────────────────────────────
 info "Configuring environment..."
 echo ""
-read -rp "Domain name (e.g. edun7.enset.ma): " DOMAIN
+read -rp "Domain name (e.g. ai.enset.ma): " DOMAIN
 read -rp "Google Client ID: " GOOGLE_CLIENT_ID
 read -rp "Admin email(s) comma-separated (e.g. prof@enset.ma): " ADMIN_EMAILS
 read -rp "Gemini API Key (leave blank if using another provider): " GEMINI_API_KEY
@@ -70,11 +70,11 @@ certbot certonly \
 sed -i "s|DOMAIN|${DOMAIN}|g" nginx-prod.conf
 
 # ── 6. Build & launch ──────────────────────────────────────────────────────────
-info "Building and starting EduN7..."
+info "Building and starting ENSET AI..."
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 # ── 7. Certificate renewal cron ────────────────────────────────────────────────
-CRON_JOB="0 3 * * 0 certbot renew --quiet && docker compose -f /opt/edun7/docker-compose.yml -f /opt/edun7/docker-compose.prod.yml restart frontend"
+CRON_JOB="0 3 * * 0 certbot renew --quiet && docker compose -f /opt/enset-ai/docker-compose.yml -f /opt/enset-ai/docker-compose.prod.yml restart frontend"
 (crontab -l 2>/dev/null | grep -v "certbot renew"; echo "$CRON_JOB") | crontab -
 info "Weekly cert renewal configured."
 
@@ -87,7 +87,7 @@ else
 fi
 
 echo ""
-echo -e "${GREEN}✓ EduN7 deployed!${NC}"
+echo -e "${GREEN}✓ ENSET AI deployed!${NC}"
 echo -e "  URL:     https://${DOMAIN}"
 echo -e "  Logs:    docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f"
 echo -e "  Restart: docker compose -f docker-compose.yml -f docker-compose.prod.yml restart"

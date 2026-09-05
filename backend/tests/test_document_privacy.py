@@ -21,8 +21,8 @@ class FakeSplitter:
 
 
 def test_document_ingestion_log_excludes_private_identifiers(tmp_path, caplog, monkeypatch):
-    from services import document_service
     import database
+    from services import document_service
 
     secret_name = "SECRET_PRIVATE_COURS.pdf"
     unique = uuid.uuid4().hex
@@ -32,11 +32,7 @@ def test_document_ingestion_log_excludes_private_identifiers(tmp_path, caplog, m
 
     monkeypatch.setattr(document_service, "PyMuPDFLoader", FakeLoader)
     monkeypatch.setattr(document_service, "_splitter", FakeSplitter())
-    monkeypatch.setattr(
-        document_service.Chroma,
-        "from_documents",
-        lambda **kwargs: None,
-    )
+    monkeypatch.setattr(document_service.vector_store_service, "index_documents", lambda *args: None)
     with database.get_db() as conn:
         conn.execute(
             "INSERT INTO users (id, email, name, password_hash, role, created_at, last_seen) "
