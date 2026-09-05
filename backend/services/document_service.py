@@ -5,7 +5,8 @@ import logging
 from pathlib import Path
 
 import chromadb
-from langchain_community.document_loaders import PyMuPDFLoader
+import pymupdf
+from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
@@ -15,6 +16,27 @@ from models.document import DocumentRecord
 from services.embedding_service import get_embedding_function
 
 logger = logging.getLogger(__name__)
+
+
+class PyMuPDFLoader:
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+
+    def load(self) -> list[Document]:
+        docs: list[Document] = []
+        with pymupdf.open(self.file_path) as pdf:
+            for page_index, page in enumerate(pdf):
+                docs.append(
+                    Document(
+                        page_content=page.get_text(),
+                        metadata={
+                            "source": self.file_path,
+                            "page": page_index,
+                            "total_pages": pdf.page_count,
+                        },
+                    )
+                )
+        return docs
 
 _PDF_RISK_PATTERNS = [
     (b"/JavaScript", "JavaScript"),

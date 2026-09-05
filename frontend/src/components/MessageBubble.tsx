@@ -2,10 +2,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import type { ComponentProps, CSSProperties, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import type { Components } from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Copy, RefreshCw, Check, Edit2 } from "lucide-react";
 import type { Message } from "../types";
 import { useState } from "react";
@@ -22,8 +20,6 @@ type CodeProps = ComponentProps<"code"> & {
   inline?: boolean;
   children?: ReactNode;
 };
-
-const syntaxTheme = vscDarkPlus as Record<string, CSSProperties>;
 
 export function MessageBubble({
   msg,
@@ -53,14 +49,11 @@ export function MessageBubble({
   const CodeRenderer = ({ inline, className, children, ...props }: CodeProps) => {
       const match = /language-(\w+)/.exec(className || "");
       return !inline && match ? (
-        <SyntaxHighlighter
-          style={syntaxTheme}
-          language={match[1]}
-          PreTag="div"
-          className="rounded-sm !bg-surface-dim border border-border-subtle text-sm font-mono my-4 overflow-x-auto"
-        >
-          {String(children).replace(/\n$/, "")}
-        </SyntaxHighlighter>
+        <pre className="rounded-sm bg-surface-dim border border-border-subtle text-sm font-mono my-4 overflow-x-auto p-4">
+          <code className={className} data-language={match[1]} {...props}>
+            {String(children).replace(/\n$/, "")}
+          </code>
+        </pre>
       ) : (
         <code className="px-1.5 py-0.5 rounded-sm bg-surface-bright text-white text-[0.85em] font-mono border border-border-subtle" {...props}>
           {children}
