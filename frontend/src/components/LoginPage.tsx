@@ -23,8 +23,8 @@ export function LoginPage({ onLogin, onRegister }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
     setError("");
 
     if (tab === "register") {
@@ -64,7 +64,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
     "w-full bg-transparent border border-zinc-800 focus:border-white focus:ring-0 text-white p-4 transition-colors duration-200";
 
   return (
-    <div className="min-h-screen flex bg-x-black font-mono text-white">
+    <div className="min-h-screen flex overflow-x-hidden bg-x-black text-white">
       {/* LEFT — Brand panel */}
       <section className="hidden lg:flex flex-col justify-between w-1/2 p-16 border-r border-white/10">
         <div className="flex items-center space-x-4">
@@ -73,23 +73,25 @@ export function LoginPage({ onLogin, onRegister }: Props) {
         </div>
         
         <div className="max-w-md">
-          <h1 className="text-6xl font-bold mb-6 tracking-tighter leading-none uppercase">
-            Sovereign Intelligence
+          <h1 className="text-5xl xl:text-6xl font-bold mb-6 tracking-tight leading-none uppercase break-words">
+            Plateforme IA académique
           </h1>
           <p className="text-zinc-500 text-lg">
-            Accédez au nœud de recherche institutionnel. Traitement neuronal sécurisé pour l'excellence académique.
+            Connectez-vous pour analyser vos documents pédagogiques privés,
+            organiser vos conversations et obtenir des réponses sourcées.
           </p>
         </div>
         
         <div className="text-zinc-600 text-xs flex flex-col gap-2 uppercase tracking-widest">
-          <p>STATUT_TERMINAL : PRÊT</p>
-          <p>© 2026 SOVEREIGN_INTEL_SYSTEMS</p>
+          <p>Plateforme privée ENSET AI</p>
+          <p>© 2026 ENSET AI</p>
         </div>
       </section>
 
       {/* RIGHT — Auth panel */}
       <section className="w-full lg:w-1/2 bg-[#0e0e0e] flex items-center justify-center p-8 sm:p-12 lg:p-24 relative overflow-hidden">
-        <button 
+        <button
+          type="button"
           onClick={() => window.location.href = '/'} 
           className="absolute top-6 right-6 lg:left-6 lg:right-auto text-zinc-500 hover:text-white flex items-center gap-2 text-xs uppercase tracking-widest transition-colors z-20"
         >
@@ -115,6 +117,8 @@ export function LoginPage({ onLogin, onRegister }: Props) {
             {(["login", "register"] as Tab[]).map((t) => (
               <button
                 key={t}
+                type="button"
+                aria-pressed={tab === t}
                 onClick={() => switchTab(t)}
                 className={`flex-1 py-3 text-xs uppercase tracking-widest font-bold transition-colors ${
                   tab === t
@@ -130,10 +134,12 @@ export function LoginPage({ onLogin, onRegister }: Props) {
           <form onSubmit={handleSubmit} className="space-y-6">
             {tab === "register" && (
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                  Full Name
+                <label htmlFor="auth-name" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
+                  Nom complet
                 </label>
                 <input
+                  id="auth-name"
+                  name="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -145,10 +151,12 @@ export function LoginPage({ onLogin, onRegister }: Props) {
             )}
 
             <div className="space-y-2">
-              <label className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                Institutional Email
+              <label htmlFor="auth-email" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
+                Email institutionnel
               </label>
               <input
+                id="auth-email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -160,15 +168,17 @@ export function LoginPage({ onLogin, onRegister }: Props) {
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                  Security Key
+                <label htmlFor="auth-password" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
+                  Mot de passe
                 </label>
                 {tab === "login" && (
-                  <a href="#" className="text-[10px] text-zinc-500 hover:text-white uppercase">Oublié ?</a>
+                  <span className="text-[10px] text-zinc-600 uppercase">Accès administré</span>
                 )}
               </div>
               <div className="relative">
                 <input
+                  id="auth-password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -178,6 +188,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
                 >
@@ -192,11 +203,13 @@ export function LoginPage({ onLogin, onRegister }: Props) {
 
             {tab === "register" && (
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                  Confirm Key
+                <label htmlFor="auth-confirm" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
+                  Confirmer le mot de passe
                 </label>
                 <div className="relative">
                   <input
+                    id="auth-confirm"
+                    name="confirm_password"
                     type={showConfirm ? "text" : "password"}
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
@@ -206,6 +219,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                   />
                   <button
                     type="button"
+                    aria-label={showConfirm ? "Masquer la confirmation" : "Afficher la confirmation"}
                     onClick={() => setShowConfirm(!showConfirm)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
                   >
@@ -227,8 +241,9 @@ export function LoginPage({ onLogin, onRegister }: Props) {
 
             <div className="pt-4">
               <button
-                type="submit"
+                type="button"
                 disabled={loading}
+                onClick={() => void handleSubmit()}
                 className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-zinc-200 transition-colors duration-200 uppercase tracking-tighter text-sm disabled:opacity-50"
               >
                 {loading
@@ -243,9 +258,10 @@ export function LoginPage({ onLogin, onRegister }: Props) {
           {/* Secondary Actions */}
           <div className="mt-12 pt-8 border-t border-zinc-900 flex flex-col items-center gap-4">
             <p className="text-zinc-500 text-xs">
-              {tab === "login" ? "Don't have an institutional account?" : "Already connected to the node?"}
+              {tab === "login" ? "Vous n'avez pas encore de compte ?" : "Vous avez déjà un compte ?"}
             </p>
             <button
+              type="button"
               onClick={() => switchTab(tab === "login" ? "register" : "login")}
               className="text-white text-xs border border-zinc-800 px-6 py-2 hover:bg-zinc-900 transition-all uppercase tracking-widest"
             >
@@ -256,8 +272,8 @@ export function LoginPage({ onLogin, onRegister }: Props) {
 
         {/* Bottom Decor */}
         <footer className="absolute bottom-0 left-0 w-full p-4 flex justify-between pointer-events-none opacity-20">
-          <div className="text-[8px] font-mono tracking-widest uppercase">SYS_AUTH_v4.0.2</div>
-          <div className="text-[8px] font-mono tracking-widest uppercase">LATENCY: 12ms</div>
+          <div className="text-[8px] tracking-widest uppercase">ENSET_AI_AUTH</div>
+          <div className="text-[8px] tracking-widest uppercase">Accès sécurisé</div>
         </footer>
       </section>
     </div>

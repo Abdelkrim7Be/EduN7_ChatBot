@@ -61,17 +61,20 @@ function SettingControl({
   draft,
   roles,
   publicAssistantOptions,
+  label,
   onChange,
 }: {
   setting: Setting;
   draft: string;
   roles: AdminRole[];
   publicAssistantOptions: PublicAssistantModelOption[];
+  label: string;
   onChange: (value: string) => void;
 }) {
   if (setting.key === "allow_registration" || setting.kind === "boolean") {
     return (
       <select
+        aria-label={label}
         value={draft === "true" ? "true" : "false"}
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-36 border border-hairline bg-surface-2 px-3 text-sm text-fg"
@@ -85,6 +88,7 @@ function SettingControl({
   if (setting.key === "default_role") {
     return (
       <select
+        aria-label={label}
         value={draft}
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-44 border border-hairline bg-surface-2 px-3 text-sm text-fg"
@@ -102,6 +106,7 @@ function SettingControl({
     const providers = [...new Set(publicAssistantOptions.map((option) => option.provider))];
     return (
       <select
+        aria-label={label}
         value={draft}
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-64 border border-hairline bg-surface-2 px-3 text-sm text-fg"
@@ -118,6 +123,7 @@ function SettingControl({
   if (setting.key === "public_assistant_model") {
     return (
       <select
+        aria-label={label}
         value={draft}
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-full border border-hairline bg-surface-2 px-3 text-sm text-fg"
@@ -134,6 +140,7 @@ function SettingControl({
   if (setting.key === "system_prompt" || setting.kind === "textarea") {
     return (
       <textarea
+        aria-label={label}
         value={draft}
         onChange={(e) => onChange(e.target.value)}
         rows={5}
@@ -151,6 +158,7 @@ function SettingControl({
     return (
       <div className="flex h-9 w-44 items-center border border-hairline bg-surface-2">
         <input
+          aria-label={label}
           type="number"
           value={draft}
           onChange={(e) => onChange(e.target.value)}
@@ -168,6 +176,7 @@ function SettingControl({
 
   return (
     <input
+      aria-label={label}
       type="text"
       value={draft}
       onChange={(e) => onChange(e.target.value)}
@@ -192,6 +201,7 @@ function SettingRow({
   const [saving, setSaving] = useState(false);
   const dirty = draft !== setting.value;
   const isWide = setting.key === "system_prompt" || setting.kind === "textarea";
+  const displayLabel = LABELS[setting.key] ?? setting.label;
 
   useEffect(() => {
     setDraft(setting.value);
@@ -215,7 +225,7 @@ function SettingRow({
     <div className={`border border-hairline bg-surface-1 p-4 ${isWide ? "md:col-span-2" : ""}`}>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm font-bold text-fg">{LABELS[setting.key] ?? setting.label}</p>
+          <p className="text-sm font-bold text-fg">{displayLabel}</p>
           <p className="mt-1 text-xs leading-relaxed text-fg-secondary">
             {setting.description || "Paramètre runtime appliqué immédiatement."}
           </p>
@@ -226,6 +236,7 @@ function SettingRow({
         <button
           onClick={handleSave}
           disabled={!dirty || saving}
+          aria-label={`Enregistrer ${displayLabel}`}
           className="flex h-9 shrink-0 items-center gap-2 border border-white/20 bg-white px-3 text-xs font-bold text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-2 disabled:text-fg-muted"
         >
           <Save className="h-3.5 w-3.5" />
@@ -238,6 +249,7 @@ function SettingRow({
         draft={draft}
         roles={roles}
         publicAssistantOptions={publicAssistantOptions}
+        label={displayLabel}
         onChange={setDraft}
       />
     </div>

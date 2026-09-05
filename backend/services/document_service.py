@@ -8,11 +8,11 @@ import chromadb
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
 
 import config
 import database
 from models.document import DocumentRecord
+from services.embedding_service import get_embedding_function
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +142,6 @@ def ensure_security_scan(doc_id: str, original_filename: str, current_status: st
     return scan
 
 
-_embedding_fn = HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL)
 _splitter = RecursiveCharacterTextSplitter(
     chunk_size=config.CHUNK_SIZE,
     chunk_overlap=config.CHUNK_OVERLAP,
@@ -179,7 +178,7 @@ def ingest(file_path: str, original_filename: str, user_id: str, scope: str = "p
 
     Chroma.from_documents(
         documents=chunks,
-        embedding=_embedding_fn,
+        embedding=get_embedding_function(),
         collection_name=f"doc_{doc_id}",
         client=_chroma_client(),
     )

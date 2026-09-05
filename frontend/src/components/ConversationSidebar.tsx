@@ -240,9 +240,15 @@ export function ConversationSidebar({
         <div className="flex-1 min-w-0">
           <div className="text-xs font-bold truncate text-white">{displayName}</div>
         </div>
-        <div className="text-gray-600 cursor-pointer hover:text-white px-2 py-1" onClick={() => setShowMenu(!showMenu)}>
+        <button
+          type="button"
+          className="text-gray-600 cursor-pointer hover:text-white px-2 py-1"
+          onClick={() => setShowMenu(!showMenu)}
+          aria-label="Ouvrir le menu utilisateur"
+          aria-expanded={showMenu}
+        >
           ⁝
-        </div>
+        </button>
         {showMenu && (
             <div className="absolute bottom-14 right-4 bg-surface-dim border border-border-subtle rounded-sm py-1 shadow-lg w-48 z-50">
                 <div className="px-4 py-2 border-b border-border-subtle flex items-center gap-3">

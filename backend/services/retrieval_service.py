@@ -4,13 +4,11 @@ from dataclasses import dataclass
 
 import chromadb
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
 
 import config
+from services.embedding_service import get_embedding_function
 
 logger = logging.getLogger(__name__)
-
-_embedding_fn = HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL)
 
 
 @dataclass
@@ -40,7 +38,7 @@ def _query_collection(doc_id: str, query: str, top_k: int) -> list[ChunkResult]:
     try:
         store = Chroma(
             collection_name=f"doc_{doc_id}",
-            embedding_function=_embedding_fn,
+            embedding_function=get_embedding_function(),
             client=_chroma_client(),
         )
         results = store.similarity_search_with_score(query, k=top_k)

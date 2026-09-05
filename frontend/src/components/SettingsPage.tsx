@@ -94,7 +94,7 @@ export function SettingsPage() {
     <div className="flex flex-col h-screen bg-[#000000] paper-texture text-white font-mono overflow-y-auto">
       <header className="glass flex items-center justify-between px-6 py-4 border-b border-border-subtle shrink-0">
         <div className="flex items-center gap-4">
-          <Link to="/" className="p-2 hover:bg-white/10 rounded-sm transition-colors group">
+          <Link to="/" aria-label="Retour au chat" className="p-2 hover:bg-white/10 rounded-sm transition-colors group">
             <ArrowLeft className="w-5 h-5 text-gray-400 group-hover:text-white" />
           </Link>
           <h1 className="text-sm font-bold uppercase tracking-widest">
@@ -165,10 +165,12 @@ export function SettingsPage() {
                   
                   <div className="flex-1 space-y-6">
                     <div>
-                      <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
+                      <label htmlFor="settings-display-name" className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
                         Nom affiché
                       </label>
                       <input
+                        id="settings-display-name"
+                        name="display_name"
                         type="text"
                         value={nameInput}
                         onChange={(e) => setNameInput(e.target.value)}
@@ -176,10 +178,12 @@ export function SettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
+                      <label htmlFor="settings-email" className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
                         Adresse e-mail
                       </label>
                       <input
+                        id="settings-email"
+                        name="email"
                         type="email"
                         defaultValue={user.email}
                         readOnly
@@ -219,52 +223,58 @@ export function SettingsPage() {
                 </h2>
                 <div className="max-w-md space-y-6">
                   <div>
-                    <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
+                    <label htmlFor="current-password" className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
                       Mot de passe actuel
                     </label>
                     <div className="relative">
                       <input
+                        id="current-password"
+                        name="current_password"
                         type={showCurrentPassword ? "text" : "password"}
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder="Mot de passe actuel"
                         className="w-full bg-transparent border border-white/20 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors pr-10"
                       />
-                      <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
+                      <button type="button" aria-label={showCurrentPassword ? "Masquer le mot de passe actuel" : "Afficher le mot de passe actuel"} onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
                         {showCurrentPassword ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg> : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
                       </button>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
+                    <label htmlFor="new-password" className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
                       Nouveau mot de passe
                     </label>
                     <div className="relative">
                       <input
+                        id="new-password"
+                        name="new_password"
                         type={showNewPassword ? "text" : "password"}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Nouveau mot de passe"
                         className="w-full bg-transparent border border-white/20 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors pr-10"
                       />
-                      <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
+                      <button type="button" aria-label={showNewPassword ? "Masquer le nouveau mot de passe" : "Afficher le nouveau mot de passe"} onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
                         {showNewPassword ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg> : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
                       </button>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
+                    <label htmlFor="confirm-password" className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2">
                       Confirmer le nouveau mot de passe
                     </label>
                     <div className="relative">
                       <input
+                        id="confirm-password"
+                        name="confirm_password"
                         type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Confirmer le mot de passe"
                         className="w-full bg-transparent border border-white/20 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors pr-10"
                       />
-                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
+                      <button type="button" aria-label={showConfirmPassword ? "Masquer la confirmation du mot de passe" : "Afficher la confirmation du mot de passe"} onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
                         {showConfirmPassword ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg> : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
                       </button>
                     </div>

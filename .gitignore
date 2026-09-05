@@ -20,9 +20,11 @@ node_modules/
 frontend/dist/
 frontend/.vite/
 frontend/test-results/
+dogfood-output/
 
 # Local DB files
 backend/*.db
+backend/data/
 
 # Editor
 .vscode/
