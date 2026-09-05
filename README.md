@@ -14,6 +14,38 @@ EduN7 is a self-hosted academic AI platform for private PDF conversations, with 
 
 ---
 
+## Screenshots
+
+### Public entry
+
+![Public landing page](docs/screenshots/landing.png)
+
+### Authentication
+
+![Login screen](docs/screenshots/login.png)
+
+### Chat workspace
+
+![Authenticated chat workspace](docs/screenshots/chat-workspace.png)
+
+![Chat response with workspace controls](docs/screenshots/chat-response.png)
+
+### Model selection
+
+![Model selector](docs/screenshots/model-selector.png)
+
+### Administration
+
+![Admin dashboard](docs/screenshots/admin-dashboard.png)
+
+![Admin settings](docs/screenshots/admin-settings.png)
+
+### Access control
+
+![Role boundary screen](docs/screenshots/access-boundary.png)
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -42,6 +74,31 @@ open http://localhost:3000
 ```
 
 The stack starts in the correct order: ChromaDB → Backend → Frontend.
+
+---
+
+## Production Readiness Checks
+
+The current branch has been validated with:
+
+```bash
+cd frontend && npm audit
+cd frontend && npm run lint
+cd frontend && npm run build
+cd backend && ./venv/bin/python -m pytest -q
+docker compose config --quiet
+docker compose up -d --build --remove-orphans
+curl http://127.0.0.1:8080/api/health
+```
+
+Latest local results:
+
+- Frontend audit: `0 vulnerabilities`
+- Frontend lint: passed
+- Frontend production build: passed with chunk sizes below Vite's warning threshold
+- Backend tests: `27 passed`
+- Docker Compose: backend healthy under Gunicorn, frontend served by Nginx
+- Role boundaries: admin routes reject non-admin users
 
 ---
 

@@ -66,5 +66,6 @@ IMPROVEMENT_PLAN.md
 *.png
 !frontend/public/**/*.png
 !backend/uploads/**/*.png
+!docs/screenshots/**/*.png
 screens_*.json
 stitch_tools.json
