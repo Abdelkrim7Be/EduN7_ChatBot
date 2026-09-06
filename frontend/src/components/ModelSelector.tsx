@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Check, ChevronDown, Circle, Sparkles, Zap } from "lucide-react";
 import type { Provider, SelectedModel } from "../types";
 
 interface Props {
@@ -9,27 +10,32 @@ interface Props {
 }
 
 const BADGE_COLORS: Record<string, string> = {
-  Free:     "bg-emerald-500/20 text-emerald-600 border-emerald-500/30",
-  Fastest:  "bg-brand-blue/15 text-brand-blue border-brand-blue/30",
-  Powerful: "bg-brand-navy/10 text-brand-navy border-brand-navy/20",
-  Standard: "bg-brand-blue-light/20 text-brand-blue-dark border-brand-blue-light/30",
-  Private:  "bg-brand-gold/20 text-brand-gold-dark border-brand-gold/30",
-  Auto:     "bg-gradient-to-r from-brand-blue/15 to-brand-gold/15 text-brand-navy border-brand-blue/30",
+  Free: "text-accent border-accent/30 bg-accent/10",
+  Fastest: "text-accent border-accent/30 bg-accent/10",
+  Powerful: "text-white border-border-heavy bg-surface-dim",
+  Standard: "text-gray-400 border-border-subtle bg-black",
+  Private: "text-gray-300 border-border-heavy bg-surface-dim",
+  Auto: "text-accent border-accent/30 bg-accent/10",
 };
 
-const PROVIDER_ICONS: Record<string, string> = {
-  groq:       "⚡",
-  anthropic:  "◆",
-  openai:     "◎",
-  ollama:     "⬡",
-  sambanova:  "◈",
-  mistral:    "▲",
-  openrouter: "⊕",
-  cerebras:   "⬟",
-  auto:       "✦",
+const PROVIDER_LABELS: Record<string, string> = {
+  groq: "GQ",
+  anthropic: "AN",
+  openai: "AI",
+  ollama: "OL",
+  sambanova: "SN",
+  mistral: "MI",
+  openrouter: "OR",
+  cerebras: "CB",
+  auto: "AU",
 };
 
-export function ModelSelector({ providers, selected, onSelect, loading }: Props) {
+export function ModelSelector({
+  providers,
+  selected,
+  onSelect,
+  loading,
+}: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -45,10 +51,14 @@ export function ModelSelector({ providers, selected, onSelect, loading }: Props)
 
   const isAuto = selected?.provider === "auto";
   const currentProvider = providers.find((p) => p.id === selected?.provider);
-  const currentModel = currentProvider?.models.find((m) => m.id === selected?.model);
+  const currentModel = currentProvider?.models.find(
+    (m) => m.id === selected?.model,
+  );
 
   if (loading || !selected) {
-    return <div className="h-8 w-40 rounded-lg bg-brand-navy-light animate-pulse" />;
+    return (
+      <div className="h-8 w-40 rounded-sm border border-border-subtle bg-surface-dim animate-pulse" />
+    );
   }
 
   const autoIsActive = selected.provider === "auto";
@@ -57,104 +67,123 @@ export function ModelSelector({ providers, selected, onSelect, loading }: Props)
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-navy-light hover:bg-brand-navy-border border border-brand-navy-border transition-colors text-sm"
+        className="flex h-9 max-w-[280px] items-center gap-2 border border-border-subtle bg-black px-3 text-xs font-mono text-gray-400 transition-colors hover:border-border-heavy hover:text-white"
       >
-        <span className="text-base leading-none">
-          {PROVIDER_ICONS[selected.provider] ?? "◦"}
+        <span className="flex h-5 w-5 items-center justify-center border border-border-subtle bg-surface-dim text-[9px] font-bold text-accent">
+          {isAuto ? <Sparkles className="h-3 w-3" /> : (PROVIDER_LABELS[selected.provider] ?? "LL")}
         </span>
-        <span className="text-white font-medium">
+        <span className="font-bold text-white">
           {isAuto ? "Auto" : (currentProvider?.name ?? selected.provider)}
         </span>
         {!isAuto && (
           <>
-            <span className="text-white/30">·</span>
-            <span className="text-white/70 max-w-[120px] truncate">
+            <span className="text-gray-700">/</span>
+            <span className="max-w-[130px] truncate text-gray-400">
               {currentModel?.name ?? selected.model}
             </span>
           </>
         )}
-        <svg
-          className={`w-3.5 h-3.5 text-white/40 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDown
+          className={`h-3.5 w-3.5 shrink-0 text-gray-600 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-white border border-brand-gray shadow-xl shadow-brand-navy/10 z-50 overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-brand-gray bg-brand-surface-muted">
-            <p className="text-xs font-semibold text-brand-gray-text uppercase tracking-wider">Choisir le modèle</p>
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden border border-border-subtle bg-black font-mono shadow-none">
+          <div className="border-b border-border-subtle bg-surface-dim px-4 py-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+              Choisir le modèle
+            </p>
           </div>
 
           <div className="max-h-96 overflow-y-auto p-2 space-y-1">
-            {/* Auto option */}
             <button
-              onClick={() => { onSelect("auto", "auto"); setOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors mb-2 ${
+              onClick={() => {
+                onSelect("auto", "auto");
+                setOpen(false);
+              }}
+              className={`mb-2 flex w-full items-center gap-3 border px-3 py-2.5 text-left transition-colors ${
                 autoIsActive
-                  ? "bg-brand-surface-muted border border-brand-blue/40"
-                  : "hover:bg-brand-surface-muted border border-transparent"
+                  ? "border-accent/40 bg-accent/10"
+                  : "border-transparent hover:border-border-subtle hover:bg-white/5"
               }`}
             >
-              <span className="text-lg leading-none">✦</span>
+              <span className="flex h-6 w-6 items-center justify-center border border-border-subtle bg-surface-dim text-accent">
+                <Sparkles className="h-3.5 w-3.5" />
+              </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-brand-navy">Auto</p>
-                <p className="text-xs text-brand-gray-text">Sélectionne automatiquement le meilleur modèle</p>
+                <p className="text-sm font-bold text-white">Auto</p>
+                <p className="text-xs text-gray-500">
+                  Sélectionne automatiquement le meilleur modèle
+                </p>
               </div>
               {autoIsActive && (
-                <svg className="w-4 h-4 text-brand-blue flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+                <Check className="h-4 w-4 flex-shrink-0 text-accent" />
               )}
             </button>
 
-            <div className="border-t border-brand-gray mb-2" />
+            <div className="border-t border-border-subtle mb-2" />
 
-            {providers.filter((p) => p.available).map((provider) => (
-              <div key={provider.id} className="mb-2">
-                <div className="flex items-center gap-2 px-2 py-1.5">
-                  <span className="text-base">{PROVIDER_ICONS[provider.id] ?? "◦"}</span>
-                  <span className="text-xs font-semibold text-brand-navy uppercase tracking-wider">
-                    {provider.name}
-                  </span>
-                  <span
-                    className={`ml-auto text-[10px] px-1.5 py-0.5 rounded border font-medium ${
-                      BADGE_COLORS[provider.badge] ?? "bg-brand-gray text-brand-gray-text border-brand-gray-mid"
-                    }`}
-                  >
-                    {provider.badge}
-                  </span>
+            {providers
+              .filter((p) => p.available)
+              .map((provider) => (
+                <div key={provider.id} className="mb-2">
+                  <div className="flex items-center gap-2 px-2 py-1.5">
+                    <span className="flex h-5 w-5 items-center justify-center border border-border-subtle bg-surface-dim text-[9px] font-bold text-accent">
+                      {provider.id === "groq" ? <Zap className="h-3 w-3" /> : (PROVIDER_LABELS[provider.id] ?? "LL")}
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-300">
+                      {provider.name}
+                    </span>
+                    <span
+                      className={`ml-auto border px-1.5 py-0.5 text-[10px] font-medium ${
+                        BADGE_COLORS[provider.badge] ??
+                        "bg-black text-gray-500 border-border-subtle"
+                      }`}
+                    >
+                      {provider.badge}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {provider.models.map((m) => {
+                      const isActive =
+                        selected.provider === provider.id &&
+                        selected.model === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => {
+                            onSelect(provider.id, m.id);
+                            setOpen(false);
+                          }}
+                          className={`flex w-full items-center gap-3 border px-3 py-2 text-left transition-colors ${
+                            isActive
+                              ? "border-accent/40 bg-accent/10"
+                              : "border-transparent hover:border-border-subtle hover:bg-white/5"
+                          }`}
+                        >
+                          <Circle
+                            className={`h-2.5 w-2.5 flex-shrink-0 ${isActive ? "fill-accent text-accent" : "text-gray-700"}`}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={`text-sm font-medium ${isActive ? "text-white" : "text-gray-300"}`}
+                            >
+                              {m.name}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {m.description}
+                            </p>
+                          </div>
+                          {isActive && (
+                            <Check className="h-4 w-4 flex-shrink-0 text-accent" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="space-y-0.5">
-                  {provider.models.map((m) => {
-                    const isActive = selected.provider === provider.id && selected.model === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        onClick={() => { onSelect(provider.id, m.id); setOpen(false); }}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                          isActive
-                            ? "bg-brand-blue/10 border border-brand-blue/30"
-                            : "hover:bg-brand-surface-muted border border-transparent"
-                        }`}
-                      >
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? "bg-brand-blue" : "bg-brand-gray-mid"}`} />
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium ${isActive ? "text-brand-navy" : "text-brand-navy/80"}`}>{m.name}</p>
-                          <p className="text-xs text-brand-gray-text truncate">{m.description}</p>
-                        </div>
-                        {isActive && (
-                          <svg className="w-4 h-4 text-brand-blue flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}

@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend:
-    name: Backend — lint + tests
+    name: Backend lint and tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,11 +35,11 @@ jobs:
           JWT_SECRET: ci-secret
           CHROMA_HOST: localhost
           CHROMA_PORT: "8000"
-          UPLOAD_DIR: /tmp/edun7_uploads
+          UPLOAD_DIR: /tmp/enset_ai_uploads
         run: pytest tests/ -v
 
   frontend:
-    name: Frontend — type-check + build
+    name: Frontend type check and build
     runs-on: ubuntu-latest
     defaults:
       run:

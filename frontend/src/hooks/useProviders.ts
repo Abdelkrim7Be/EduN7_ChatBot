@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Provider, SelectedModel } from "../types";
 import { fetchProviders } from "../api/client";
 
-const STORAGE_KEY = "edun7_selected_model";
+const STORAGE_KEY = "ensetai_selected_model";
 
 function loadStored(): SelectedModel | null {
   try {
@@ -17,7 +17,9 @@ function saveStored(sel: SelectedModel) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sel));
 }
 
-export function useProviders() {
+// The provider list is behind auth (it reveals which keys are configured),
+// so it can only be fetched once the user is signed in.
+export function useProviders(isAuthenticated: boolean) {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [selected, setSelected] = useState<SelectedModel | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ export function useProviders() {
             (p) =>
               p.id === stored.provider &&
               p.available &&
-              p.models.some((m) => m.id === stored.model)
+              p.models.some((m) => m.id === stored.model),
           ));
 
       if (stillValid && stored) {
@@ -54,8 +56,14 @@ export function useProviders() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setProviders([]);
+      setSelected(null);
+      setLoading(false);
+      return;
+    }
     refresh();
-  }, [refresh]);
+  }, [refresh, isAuthenticated]);
 
   function select(provider: string, model: string) {
     const sel = { provider, model };
@@ -63,9 +71,18 @@ export function useProviders() {
     saveStored(sel);
   }
 
-  const currentProvider = providers.find((p) => p.id === selected?.provider) ?? null;
+  const currentProvider =
+    providers.find((p) => p.id === selected?.provider) ?? null;
   const currentModel =
     currentProvider?.models.find((m) => m.id === selected?.model) ?? null;
 
-  return { providers, selected, loading, select, currentProvider, currentModel, refresh };
+  return {
+    providers,
+    selected,
+    loading,
+    select,
+    currentProvider,
+    currentModel,
+    refresh,
+  };
 }

@@ -1,0 +1,15 @@
+{
+  "name": "enset_ai",
+  "version": "1.0.0",
+  "description": "ENSET AI is a self-hosted RAG platform for private PDF conversations and an optional public landing assistant.",
+  "main": "e2e_test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.62.1"
+  }
+}

@@ -1,5 +1,5 @@
+import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
 
 
 @dataclass
@@ -10,9 +10,12 @@ class DocumentRecord:
     collection_name: str
     page_count: int
     chunk_count: int
-    uploaded_at: str
+    uploaded_at: float
     scope: str = "private"
     category: str = "Autres"
+    security_status: str = "pending"
+    security_verdict: str = ""
+    security_checked_at: float | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -25,6 +28,9 @@ class DocumentRecord:
             "uploaded_at": self.uploaded_at,
             "scope": self.scope,
             "category": self.category,
+            "security_status": self.security_status,
+            "security_verdict": self.security_verdict,
+            "security_checked_at": self.security_checked_at,
         }
 
     @staticmethod
@@ -36,6 +42,9 @@ class DocumentRecord:
         chunk_count: int,
         scope: str = "private",
         category: str = "Autres",
+        security_status: str = "pending",
+        security_verdict: str = "",
+        security_checked_at: float | None = None,
     ) -> "DocumentRecord":
         return DocumentRecord(
             doc_id=doc_id,
@@ -44,7 +53,10 @@ class DocumentRecord:
             collection_name=f"doc_{doc_id}",
             page_count=page_count,
             chunk_count=chunk_count,
-            uploaded_at=datetime.now(timezone.utc).isoformat(),
+            uploaded_at=time.time(),
             scope=scope,
             category=category,
+            security_status=security_status,
+            security_verdict=security_verdict,
+            security_checked_at=security_checked_at,
         )

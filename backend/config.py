@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,30 +25,80 @@ CHROMA_HOST: str = os.getenv("CHROMA_HOST", "localhost")
 CHROMA_PORT: int = int(os.getenv("CHROMA_PORT", "8000"))
 
 UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "./uploads")
+DB_PATH: str = os.getenv("DB_PATH", "./data/enset_ai.db")
+DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+
+DOCUMENT_STORAGE_BACKEND: str = os.getenv("DOCUMENT_STORAGE_BACKEND", "local").lower()
+DOCUMENT_STORAGE_PREFIX: str = os.getenv("DOCUMENT_STORAGE_PREFIX", "documents")
+S3_BUCKET: str = os.getenv("S3_BUCKET", "")
+S3_ENDPOINT_URL: str = os.getenv("S3_ENDPOINT_URL", "")
+S3_REGION: str = os.getenv("S3_REGION", "us-east-1")
+S3_ACCESS_KEY_ID: str = os.getenv("S3_ACCESS_KEY_ID", os.getenv("AWS_ACCESS_KEY_ID", ""))
+S3_SECRET_ACCESS_KEY: str = os.getenv("S3_SECRET_ACCESS_KEY", os.getenv("AWS_SECRET_ACCESS_KEY", ""))
 
 EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "1000"))
 CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "200"))
 TOP_K_RESULTS: int = int(os.getenv("TOP_K_RESULTS", "5"))
 
+VECTOR_STORE_BACKEND: str = os.getenv("VECTOR_STORE_BACKEND", "chroma").lower()
+QDRANT_URL: str = os.getenv("QDRANT_URL", "http://localhost:6333")
+QDRANT_API_KEY: str = os.getenv("QDRANT_API_KEY", "")
+
 MAX_HISTORY_TURNS: int = int(os.getenv("MAX_HISTORY_TURNS", "6"))
 SESSION_TTL_SECONDS: int = int(os.getenv("SESSION_TTL_SECONDS", "3600"))
 
 JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-in-production")
+if JWT_SECRET == "change-me-in-production" and os.getenv("FLASK_ENV") != "development":
+    raise RuntimeError(
+        "FATAL: JWT_SECRET is not set. Set JWT_SECRET in your .env file. "
+        "Current value 'change-me-in-production' is not safe for deployment."
+    )
 JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
 ADMIN_EMAILS: list[str] = [e.strip() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()]
 ALLOWED_EMAIL_DOMAINS: list[str] = [d.strip() for d in os.getenv("ALLOWED_EMAIL_DOMAINS", "").split(",") if d.strip()]
 
-ALLOWED_ORIGINS: list[str] = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+REDIS_URL: str = os.getenv("REDIS_URL", "")
+TRUST_PROXY_HEADERS: bool = os.getenv("TRUST_PROXY_HEADERS", "false").lower() in ("true", "1", "yes")
+
+ALLOWED_ORIGINS: list[str] = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")]
 RATE_LIMIT_CHAT: str = os.getenv("RATE_LIMIT_CHAT", "30 per hour")
 RATE_LIMIT_UPLOAD: str = os.getenv("RATE_LIMIT_UPLOAD", "20 per day")
 
 RAG_SYSTEM_PROMPT: str = (
-    "You are EduN7, an academic document assistant. "
-    "Answer questions based strictly on the provided document context. "
-    "Each context chunk is labelled with a number like [1], [2], [3]. "
-    "When you use information from a chunk, place its reference number inline immediately after the fact, "
-    "for example: 'Neurons fire in response to stimuli [1].' or 'The method has two phases [2][3].' "
-    "Do not add a references list at the end — inline numbers only. "
-    "If the answer is not in the context, say so clearly. Do not fabricate information."
+    "You are ENSET AI, an incredibly intelligent and helpful AI assistant. "
+    "You have vast general knowledge and can answer any question the user asks. "
+    "Sometimes, you will be provided with <database_results> from the user's private documents. "
+    "If those results are relevant to the user's question, use them to personalize your answer and cite them with [1], [2]. "
+    "HOWEVER, if the database results are irrelevant or empty, you MUST ignore them and answer the question using your own brain! "
+    "NEVER apologize or say 'The context does not provide this' or 'I cannot find this'. "
+    "Just answer the question directly and naturally like a highly intelligent AI."
 )
+
+def get_runtime_setting(key: str, fallback: str = "") -> str:
+    """Get a setting from DB, falling back to the env-based value."""
+    try:
+        from services.settings_service import get_setting
+        return get_setting(key, fallback)
+    except Exception:
+        return fallback
+
+def get_system_prompt() -> str:
+    """Get the system prompt, preferring DB setting over env default."""
+    return get_runtime_setting("system_prompt", RAG_SYSTEM_PROMPT)
+
+def is_registration_allowed() -> bool:
+    """Check if registration is allowed via DB setting."""
+    try:
+        from services.settings_service import get_bool
+        return get_bool("allow_registration", True)
+    except Exception:
+        return True
+
+def is_maintenance_mode() -> bool:
+    """Check if maintenance mode is active."""
+    try:
+        from services.settings_service import get_bool
+        return get_bool("maintenance_mode", False)
+    except Exception:
+        return False

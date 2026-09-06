@@ -1,4 +1,5 @@
 import logging
+
 import config
 
 logger = logging.getLogger(__name__)
@@ -29,10 +30,10 @@ PROVIDER_CATALOG = {
         "description": "Fast inference · Free tier",
         "badge": "Fast",
         "models": [
-            {"id": "llama-3.3-70b-versatile",              "name": "Llama 3.3 70B",    "description": "High quality · Fast"},
-            {"id": "llama-3.1-8b-instant",                 "name": "Llama 3.1 8B",     "description": "Fastest"},
-            {"id": "meta-llama/llama-4-scout-17b-16e-instruct", "name": "Llama 4 Scout", "description": "Newest · Multimodal"},
-            {"id": "qwen/qwen3-32b",                       "name": "Qwen 3 32B",       "description": "Strong reasoning"},
+            {"id": "openai/gpt-oss-20b",   "name": "GPT-OSS 20B",       "description": "Fastest · Lightweight"},
+            {"id": "openai/gpt-oss-120b",  "name": "GPT-OSS 120B",      "description": "High quality · Fast"},
+            {"id": "groq/compound",        "name": "Groq Compound",     "description": "Agentic · Tool use"},
+            {"id": "groq/compound-mini",   "name": "Groq Compound Mini","description": "Agentic · Fastest"},
         ],
     },
     "mistral": {
@@ -52,8 +53,8 @@ PROVIDER_CATALOG = {
         "models": [
             {"id": "google/gemma-4-31b-it:free",                 "name": "Gemma 4 31B",       "description": "Free · Google · Fast"},
             {"id": "nvidia/nemotron-3-super-120b-a12b:free",     "name": "Nemotron 120B",     "description": "Free · NVIDIA · Large"},
-            {"id": "minimax/minimax-m2.5:free",                  "name": "MiniMax M2.5",      "description": "Free · Capable"},
-            {"id": "deepseek/deepseek-v4-flash:free",            "name": "DeepSeek V4 Flash", "description": "Free · Strong reasoning"},
+            {"id": "openai/gpt-oss-20b:free",                    "name": "GPT-OSS 20B",       "description": "Free · Fast"},
+            {"id": "z-ai/glm-5.2:free",                          "name": "GLM 5.2",           "description": "Free · Capable"},
         ],
     },
     "together": {
@@ -72,10 +73,10 @@ PROVIDER_CATALOG = {
         "description": "Ultra-fast · Free · Llama 4 · DeepSeek R1",
         "badge": "Fastest",
         "models": [
-            {"id": "Meta-Llama-4-Maverick-17B-128E-Instruct",    "name": "Llama 4 Maverick", "description": "Newest · Fast · Free"},
-            {"id": "Meta-Llama-3.1-405B-Instruct",               "name": "Llama 3.1 405B",   "description": "Largest open model · Free"},
             {"id": "Meta-Llama-3.3-70B-Instruct",                "name": "Llama 3.3 70B",    "description": "High quality · Free"},
-            {"id": "DeepSeek-R1",                                 "name": "DeepSeek R1",      "description": "Best reasoning · Free"},
+            {"id": "DeepSeek-V3.2",                              "name": "DeepSeek V3.2",    "description": "Strong reasoning"},
+            {"id": "gpt-oss-120b",                               "name": "GPT-OSS 120B",     "description": "Large · Capable"},
+            {"id": "MiniMax-M3",                                 "name": "MiniMax M3",       "description": "Newest · Capable"},
         ],
     },
 }
@@ -85,7 +86,9 @@ BADGE_PRIORITY = ["Free", "Fastest", "Fast", "Powerful", "Standard", "Private"]
 AUTO_FALLBACK_ORDER = [
     ("cerebras",   "llama3.1-8b"),
     ("sambanova",  "Meta-Llama-3.3-70B-Instruct"),
-    ("groq",       "llama-3.3-70b-versatile"),
+    ("groq",       "openai/gpt-oss-20b"),
+    ("groq",       "groq/compound-mini"),
+    ("groq",       "openai/gpt-oss-120b"),
     ("mistral",    "mistral-small-latest"),
     ("openrouter", "google/gemma-4-31b-it:free"),
     ("gemini",     "gemini-2.0-flash"),
@@ -154,6 +157,7 @@ def build_llm(provider: str, model: str):
             google_api_key=config.GEMINI_API_KEY,
             temperature=config.LLM_TEMPERATURE,
             max_output_tokens=config.LLM_MAX_TOKENS,
+            max_retries=0,
             streaming=True,
         )
 
@@ -180,6 +184,7 @@ def build_llm(provider: str, model: str):
             api_key=config.GROQ_API_KEY,
             temperature=config.LLM_TEMPERATURE,
             max_tokens=config.LLM_MAX_TOKENS,
+            max_retries=0,
             streaming=True,
         )
 

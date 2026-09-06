@@ -1,7 +1,20 @@
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, g, jsonify, make_response, request
 
 from middleware.auth import require_auth
-from services.auth_service import register_user, authenticate_user, create_jwt, AuthError
+from services.auth_service import (
+    AuthError,
+    authenticate_user,
+    change_password,
+    create_jwt,
+    register_user,
+    revoke_token,
+    update_user_profile,
+)
+from services.cookie_auth import (
+    clear_auth_cookies,
+    set_auth_cookies,
+    token_from_request,
+)
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -13,13 +26,18 @@ def register():
     name     = (data.get("name")     or "").strip()
     password = (data.get("password") or "").strip()
 
+    import config
+    if not config.is_registration_allowed():
+        return jsonify({"error": "Registration is currently disabled"}), 403
+
     try:
         user = register_user(email, name, password)
     except AuthError as e:
         return jsonify({"error": str(e)}), e.status
 
     token = create_jwt(user)
-    return jsonify({"token": token, "user": user.to_dict()}), 201
+    resp = make_response(jsonify({"user": user.to_dict()}), 201)
+    return set_auth_cookies(resp, token)
 
 
 @auth_bp.post("/api/auth/login")
@@ -37,7 +55,8 @@ def login():
         return jsonify({"error": str(e)}), e.status
 
     token = create_jwt(user)
-    return jsonify({"token": token, "user": user.to_dict()}), 200
+    resp = make_response(jsonify({"user": user.to_dict()}), 200)
+    return set_auth_cookies(resp, token)
 
 
 @auth_bp.get("/api/auth/me")
@@ -47,5 +66,46 @@ def me():
 
 
 @auth_bp.post("/api/auth/logout")
+@require_auth
 def logout():
-    return jsonify({"ok": True}), 200
+    token, _ = token_from_request()
+    if token:
+        revoke_token(token)
+    resp = make_response(jsonify({"ok": True}), 200)
+    return clear_auth_cookies(resp)
+
+
+@auth_bp.put("/api/auth/profile")
+@require_auth
+def update_profile():
+    data = request.get_json(silent=True) or {}
+    name = data.get("name")
+    avatar_url = data.get("avatar_url")
+    
+    try:
+        updated_user = update_user_profile(g.user.id, name, avatar_url)
+    except AuthError as e:
+        return jsonify({"error": str(e)}), e.status
+
+    # Re-issue the token so the name/avatar in the payload stay current.
+    token = create_jwt(updated_user)
+    resp = make_response(jsonify({"user": updated_user.to_dict()}), 200)
+    return set_auth_cookies(resp, token)
+
+
+@auth_bp.put("/api/auth/password")
+@require_auth
+def update_password():
+    data = request.get_json(silent=True) or {}
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    
+    if not current_password or not new_password:
+        return jsonify({"error": "current_password and new_password are required"}), 400
+        
+    try:
+        change_password(g.user.id, current_password, new_password)
+    except AuthError as e:
+        return jsonify({"error": str(e)}), e.status
+        
+    return jsonify({"updated": True}), 200

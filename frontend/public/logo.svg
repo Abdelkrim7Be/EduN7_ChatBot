@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Thicker main lines -->
+  <g stroke-width="8">
+    <!-- Vertical spine -->
+    <line x1="25" y1="20" x2="25" y2="80" />
+    
+    <!-- Horizontal bars -->
+    <line x1="25" y1="25" x2="75" y2="25" />
+    <line x1="25" y1="50" x2="60" y2="50" />
+    <line x1="25" y1="75" x2="75" y2="75" />
+  </g>
+  
+  <!-- Technical architectural thin extension lines -->
+  <g stroke-width="2" stroke-dasharray="4 4" opacity="0.6">
+    <!-- Spine extensions -->
+    <line x1="25" y1="5" x2="25" y2="20" />
+    <line x1="25" y1="80" x2="25" y2="95" />
+    
+    <!-- Horizontal extensions -->
+    <line x1="5" y1="25" x2="25" y2="25" />
+    <line x1="75" y1="25" x2="90" y2="25" />
+    
+    <line x1="5" y1="50" x2="25" y2="50" />
+    <line x1="60" y1="50" x2="75" y2="50" />
+    
+    <line x1="5" y1="75" x2="25" y2="75" />
+    <line x1="75" y1="75" x2="90" y2="75" />
+    
+    <!-- Diagonal crossbars -->
+    <line x1="25" y1="25" x2="40" y2="50" />
+    <line x1="25" y1="75" x2="40" y2="50" />
+  </g>
+
+  <!-- Dots at intersections and ends -->
+  <g fill="white" stroke="none">
+    <circle cx="25" cy="25" r="3" />
+    <circle cx="25" cy="50" r="3" />
+    <circle cx="25" cy="75" r="3" />
+    <circle cx="75" cy="25" r="3" />
+    <circle cx="60" cy="50" r="3" />
+    <circle cx="75" cy="75" r="3" />
+  </g>
+</svg>

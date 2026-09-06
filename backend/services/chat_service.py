@@ -1,24 +1,28 @@
 import json
 import logging
-from typing import Generator
+from collections.abc import Generator
 
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 import config
 from services import retrieval_service, session_service
+from services.llm_factory import AUTO_FALLBACK_ORDER, build_llm
 from services.retrieval_service import ChunkResult
-from services.llm_factory import build_llm, AUTO_FALLBACK_ORDER
 
 logger = logging.getLogger(__name__)
 
 
 def _is_retriable(e: Exception) -> bool:
-    msg = str(e)
-    return any(x in msg for x in ["429", "RESOURCE_EXHAUSTED", "quota", "rate limit", "rate_limit", "RateLimitError"])
+    if isinstance(e, (TimeoutError, ConnectionError)):
+        return True
+    msg = str(e).lower()
+    return any(x in msg for x in ["429", "resource_exhausted", "quota", "rate limit", "rate_limit", "ratelimiterror"])
 
 
 def _friendly_error(provider: str, model: str, exc: Exception) -> str:
     msg = str(exc)
+    if isinstance(exc, (TimeoutError, ConnectionError)) or "timeout" in msg.lower() or "connect" in msg.lower():
+        return f"**Could not reach {provider.title()}.** Check your internet connection and try again."
     if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "quota" in msg.lower() or "rate" in msg.lower():
         return (
             f"**{provider.title()} quota exceeded** — you've hit the free-tier rate limit for `{model}`. "
@@ -30,31 +34,97 @@ def _friendly_error(provider: str, model: str, exc: Exception) -> str:
         return f"**Model `{model}` not found on {provider.title()}.** It may have been renamed or removed."
     if "402" in msg or "insufficient" in msg.lower() or "credit" in msg.lower():
         return f"**{provider.title()} account has no credits.** Add billing at the provider's website."
-    if "Connection" in msg or "connect" in msg.lower() or "timeout" in msg.lower():
-        return f"**Could not reach {provider.title()}.** Check your internet connection and try again."
     return f"**{provider.title()} error:** {msg[:200]}"
 
 
 def _build_context(chunks: list[ChunkResult]) -> str:
     lines = []
     for i, chunk in enumerate(chunks, 1):
-        lines.append(f"[{i}] ({chunk.doc_name}, p.{chunk.page_number})\n{chunk.text}")
+        lines.append(
+            f'<document id="{i}" source="{chunk.doc_name}" page="{chunk.page_number}">\n'
+            f'{chunk.text}\n'
+            f'</document>'
+        )
     return "\n\n".join(lines)
 
 
 def _build_messages(session_id: str, user_query: str, context: str) -> list:
     session = session_service.get_or_create(session_id)
-    messages = [SystemMessage(content=config.RAG_SYSTEM_PROMPT)]
 
-    for turn in session.messages:
+    messages = [SystemMessage(content=config.get_system_prompt())]
+
+    history_messages = []
+    history_chars = 0
+    history_chars_limit = config.MAX_HISTORY_TURNS * 1000
+
+    for turn in reversed(session.messages):
+        turn_len = len(turn["content"])
+        if history_chars + turn_len > history_chars_limit:
+            break
+        history_chars += turn_len
         if turn["role"] == "user":
-            messages.append(HumanMessage(content=turn["content"]))
+            history_messages.insert(0, HumanMessage(content=turn["content"]))
         else:
-            messages.append(AIMessage(content=turn["content"]))
+            history_messages.insert(0, AIMessage(content=turn["content"]))
 
-    augmented_query = f"Document context:\n{context}\n\nQuestion: {user_query}"
+    messages.extend(history_messages)
+
+    if context.strip():
+        augmented_query = (
+            f"Here are some search results from the database. If they are relevant, use them to answer. "
+            f"If they are NOT relevant, completely ignore them and answer using your own knowledge.\n\n"
+            f"<database_results>\n{context}\n</database_results>\n\n"
+            f"User: {user_query}"
+        )
+    else:
+        augmented_query = user_query
+
     messages.append(HumanMessage(content=augmented_query))
     return messages
+
+
+def _rewrite_query(session, user_query: str, provider: str, model: str, is_auto: bool = False) -> str:
+    history_text = ""
+    if session.messages:
+        for msg in session.messages[-4:]:
+            role = "User" if msg["role"] == "user" else "Assistant"
+            history_text += f"{role}: {msg['content']}\n"
+    else:
+        history_text = "(No prior history. This is the first message.)\n"
+    
+    rewrite_prompt = (
+        "Given the following conversation and a follow-up user message, "
+        "determine if the follow-up message requires searching a PRIVATE document knowledge base. "
+        "If the user is asking about general knowledge (e.g., 'who is the president of France?', 'what is Python?', 'capital of Spain', 'write a poem'), "
+        "or if it is just a conversational greeting (like 'hi', 'hello', 'thanks'), "
+        "return EXACTLY the string: __NO_SEARCH__\n"
+        "Only rewrite the query for search if it clearly pertains to internal documents, strategies, or private technical details.\n"
+        "Do NOT answer the query, ONLY return the rewritten query or __NO_SEARCH__.\n\n"
+        f"Conversation History:\n{history_text}\n"
+        f"Follow-up: {user_query}\n"
+        "Output:"
+    )
+    
+    providers_to_try = [(provider, model)]
+    for p, m in AUTO_FALLBACK_ORDER:
+        if (p, m) not in providers_to_try:
+            providers_to_try.append((p, m))
+    
+    for p, m in providers_to_try:
+        try:
+            llm = build_llm(p, m)
+            response = llm.invoke([HumanMessage(content=rewrite_prompt)])
+            rewritten = response.content.strip()
+            if len(rewritten) > 200 or not rewritten:
+                return user_query
+            return rewritten
+        except ValueError:
+            continue
+        except Exception as e:
+            logger.warning("Query rewrite failed for %s/%s: %s", p, m, e)
+            continue
+            
+    return user_query
 
 
 def stream_response(
@@ -65,17 +135,25 @@ def stream_response(
     model: str = config.DEFAULT_MODEL,
 ) -> Generator[str, None, None]:
 
-    chunks = retrieval_service.retrieve(message, doc_ids)
+    session = session_service.get_or_create(session_id)
+    is_auto = (provider == "auto")
+    
+    rewrite_provider = config.DEFAULT_PROVIDER if is_auto else provider
+    rewrite_model = config.DEFAULT_MODEL if is_auto else model
+    
+    if not doc_ids:
+        # No documents selected — retrieval is a no-op, so skip the extra
+        # query-rewrite LLM round-trip entirely (halves latency and cost).
+        chunks = []
+    else:
+        search_query = _rewrite_query(session, message, rewrite_provider, rewrite_model, is_auto)
+        logger.info("Original query: '%s', rewritten for search: '%s'", message, search_query)
+        if "__NO_SEARCH__" in search_query:
+            chunks = []
+        else:
+            chunks = retrieval_service.retrieve(search_query, doc_ids)
 
-    if not chunks:
-        no_ctx = "I could not find relevant information in the uploaded documents to answer your question."
-        yield f'data: {json.dumps({"type": "token", "content": no_ctx})}\n\n'
-        yield f'data: {json.dumps({"type": "citations", "citations": []})}\n\n'
-        yield f'data: {json.dumps({"type": "done"})}\n\n'
-        session_service.append_turn(session_id, message, no_ctx)
-        return
-
-    context = _build_context(chunks)
+    context = _build_context(chunks) if chunks else ""
     messages = _build_messages(session_id, message, context)
 
     is_auto = provider == "auto"
@@ -89,11 +167,23 @@ def stream_response(
 
         full_response = ""
         try:
-            for chunk in llm.stream(messages):
-                delta = chunk.content
-                if delta:
-                    full_response += delta
-                    yield f'data: {json.dumps({"type": "token", "content": delta})}\n\n'
+            try:
+                for chunk in llm.stream(messages):
+                    delta = chunk.content
+                    if delta:
+                        full_response += delta
+                        yield f'data: {json.dumps({"type": "token", "content": delta})}\n\n'
+            except GeneratorExit:
+                # Client disconnected (stop button / navigation). Keep whatever
+                # was generated so the conversation history is not lost.
+                if full_response:
+                    session_service.append_turn(
+                        session_id, message, full_response,
+                        citations=[c.to_dict() for c in chunks],
+                        provider=try_provider, model=try_model,
+                    )
+                    session_service.update_doc_ids(session_id, doc_ids)
+                raise
 
         except Exception as e:
             logger.warning("LLM error [%s/%s]: %s", try_provider, try_model, e)

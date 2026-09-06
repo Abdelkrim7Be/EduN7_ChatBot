@@ -6,8 +6,6 @@ import config
 import database
 from models.session import SessionRecord
 
-_sessions: dict[str, SessionRecord] = {}
-
 
 def _ensure_conversation(session_id: str, user_id: str | None = None) -> None:
     now = time.time()
@@ -19,27 +17,29 @@ def _ensure_conversation(session_id: str, user_id: str | None = None) -> None:
         )
 
 
-def _load_messages_from_db(session_id: str) -> list[dict]:
+def _load_from_db(session_id: str) -> SessionRecord | None:
     with database.get_db() as conn:
-        rows = conn.execute(
+        row = conn.execute("SELECT * FROM conversations WHERE session_id=?", (session_id,)).fetchone()
+        if not row:
+            return None
+        msgs = conn.execute(
             "SELECT role, content FROM messages WHERE session_id=? ORDER BY created_at",
-            (session_id,),
+            (session_id,)
         ).fetchall()
-    return [{"role": r["role"], "content": r["content"]} for r in rows]
-
-
-def get_or_create(session_id: str, user_id: str | None = None) -> SessionRecord:
-    _cleanup_expired()
-    if session_id not in _sessions:
-        messages = _load_messages_from_db(session_id)
+        messages = [{"role": r["role"], "content": r["content"]} for r in msgs]
         max_msgs = config.MAX_HISTORY_TURNS * 2
-        _sessions[session_id] = SessionRecord(
+        return SessionRecord(
             session_id=session_id,
             messages=messages[-max_msgs:] if messages else [],
         )
-        _ensure_conversation(session_id, user_id)
 
-    # Ownership check: if user_id provided, verify the session belongs to this user
+
+def get_or_create(session_id: str, user_id: str | None = None) -> SessionRecord:
+    session = _load_from_db(session_id)
+    if not session:
+        _ensure_conversation(session_id, user_id)
+        session = _load_from_db(session_id)
+
     if user_id is not None:
         with database.get_db() as conn:
             row = conn.execute(
@@ -48,8 +48,8 @@ def get_or_create(session_id: str, user_id: str | None = None) -> SessionRecord:
         if row and row["user_id"] is not None and row["user_id"] != user_id:
             raise PermissionError(f"Session {session_id} belongs to another user")
 
-    session = _sessions[session_id]
-    session.last_active = time.time()
+    if session:
+        session.last_active = time.time()
     return session
 
 
@@ -61,13 +61,6 @@ def append_turn(
     provider: str | None = None,
     model: str | None = None,
 ) -> None:
-    session = get_or_create(session_id)
-    session.messages.append({"role": "user", "content": user_msg})
-    session.messages.append({"role": "assistant", "content": assistant_msg})
-    max_msgs = config.MAX_HISTORY_TURNS * 2
-    if len(session.messages) > max_msgs:
-        session.messages = session.messages[-max_msgs:]
-
     now = time.time()
     citations_json = json.dumps(citations) if citations else None
     auto_title = (user_msg[:60].strip() + ("…" if len(user_msg) > 60 else ""))
@@ -111,16 +104,32 @@ def update_doc_ids(session_id: str, new_doc_ids: list[str]) -> None:
 
 
 def delete(session_id: str) -> bool:
-    _sessions.pop(session_id, None)
     with database.get_db() as conn:
         conn.execute("DELETE FROM conversations WHERE session_id=?", (session_id,))
     return True
 
 
 def create_new(user_id: str | None = None) -> str:
+    """Return a fresh conversation for the user.
+
+    If the user already has an empty conversation, reuse it instead of
+    inserting another one — otherwise every page load leaves a ghost
+    "New conversation" behind in the sidebar.
+    """
+    if user_id:
+        with database.get_db() as conn:
+            row = conn.execute(
+                "SELECT c.session_id FROM conversations c "
+                "LEFT JOIN messages m ON m.session_id = c.session_id "
+                "WHERE c.user_id = ? GROUP BY c.session_id HAVING COUNT(m.id) = 0 "
+                "ORDER BY c.last_active DESC LIMIT 1",
+                (user_id,),
+            ).fetchone()
+        if row:
+            return row["session_id"]
+
     session_id = str(uuid.uuid4())
     now = time.time()
-    _sessions[session_id] = SessionRecord(session_id=session_id)
     with database.get_db() as conn:
         conn.execute(
             "INSERT OR IGNORE INTO conversations (session_id, title, doc_ids, created_at, last_active, user_id) "
@@ -128,10 +137,3 @@ def create_new(user_id: str | None = None) -> str:
             (session_id, now, now, user_id),
         )
     return session_id
-
-
-def _cleanup_expired() -> None:
-    cutoff = time.time() - config.SESSION_TTL_SECONDS
-    expired = [sid for sid, s in _sessions.items() if s.last_active < cutoff]
-    for sid in expired:
-        del _sessions[sid]

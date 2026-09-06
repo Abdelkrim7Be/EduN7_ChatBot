@@ -16,9 +16,15 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 
 # Node / Frontend
-frontend/node_modules/
+node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/test-results/
+dogfood-output/
+
+# Local DB files
+backend/*.db
+backend/data/
 
 # Editor
 .vscode/
@@ -43,3 +49,23 @@ PLAN.md
 .windsurf/
 .ai/
 *.ai-context
+
+# Legacy / cleanup (prevent re-adding)
+frontend_old/
+rag_impl/
+LLM/
+stitch_screens/
+qa_screenshots/
+QA_Report/
+RUN_APP.sh
+
+# Improvement plan (local working doc)
+IMPROVEMENT_PLAN.md
+
+# Temp artifacts
+*.png
+!frontend/public/**/*.png
+!backend/uploads/**/*.png
+!docs/screenshots/**/*.png
+screens_*.json
+stitch_tools.json

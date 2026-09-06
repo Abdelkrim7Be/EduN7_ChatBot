@@ -1,171 +1,158 @@
-import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import type { Citation, Message } from "../types";
-import { CitationCard } from "./CitationCard";
-import { StreamingIndicator } from "./StreamingIndicator";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import type { ComponentProps, ReactNode } from "react";
+import type { Components } from "react-markdown";
+import { Copy, RefreshCw, Check, Edit2 } from "lucide-react";
+import type { Message } from "../types";
+import { useState } from "react";
 
 interface Props {
-  message: Message;
+  msg: Message;
+  isLast?: boolean;
+  isStreaming?: boolean;
+  onRegenerate?: () => void;
+  onEdit?: (id: string, newText: string) => void;
 }
 
-function renderWithCitations(text: string, citations?: Citation[]): React.ReactNode {
-  const parts = text.split(/(\[\d+\])/);
-  return parts.map((part, i) => {
-    const m = part.match(/^\[(\d+)\]$/);
-    if (m) {
-      const n = parseInt(m[1], 10);
-      const c = citations?.[n - 1];
-      return (
-        <span
-          key={i}
-          className="cite-ref"
-          title={c ? `${c.doc_name} · p.${c.page_number}` : `Source ${n}`}
-        >
-          {n}
-        </span>
-      );
-    }
-    return <React.Fragment key={i}>{part}</React.Fragment>;
-  });
-}
+type CodeProps = ComponentProps<"code"> & {
+  inline?: boolean;
+  children?: ReactNode;
+};
 
-type MdP  = React.ComponentProps<"p">  & { node?: unknown };
-type MdLi = React.ComponentProps<"li"> & { node?: unknown };
-
-function makeCited(citations?: Citation[]) {
-  return {
-    p({ children, node: _n, ...rest }: MdP) {
-      return (
-        <p {...rest}>
-          {React.Children.map(children, (child) =>
-            typeof child === "string"
-              ? renderWithCitations(child, citations)
-              : child
-          )}
-        </p>
-      );
-    },
-    li({ children, node: _n, ...rest }: MdLi) {
-      return (
-        <li {...rest}>
-          {React.Children.map(children, (child) =>
-            typeof child === "string"
-              ? renderWithCitations(child, citations)
-              : child
-          )}
-        </li>
-      );
-    },
-  };
-}
-
-export function MessageBubble({ message }: Props) {
-  const isUser = message.role === "user";
-  const showCursor = !isUser && !!message.isStreaming && !!message.content;
+export function MessageBubble({
+  msg,
+  isLast,
+  isStreaming,
+  onRegenerate,
+  onEdit,
+}: Props) {
+  const isUser = msg.role === "user";
   const [copied, setCopied] = useState(false);
-  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
-
-  const displayContent = showCursor ? message.content + "▌" : message.content;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editVal, setEditVal] = useState(msg.content);
 
   function handleCopy() {
-    navigator.clipboard.writeText(message.content).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard.writeText(msg.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
+  function handleSaveEdit() {
+    if (onEdit && editVal.trim() !== msg.content) {
+      onEdit(msg.id, editVal.trim());
+    }
+    setIsEditing(false);
+  }
+
+  const CodeRenderer = ({ inline, className, children, ...props }: CodeProps) => {
+      const match = /language-(\w+)/.exec(className || "");
+      return !inline && match ? (
+        <pre className="rounded-sm bg-surface-dim border border-border-subtle text-sm font-mono my-4 overflow-x-auto p-4">
+          <code className={className} data-language={match[1]} {...props}>
+            {String(children).replace(/\n$/, "")}
+          </code>
+        </pre>
+      ) : (
+        <code className="px-1.5 py-0.5 rounded-sm bg-surface-bright text-white text-[0.85em] font-mono border border-border-subtle" {...props}>
+          {children}
+        </code>
+      );
+  };
+
+  const markdownComponents: Components = {
+    code: CodeRenderer as Components["code"],
+  };
+
   return (
-    <div
-      className={`flex w-full mb-4 animate-message-in ${
-        isUser ? "justify-end" : "justify-start"
-      }`}
-    >
-      {/* AI avatar */}
-      {!isUser && (
-        <div className="w-7 h-7 rounded-lg bg-brand-blue flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 shadow-sm shadow-brand-blue/20">
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-        </div>
-      )}
+    <div className={`flex gap-4 w-full animate-fade-in group hover-reveal ${isUser ? "flex-row-reverse" : ""}`}>
+      {/* Avatar */}
+      <div className={`w-8 h-8 rounded-sm shrink-0 flex items-center justify-center font-bold text-[10px] ${
+        isUser ? "bg-white text-black" : "bg-surface-bright text-white"
+      }`}>
+        {isUser ? "USR" : "SYS"}
+      </div>
 
-      <div className={`max-w-[75%] ${isUser ? "items-end" : "items-start"} flex flex-col group/msg`}>
-        <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-            isUser
-              ? "bg-brand-blue text-white rounded-br-sm shadow-sm shadow-brand-blue/20"
-              : "bg-brand-surface-muted text-brand-navy rounded-bl-sm border border-brand-gray"
-          }`}
-        >
-          {isUser ? (
-            <p className="whitespace-pre-wrap">{message.content}</p>
-          ) : message.isStreaming && !message.content ? (
-            <StreamingIndicator />
-          ) : (
-            <div className="prose prose-sm max-w-none">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[[rehypeSanitize, { ...defaultSchema, attributes: { ...defaultSchema.attributes, "*": ["className"] } }]]}
-                components={makeCited(message.citations) as Parameters<typeof ReactMarkdown>[0]["components"]}
-              >
-                {displayContent}
-              </ReactMarkdown>
-            </div>
-          )}
-        </div>
-
-        {/* AI message actions */}
-        {!isUser && !message.isStreaming && message.content && (
-          <div className="flex items-center gap-1 px-1 mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
-            <button
-              onClick={handleCopy}
-              title={copied ? "Copié !" : "Copier la réponse"}
-              className="flex items-center gap-1 text-[10px] text-brand-gray-text hover:text-brand-blue transition-colors px-1.5 py-0.5 rounded hover:bg-brand-gray"
-            >
-              {copied ? (
-                <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              )}
-              {copied ? "Copié" : "Copier"}
-            </button>
-            <button
-              onClick={() => setFeedback(feedback === "up" ? null : "up")}
-              title="Bonne réponse"
-              className={`p-0.5 rounded transition-colors ${feedback === "up" ? "text-green-500" : "text-brand-gray-text hover:text-green-500"}`}
-            >
-              <svg className="w-3.5 h-3.5" fill={feedback === "up" ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setFeedback(feedback === "down" ? null : "down")}
-              title="Mauvaise réponse"
-              className={`p-0.5 rounded transition-colors ${feedback === "down" ? "text-red-400" : "text-brand-gray-text hover:text-red-400"}`}
-            >
-              <svg className="w-3.5 h-3.5" fill={feedback === "down" ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
-              </svg>
-            </button>
+      <div className={`flex-1 min-w-0 ${isUser ? "flex flex-col items-end" : ""}`}>
+        {isUser ? (
+          <div className="max-w-[85%] text-right">
+            {isEditing ? (
+              <div className="w-full flex flex-col gap-2 bg-surface-dim border border-border-subtle p-3 rounded-sm">
+                <textarea
+                  className="w-full bg-transparent text-white outline-none resize-y min-h-[60px] font-mono text-sm"
+                  value={editVal}
+                  onChange={(e) => setEditVal(e.target.value)}
+                  autoFocus
+                />
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => setIsEditing(false)} className="px-3 py-1 text-xs text-gray-400 hover:text-white uppercase">Annuler</button>
+                  <button onClick={handleSaveEdit} className="px-3 py-1 text-xs bg-white text-black rounded-sm uppercase font-bold">Enregistrer et envoyer</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-end group/edit">
+                <div className="text-white font-mono text-sm leading-relaxed whitespace-pre-wrap text-left break-words">
+                  {msg.content}
+                </div>
+                <div className="mt-2 flex items-center gap-2 reveal-target">
+                  <button
+                    onClick={handleCopy}
+                    className="p-1.5 text-gray-500 hover:text-white border border-transparent hover:border-border-subtle rounded-sm transition-all flex items-center gap-1 text-[10px] uppercase tracking-widest font-mono"
+                    title="Copier"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                  <button 
+                    onClick={() => setIsEditing(true)} 
+                    className="p-1.5 text-gray-500 hover:text-white border border-transparent hover:border-border-subtle rounded-sm transition-all flex items-center gap-1 text-[10px] uppercase tracking-widest font-mono"
+                    title="Modifier"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        ) : (
+          <div className="max-w-full prose prose-invert prose-pre:bg-[#0e0e0e] prose-pre:border prose-pre:border-border-subtle font-serif leading-relaxed text-gray-200">
+            {isLast && isStreaming && msg.content === "" ? (
+              <div className="flex items-center gap-1 text-gray-500 mt-2">
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                <span className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+              </div>
+            ) : (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+                components={markdownComponents}
+              >
+                {msg.content}
+              </ReactMarkdown>
+            )}
 
-        {!isUser && message.actualProvider && (
-          <p className="text-[10px] text-brand-gray-text px-1 mt-0.5">
-            ✦ via {message.actualProvider} · {message.actualModel}
-          </p>
-        )}
-
-        {!isUser && message.citations !== undefined && (
-          <div className="px-1 w-full">
-            <CitationCard citations={message.citations} />
+            {/* Actions for bot message */}
+            {!isStreaming && (
+              <div className="mt-4 flex items-center gap-2 reveal-target">
+                <button
+                  onClick={handleCopy}
+                  className="p-1.5 text-gray-500 hover:text-white border border-transparent hover:border-border-subtle rounded-sm transition-all flex items-center gap-1 text-[10px] uppercase tracking-widest font-mono"
+                  title="Copier"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+                {onRegenerate && isLast && (
+                  <button
+                    onClick={onRegenerate}
+                    className="p-1.5 text-gray-500 hover:text-white border border-transparent hover:border-border-subtle rounded-sm transition-all flex items-center gap-1 text-[10px] uppercase tracking-widest font-mono"
+                    title="Régénérer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface Props {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -8,16 +9,22 @@ interface Props {
 type Tab = "login" | "register";
 
 export function LoginPage({ onLogin, onRegister }: Props) {
-  const [tab, setTab] = useState<Tab>("login");
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(
+    searchParams.get("tab") === "register" ? "register" : "login"
+  );
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
     setError("");
 
     if (tab === "register") {
@@ -38,6 +45,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
       } else {
         await onRegister(email, name, password);
       }
+      navigate("/", { replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Une erreur est survenue");
     } finally {
@@ -53,183 +61,221 @@ export function LoginPage({ onLogin, onRegister }: Props) {
   }
 
   const inputClass =
-    "bg-brand-surface-muted border border-brand-gray rounded-lg px-3 py-2.5 text-sm text-brand-navy placeholder-brand-gray-text outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all w-full";
+    "w-full bg-transparent border border-zinc-800 focus:border-white focus:ring-0 text-white p-4 transition-colors duration-200";
 
   return (
-    <div className="min-h-screen flex">
-
-      {/* LEFT — ENSET brand panel */}
-      <div className="hidden lg:flex lg:w-5/12 bg-brand-navy flex-col items-center justify-center px-12 relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-brand-blue/10 rounded-full" />
-        <div className="absolute -bottom-20 -left-20 w-56 h-56 bg-brand-gold/10 rounded-full" />
-
-        <div className="relative z-10 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-brand-blue flex items-center justify-center mx-auto mb-6 shadow-xl shadow-brand-blue/40">
-            <svg className="w-11 h-11 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-          </div>
-
-          <h1 className="text-5xl font-bold text-white tracking-tight">ENSET AI</h1>
-
-          <div className="flex items-center justify-center gap-3 my-5">
-            <div className="h-px w-10 bg-white/20" />
-            <div className="w-12 h-1 bg-brand-gold rounded-full" />
-            <div className="h-px w-10 bg-white/20" />
-          </div>
-
-          <p className="text-brand-blue-light text-xs font-semibold uppercase tracking-widest mb-1">
-            École Normale Supérieure
-          </p>
-          <p className="text-brand-blue-light text-xs font-semibold uppercase tracking-widest mb-8">
-            de l'Enseignement Technique · Mohammedia
-          </p>
-
-          <p className="text-white/60 text-sm leading-relaxed max-w-[260px]">
-            Explorez vos documents, posez vos questions — votre assistant pédagogique intelligent.
-          </p>
-
-          <div className="mt-12 flex items-center justify-center gap-2 text-xs text-white/25 uppercase tracking-wider">
-            <span>Université Hassan II</span>
-            <span>·</span>
-            <span>Casablanca</span>
-          </div>
+    <div className="min-h-screen flex overflow-x-hidden bg-x-black text-white">
+      {/* LEFT — Brand panel */}
+      <section className="hidden lg:flex flex-col justify-between w-1/2 p-16 border-r border-white/10">
+        <div className="flex items-center space-x-4">
+          <img src="/logo.svg" alt="Logo" className="w-12 h-12" />
+          <span className="text-xl font-bold tracking-widest uppercase">ENSET AI</span>
         </div>
-      </div>
+        
+        <div className="max-w-md">
+          <h1 className="text-5xl xl:text-6xl font-bold mb-6 tracking-tight leading-none uppercase break-words">
+            Plateforme IA académique
+          </h1>
+          <p className="text-zinc-500 text-lg">
+            Connectez-vous pour analyser vos documents pédagogiques privés,
+            organiser vos conversations et obtenir des réponses sourcées.
+          </p>
+        </div>
+        
+        <div className="text-zinc-600 text-xs flex flex-col gap-2 uppercase tracking-widest">
+          <p>Plateforme privée ENSET AI</p>
+          <p>© 2026 ENSET AI</p>
+        </div>
+      </section>
 
-      {/* RIGHT — login form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-brand-surface-muted">
-        <div className="w-full max-w-sm">
-
-          {/* Mobile-only logo */}
-          <div className="flex flex-col items-center gap-2 mb-8 lg:hidden">
-            <div className="w-14 h-14 rounded-xl bg-brand-blue flex items-center justify-center shadow-lg shadow-brand-blue/30">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-brand-navy">ENSET AI</h1>
-            <p className="text-xs text-brand-gray-text uppercase tracking-widest">ENSET Mohammedia</p>
+      {/* RIGHT — Auth panel */}
+      <section className="w-full lg:w-1/2 bg-[#0e0e0e] flex items-center justify-center p-8 sm:p-12 lg:p-24 relative overflow-hidden">
+        <button
+          type="button"
+          onClick={() => window.location.href = '/'} 
+          className="absolute top-6 right-6 lg:left-6 lg:right-auto text-zinc-500 hover:text-white flex items-center gap-2 text-xs uppercase tracking-widest transition-colors z-20"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Home
+        </button>
+        <div className="w-full max-w-sm flex flex-col z-10">
+          {/* Mobile Logo */}
+          <div className="lg:hidden mb-12 flex justify-center">
+            <img src="/logo.svg" alt="Logo" className="w-16 h-16" />
+          </div>
+          
+          <div className="mb-10">
+            <h2 className="text-3xl font-bold mb-2">
+              {tab === "login" ? "Ouvrir une session" : "Demander un accès"}
+            </h2>
+            <p className="text-zinc-400 text-sm">
+              {tab === "login" ? "Saisissez vos identifiants pour continuer." : "Inscrivez-vous pour rejoindre la plateforme."}
+            </p>
           </div>
 
-          {/* Card */}
-          <div className="bg-white rounded-2xl shadow-xl shadow-brand-navy/10 border border-brand-gray overflow-hidden">
+          <div className="flex border-b border-zinc-800 mb-8">
+            {(["login", "register"] as Tab[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={tab === t}
+                onClick={() => switchTab(t)}
+                className={`flex-1 py-3 text-xs uppercase tracking-widest font-bold transition-colors ${
+                  tab === t
+                    ? "text-white border-b-2 border-white"
+                    : "text-zinc-600 hover:text-white"
+                }`}
+              >
+                {t === "login" ? "Connexion" : "Inscription"}
+              </button>
+            ))}
+          </div>
 
-            <div className="px-6 pt-6 pb-4 border-b border-brand-gray">
-              <h2 className="text-lg font-bold text-brand-navy">
-                {tab === "login" ? "Bienvenue" : "Créer un compte"}
-              </h2>
-              <p className="text-sm text-brand-gray-text mt-0.5">
-                {tab === "login"
-                  ? "Connectez-vous à votre espace ENSET AI"
-                  : "Rejoignez la plateforme pédagogique"}
-              </p>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex border-b border-brand-gray">
-              {(["login", "register"] as Tab[]).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => switchTab(t)}
-                  className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                    tab === t
-                      ? "text-brand-blue border-b-2 border-brand-blue bg-brand-surface-muted/50"
-                      : "text-brand-gray-text hover:text-brand-navy"
-                  }`}
-                >
-                  {t === "login" ? "Se connecter" : "S'inscrire"}
-                </button>
-              ))}
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
-
-              {tab === "register" && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-brand-navy">Nom complet</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Abdelkrim Bellagnech"
-                    required
-                    className={inputClass}
-                  />
-                </div>
-              )}
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-brand-navy">Adresse email</label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {tab === "register" && (
+              <div className="space-y-2">
+                <label htmlFor="auth-name" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
+                  Nom complet
+                </label>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="vous@enset.ma"
+                  id="auth-name"
+                  name="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Prénom Nom"
                   required
                   className={inputClass}
                 />
               </div>
+            )}
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-brand-navy">Mot de passe</label>
+            <div className="space-y-2">
+              <label htmlFor="auth-email" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
+                Email institutionnel
+              </label>
+              <input
+                id="auth-email"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="professor@enset.ma"
+                required
+                className={inputClass}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label htmlFor="auth-password" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
+                  Mot de passe
+                </label>
+                {tab === "login" && (
+                  <span className="text-[10px] text-zinc-600 uppercase">Accès administré</span>
+                )}
+              </div>
+              <div className="relative">
                 <input
-                  type="password"
+                  id="auth-password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={tab === "register" ? "Min. 8 caractères" : "••••••••"}
+                  placeholder="••••••••"
                   required
                   className={inputClass}
                 />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                >
+                  {showPassword ? (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  )}
+                </button>
               </div>
+            </div>
 
-              {tab === "register" && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-brand-navy">Confirmer le mot de passe</label>
+            {tab === "register" && (
+              <div className="space-y-2">
+                <label htmlFor="auth-confirm" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
+                  Confirmer le mot de passe
+                </label>
+                <div className="relative">
                   <input
-                    type="password"
+                    id="auth-confirm"
+                    name="confirm_password"
+                    type={showConfirm ? "text" : "password"}
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                     placeholder="••••••••"
                     required
                     className={inputClass}
                   />
+                  <button
+                    type="button"
+                    aria-label={showConfirm ? "Masquer la confirmation" : "Afficher la confirmation"}
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                  >
+                    {showConfirm ? (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    )}
+                  </button>
                 </div>
-              )}
+              </div>
+            )}
 
-              {error && (
-                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  {error}
-                </p>
-              )}
+            {error && (
+              <div className="border border-red-500/30 bg-red-500/10 text-red-500 text-xs p-3 font-mono">
+                [ERROR] {error}
+              </div>
+            )}
 
+            <div className="pt-4">
               <button
-                type="submit"
+                type="button"
                 disabled={loading}
-                className="mt-1 w-full py-2.5 rounded-lg bg-brand-blue text-white text-sm font-semibold hover:bg-brand-blue-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-brand-blue/20"
+                onClick={() => void handleSubmit()}
+                className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-zinc-200 transition-colors duration-200 uppercase tracking-tighter text-sm disabled:opacity-50"
               >
                 {loading
-                  ? (tab === "login" ? "Connexion…" : "Création du compte…")
-                  : (tab === "login" ? "Se connecter" : "Créer mon compte")}
+                  ? "Traitement..."
+                  : tab === "login"
+                    ? "Se connecter"
+                    : "Créer le compte"}
               </button>
+            </div>
+          </form>
 
-              {tab === "register" && (
-                <p className="text-xs text-brand-gray-text text-center leading-relaxed">
-                  Votre compte sera enregistré en tant qu'<span className="text-brand-navy font-medium">Étudiant</span>.
-                  Un administrateur peut vous promouvoir au rang de Professeur.
-                </p>
-              )}
-            </form>
+          {/* Secondary Actions */}
+          <div className="mt-12 pt-8 border-t border-zinc-900 flex flex-col items-center gap-4">
+            <p className="text-zinc-500 text-xs">
+              {tab === "login" ? "Vous n'avez pas encore de compte ?" : "Vous avez déjà un compte ?"}
+            </p>
+            <button
+              type="button"
+              onClick={() => switchTab(tab === "login" ? "register" : "login")}
+              className="text-white text-xs border border-zinc-800 px-6 py-2 hover:bg-zinc-900 transition-all uppercase tracking-widest"
+            >
+              {tab === "login" ? "Demander un accès" : "Se connecter"}
+            </button>
           </div>
-
-          <p className="text-xs text-brand-gray-text text-center mt-6">
-            Propulsé par RAG ·{" "}
-            <span className="text-brand-blue font-medium">Gemini · Cerebras · Groq</span>
-          </p>
         </div>
-      </div>
+
+        {/* Bottom Decor */}
+        <footer className="absolute bottom-0 left-0 w-full p-4 flex justify-between pointer-events-none opacity-20">
+          <div className="text-[8px] tracking-widest uppercase">ENSET_AI_AUTH</div>
+          <div className="text-[8px] tracking-widest uppercase">Accès sécurisé</div>
+        </footer>
+      </section>
     </div>
   );
 }

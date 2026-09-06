@@ -5,13 +5,21 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch \
+    && pip install --no-cache-dir -r requirements.txt
+
+RUN mkdir -p /app/data /app/uploads /app/hf_cache \
+    && adduser --disabled-password --gecos "" --uid 10001 appuser \
+    && chown -R appuser:appuser /app
+
+COPY --chown=appuser:appuser . .
+
+USER appuser
+ENV HF_HOME=/app/hf_cache
 
 # Pre-download the embedding model so first request has no cold start
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
-COPY . .
-
 EXPOSE 8080
 
-CMD ["python", "app.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "4", "app:create_app()"]

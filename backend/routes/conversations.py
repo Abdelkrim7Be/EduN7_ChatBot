@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, g, jsonify, request
 
 import database
 from middleware.auth import require_auth
@@ -62,7 +62,7 @@ def get_conversation(session_id: str):
         ).fetchone()
         if conv is None:
             return jsonify({"error": "Not found"}), 404
-        if conv["user_id"] is not None and conv["user_id"] != g.user.id:
+        if conv["user_id"] != g.user.id:
             return jsonify({"error": "Access denied"}), 403
 
         msgs = conn.execute(
@@ -105,7 +105,7 @@ def update_conversation(session_id: str):
         ).fetchone()
         if conv is None:
             return jsonify({"error": "Not found"}), 404
-        if conv["user_id"] is not None and conv["user_id"] != g.user.id:
+        if conv["user_id"] != g.user.id:
             return jsonify({"error": "Access denied"}), 403
         conn.execute(
             "UPDATE conversations SET title=? WHERE session_id=?",
@@ -121,7 +121,9 @@ def delete_conversation(session_id: str):
         conv = conn.execute(
             "SELECT user_id FROM conversations WHERE session_id=?", (session_id,)
         ).fetchone()
-        if conv is not None and conv["user_id"] is not None and conv["user_id"] != g.user.id:
+        if conv is None:
+            return jsonify({"error": "Not found"}), 404
+        if conv["user_id"] != g.user.id:
             return jsonify({"error": "Access denied"}), 403
     session_service.delete(session_id)
     return jsonify({"deleted": True}), 200
