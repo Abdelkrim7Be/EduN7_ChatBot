@@ -6,6 +6,7 @@
 
 <p align="center">
   <img alt="CI" src="https://img.shields.io/badge/CI-passing-brightgreen?style=flat-square&logo=githubactions&logoColor=white">
+  <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square">
 </p>
 
 <p align="center">
@@ -62,6 +63,12 @@ The platform also includes an optional public landing assistant. That public ass
 
 ![Admin settings](docs/screenshots/admin-settings.png)
 
+### Storage and retrieval
+
+![MinIO object storage console](docs/screenshots/minio-storage.png)
+
+![RAG storage and embedding flow](docs/screenshots/rag-storage-flow.svg)
+
 ### Access control
 
 ![Role boundary screen](docs/screenshots/access-boundary.png)
@@ -83,7 +90,7 @@ The platform also includes an optional public landing assistant. That public ass
 
 ---
 
-## Quickstart — Docker (recommended)
+## Quickstart Docker
 
 ```bash
 # 1. Copy and fill in your Groq API key
@@ -131,13 +138,13 @@ Latest local results:
 - Node.js 20+
 - Docker for the optional local vector database, or Docker Compose for the full stack
 
-### Step 1 — Start ChromaDB
+### Step 1 - Start ChromaDB
 
 ```bash
 docker run -p 8000:8000 chromadb/chroma:latest
 ```
 
-### Step 2 — Start the Backend
+### Step 2 - Start the Backend
 
 ```bash
 cd backend
@@ -145,16 +152,16 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp ../.env.example .env   # fill in GROQ_API_KEY
 python app.py
-# → running on http://localhost:8080
+# running on http://localhost:8080
 ```
 
-### Step 3 — Start the Frontend
+### Step 3 - Start the Frontend
 
 ```bash
 cd frontend
 npm install
 npm run dev
-# → running on http://localhost:3000
+# running on http://localhost:3000
 ```
 
 ---
@@ -171,27 +178,27 @@ Get a free key at [console.groq.com](https://console.groq.com).
 
 | Variable | Default | Description |
 |---|---|---|
-| `GROQ_API_KEY` | — | **Required** |
+| `GROQ_API_KEY` | blank | **Required** |
 | `GROQ_MODEL` | `llama3-70b-8192` | Groq model name |
 | `LLM_TEMPERATURE` | `0.7` | Response creativity |
-| `DATABASE_URL` | — | Postgres connection URL; leave blank to use local SQLite |
+| `DATABASE_URL` | blank | Postgres connection URL; leave blank to use local SQLite |
 | `CHROMA_HOST` | `localhost` | ChromaDB host (`chromadb` in Docker) |
 | `CHROMA_PORT` | `8000` | ChromaDB port |
 | `VECTOR_STORE_BACKEND` | `chroma` | Vector backend: `chroma` or `qdrant` |
 | `QDRANT_URL` | `http://localhost:6333` | Qdrant HTTP endpoint |
-| `QDRANT_API_KEY` | — | Optional Qdrant API key |
+| `QDRANT_API_KEY` | blank | Optional Qdrant API key |
 | `DOCUMENT_STORAGE_BACKEND` | `local` | PDF storage backend: `local` or `s3` |
 | `DOCUMENT_STORAGE_PREFIX` | `documents` | Object key prefix for stored PDFs |
-| `S3_BUCKET` | — | Bucket for PDFs when using S3/MinIO/R2 |
-| `S3_ENDPOINT_URL` | — | S3-compatible endpoint; use `http://minio:9000` for bundled MinIO |
+| `S3_BUCKET` | blank | Bucket for PDFs when using S3/MinIO/R2 |
+| `S3_ENDPOINT_URL` | blank | S3-compatible endpoint; use `http://minio:9000` for bundled MinIO |
 | `S3_REGION` | `us-east-1` | S3 region |
-| `S3_ACCESS_KEY_ID` | — | S3/MinIO access key |
-| `S3_SECRET_ACCESS_KEY` | — | S3/MinIO secret key |
+| `S3_ACCESS_KEY_ID` | blank | S3/MinIO access key |
+| `S3_SECRET_ACCESS_KEY` | blank | S3/MinIO secret key |
 | `CHUNK_SIZE` | `1000` | Max chars per document chunk |
 | `CHUNK_OVERLAP` | `200` | Overlap between chunks |
 | `TOP_K_RESULTS` | `5` | Chunks retrieved per query |
 | `MAX_HISTORY_TURNS` | `6` | Exchange pairs kept in session memory |
-| `REDIS_URL` | — | Shared rate-limit storage |
+| `REDIS_URL` | blank | Shared rate-limit storage |
 | `TRUST_PROXY_HEADERS` | `false` | Trust one reverse proxy hop for client IP/proto headers |
 
 ---
@@ -204,6 +211,8 @@ Docker Compose runs the scalable RAG storage layout:
 - MinIO stores original uploaded PDFs through the S3-compatible backend.
 - Qdrant stores document embeddings.
 - The backend still keeps a small temporary upload directory for validation and ingestion, but the durable PDF copy is stored in object storage.
+
+During ingestion, ENSET AI extracts text from the uploaded PDF, splits it into chunks, embeds those chunks, and writes the vectors to Qdrant. The original PDF is kept in MinIO or another S3-compatible object store, while Postgres keeps the document ownership, visibility, permissions, and conversation records. ChromaDB remains available as the lightweight local vector fallback.
 
 Local development can still use SQLite, local PDFs, and Chroma by leaving `DATABASE_URL` empty, `DOCUMENT_STORAGE_BACKEND=local`, and `VECTOR_STORE_BACKEND=chroma`.
 
