@@ -58,7 +58,7 @@ async function pollUntilReady(
         pending.delete(s.id);
         failed.push({
           id: s.id,
-          message: s.error_message ?? "Échec du traitement",
+          message: s.error_message ?? "Processing failed",
         });
       } else if (s.status === "ready") {
         pending.delete(s.id);
@@ -176,7 +176,7 @@ export function useDocuments(sessionId: string) {
           setUploadStage(null);
         }, 1200);
       } catch (e: unknown) {
-        setUploadError(e instanceof Error ? e.message : "Échec de l'upload");
+        setUploadError(e instanceof Error ? e.message : "Upload failed");
         setUploadStage(null);
         setIsUploading(false);
         // Remove optimistic docs on error

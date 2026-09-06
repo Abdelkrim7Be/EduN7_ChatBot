@@ -49,7 +49,7 @@ export function useProviders(isAuthenticated: boolean) {
         saveStored(sel);
       }
     } catch (e) {
-      console.error("Échec du chargement des fournisseurs :", e);
+      console.error("Failed to load providers:", e);
     } finally {
       setLoading(false);
     }

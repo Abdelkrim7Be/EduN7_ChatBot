@@ -28,7 +28,7 @@ def register():
 
     import config
     if not config.is_registration_allowed():
-        return jsonify({"error": "Les inscriptions sont actuellement désactivées"}), 403
+        return jsonify({"error": "Registration is currently disabled"}), 403
 
     try:
         user = register_user(email, name, password)
@@ -47,7 +47,7 @@ def login():
     password = (data.get("password") or "").strip()
 
     if not email or not password:
-        return jsonify({"error": "L'email et le mot de passe sont obligatoires"}), 400
+        return jsonify({"error": "email and password are required"}), 400
 
     try:
         user = authenticate_user(email, password)
@@ -101,7 +101,7 @@ def update_password():
     new_password = data.get("new_password")
     
     if not current_password or not new_password:
-        return jsonify({"error": "Le mot de passe actuel et le nouveau mot de passe sont obligatoires"}), 400
+        return jsonify({"error": "current_password and new_password are required"}), 400
         
     try:
         change_password(g.user.id, current_password, new_password)

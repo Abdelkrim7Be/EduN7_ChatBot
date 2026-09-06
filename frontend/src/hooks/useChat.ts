@@ -132,7 +132,7 @@ export function useChat(sessionId: string, onError?: (msg: string) => void) {
                   // Keep partial content on manual stop; show error otherwise.
                   content: aborted
                     ? fullContent || "_(Réponse interrompue)_"
-                    : `Erreur : ${e instanceof Error ? e.message : "Une erreur est survenue"}`,
+                    : `Error: ${e instanceof Error ? e.message : "An error occurred"}`,
                   citations,
                   isStreaming: false,
                   actualProvider,

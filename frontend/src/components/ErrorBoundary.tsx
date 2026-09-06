@@ -28,15 +28,15 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex-1 flex flex-col items-center justify-center bg-brand-surface-muted min-h-screen p-4 text-center">
           <div className="bg-brand-navy p-6 rounded-lg border border-brand-navy-border max-w-md w-full">
-            <h2 className="text-xl font-bold text-red-500 mb-4">Une erreur est survenue</h2>
+            <h2 className="text-xl font-bold text-red-500 mb-4">Something went wrong</h2>
             <p className="text-white/70 mb-4 text-sm">
-              {this.state.error?.message || "Une erreur inattendue est survenue."}
+              {this.state.error?.message || "An unexpected error occurred."}
             </p>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
-              Recharger la page
+              Reload Page
             </button>
           </div>
         </div>

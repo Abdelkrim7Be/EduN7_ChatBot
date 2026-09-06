@@ -34,14 +34,14 @@ function groupByRecency(conversations: Conversation[]): Group[] {
   const buckets: Record<string, Conversation[]> = {
     "Aujourd'hui": [],
     "Hier": [],
-    "7 derniers jours": [],
+    "Last 7 Days": [],
     "Plus ancien": [],
   };
   for (const c of conversations) {
     const delta = now - c.last_active;
     if (delta < 86400) buckets["Aujourd'hui"].push(c);
     else if (delta < 172800) buckets["Hier"].push(c);
-    else if (delta < 604800) buckets["7 derniers jours"].push(c);
+    else if (delta < 604800) buckets["Last 7 Days"].push(c);
     else buckets["Plus ancien"].push(c);
   }
   return Object.entries(buckets)
@@ -113,7 +113,7 @@ export function ConversationSidebar({
         <button
           onClick={onCollapseToggle}
           className="p-2 text-gray-500 hover:text-white rounded-sm hover:bg-surface-dim transition-colors mb-4"
-          title="Afficher les conversations"
+          title="Show conversations"
         >
           <PanelLeftOpen className="w-5 h-5" />
         </button>
@@ -135,7 +135,7 @@ export function ConversationSidebar({
         <button
           onClick={onCollapseToggle}
           className="p-1.5 text-gray-500 hover:text-white rounded-sm hover:bg-surface-dim transition-colors"
-          title="Masquer les conversations"
+          title="Hide conversations"
         >
           <PanelLeftClose className="w-4 h-4" />
         </button>
@@ -147,7 +147,7 @@ export function ConversationSidebar({
             onClick={onNewConversation}
             className="w-full text-left py-2 px-3 text-sm text-white border border-white/20 hover:border-white hover:bg-white hover:text-black transition-all duration-300 rounded-sm"
           >
-            + NOUVELLE SESSION
+            + NEW SESSION
           </button>
           
           {(isRole("admin") || hasPermission("admin.dashboard.view")) && (
@@ -156,7 +156,7 @@ export function ConversationSidebar({
               className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-3 text-sm font-bold text-accent bg-accent/10 hover:bg-accent/20 border border-accent/20 hover:border-accent/40 transition-all duration-300 rounded-sm uppercase tracking-widest"
             >
               <Shield className="w-4 h-4" />
-              Panneau admin
+              Admin Panel
             </button>
           )}
         </div>
@@ -309,7 +309,7 @@ export function ConversationSidebar({
                       className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-surface-bright flex items-center gap-2 border-b border-border-subtle"
                   >
                       <Settings className="w-4 h-4" />
-                      Tableau de bord admin
+                      Admin Dashboard
                   </button>
                 )}
 

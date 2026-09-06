@@ -206,7 +206,7 @@ export function SettingsPage() {
                         className="flex items-center gap-2 px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors disabled:opacity-50"
                       >
                         <Save className="w-4 h-4" />
-                        {isSaving ? "Enregistrement..." : "Enregistrer"}
+                        {isSaving ? "Saving..." : "Enregistrer"}
                       </button>
                     </div>
                   </div>
@@ -286,7 +286,7 @@ export function SettingsPage() {
                       className="flex items-center gap-2 px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors disabled:opacity-50"
                     >
                       <Key className="w-4 h-4" />
-                      {isChangingPassword ? "Mise à jour..." : "Mettre à jour le mot de passe"}
+                      {isChangingPassword ? "Updating..." : "Mettre à jour le mot de passe"}
                     </button>
                   </div>
                 </div>

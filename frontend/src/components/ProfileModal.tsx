@@ -18,7 +18,7 @@ export function ProfileModal({ onClose }: Props) {
       <div className="relative bg-black border border-white/20 shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/20">
           <h2 className="text-sm font-bold text-white uppercase tracking-widest">
-            Paramètres du profil
+            Profile Settings
           </h2>
           <button
             onClick={onClose}
@@ -62,7 +62,7 @@ export function ProfileModal({ onClose }: Props) {
             onClick={onClose}
             className="px-6 py-2.5 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-200 transition-colors border border-white"
           >
-            Fermer
+            Close
           </button>
         </div>
       </div>

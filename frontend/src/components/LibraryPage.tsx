@@ -106,9 +106,9 @@ export function LibraryPage({ user, isRole }: Props) {
     setBulkDeleting(false);
     setConfirmBulk(false);
     if (failed === 0)
-      toast(`${ids.length} document${ids.length > 1 ? "s" : ""} supprimé${ids.length > 1 ? "s" : ""}`, "success");
+      toast(`${ids.length} document${ids.length > 1 ? "s" : ""} deleted`, "success");
     else
-      toast(`${ids.length - failed} supprimé(s), ${failed} erreur(s)`, "error");
+      toast(`${ids.length - failed} deleted, ${failed} error(s)`, "error");
   }
 
   const filtered = docs.filter(
@@ -160,7 +160,7 @@ export function LibraryPage({ user, isRole }: Props) {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
               </svg>
-              Retour au chat
+              Return to Chat
             </Link>
           </div>
           
@@ -182,32 +182,32 @@ export function LibraryPage({ user, isRole }: Props) {
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                 </svg>
-                <h1 className="text-3xl font-bold tracking-tight uppercase">Bibliothèque partagée</h1>
+                <h1 className="text-3xl font-bold tracking-tight uppercase">Shared Library</h1>
               </div>
-              <p className="text-white/50 text-sm">{docs.length} documents publiés et accessibles à tous</p>
+              <p className="text-white/50 text-sm">{docs.length} documents published and accessible to all</p>
             </div>
             {selectedCount > 0 ? (
               <div className="flex items-center gap-4">
-                <span className="text-xs uppercase tracking-widest text-white/50">{selectedCount} sélectionné(s)</span>
+                <span className="text-xs uppercase tracking-widest text-white/50">{selectedCount} selected</span>
                 {confirmBulk ? (
                   <>
                     <button onClick={handleBulkDelete} disabled={bulkDeleting} className="bg-red-600 text-white px-6 py-2 font-bold uppercase tracking-widest hover:bg-red-700 transition-all text-xs disabled:opacity-50">
                       {bulkDeleting ? "Suppression..." : "Confirmer"}
                     </button>
                     <button onClick={() => setConfirmBulk(false)} className="border border-white/40 text-white px-4 py-2 font-bold uppercase tracking-widest hover:bg-white/10 transition-all text-xs">
-                      Annuler
+                      Cancel
                     </button>
                   </>
                 ) : (
                   <button onClick={() => setConfirmBulk(true)} className="border border-red-500/50 text-red-500 px-6 py-2 font-bold uppercase tracking-widest hover:bg-red-500/10 transition-all text-xs">
-                    Supprimer la sélection
+                    Delete Selected
                   </button>
                 )}
               </div>
             ) : (
               <div className="flex items-center gap-4">
                 <button onClick={() => { setLoading(true); fetchAdminDocuments("shared").then(({ documents }) => setDocs(documents)).finally(() => setLoading(false)); }} className="border border-white/40 text-white px-6 py-3 font-bold uppercase tracking-widest hover:bg-white/10 transition-all text-sm">
-                  Actualiser
+                  Refresh
                 </button>
                 <input
                   ref={fileInputRef}
@@ -236,7 +236,7 @@ export function LibraryPage({ user, isRole }: Props) {
                   className="appearance-none cursor-pointer w-4 h-4 border border-white/30 rounded-sm bg-transparent checked:bg-white checked:border-white relative flex-shrink-0 after:content-[''] checked:after:content-['✓'] after:absolute after:inset-0 after:flex after:items-center after:justify-center after:text-black after:text-[12px] after:font-bold after:leading-none transition-colors"
                 />
                 <label htmlFor="selectAll" className="text-[10px] uppercase font-bold text-white/50 cursor-pointer select-none">
-                  Tout sélectionner
+                  Select All
                 </label>
               </div>
             )}
