@@ -93,9 +93,9 @@ The platform also includes an optional public landing assistant. That public ass
 ## Quickstart Docker
 
 ```bash
-# 1. Copy and fill in your Groq API key
+# 1. Copy and fill in your model provider API key
 cp .env.example .env
-# Edit .env and set GROQ_API_KEY=your_key_here
+# Edit .env and set one provider key, for example YOUR_MODEL_API_KEY=your_model_api_key_here
 
 # 2. Start all services
 docker-compose up --build
@@ -150,7 +150,7 @@ docker run -p 8000:8000 chromadb/chroma:latest
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp ../.env.example .env   # fill in GROQ_API_KEY
+cp ../.env.example .env   # fill in one model provider API key
 python app.py
 # running on http://localhost:8080
 ```
@@ -171,15 +171,15 @@ npm run dev
 Copy `.env.example` to `.env` and set at minimum:
 
 ```
-GROQ_API_KEY=your_groq_api_key_here
+YOUR_MODEL_API_KEY=your_model_api_key_here
 ```
 
-Get a free key at [console.groq.com](https://console.groq.com).
+Use any supported model provider and set the matching key in `.env`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `GROQ_API_KEY` | blank | **Required** |
-| `GROQ_MODEL` | `llama3-70b-8192` | Groq model name |
+| Provider API key | blank | Set at least one supported provider key, such as `GEMINI_API_KEY`, `CEREBRAS_API_KEY`, `GROQ_API_KEY`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY`, `TOGETHER_API_KEY`, or `SAMBANOVA_API_KEY` |
+| Provider model | provider default | Optional model override configured through backend settings |
 | `LLM_TEMPERATURE` | `0.7` | Response creativity |
 | `DATABASE_URL` | blank | Postgres connection URL; leave blank to use local SQLite |
 | `CHROMA_HOST` | `localhost` | ChromaDB host (`chromadb` in Docker) |

@@ -1,111 +1,133 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
-  <title id="title">ENSET AI RAG storage flow</title>
-  <desc id="desc">Upload, storage, embedding, retrieval, and response flow for ENSET AI.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="820" viewBox="0 0 1440 820" role="img" aria-labelledby="title desc">
+  <title id="title">ENSET AI production RAG storage</title>
+  <desc id="desc">Production storage architecture showing application API, metadata database, object storage, vector database, and chat retrieval.</desc>
   <defs>
-    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#111827"/>
-      <stop offset="1" stop-color="#020617"/>
-    </linearGradient>
-    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M2 2 L10 6 L2 10 Z" fill="#22c55e"/>
+    <marker id="arrowGreen" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M2 2 L12 7 L2 12 Z" fill="#2dd4bf"/>
     </marker>
+    <marker id="arrowBlue" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M2 2 L12 7 L2 12 Z" fill="#60a5fa"/>
+    </marker>
+    <filter id="shadow" x="-12%" y="-18%" width="124%" height="136%">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
     <style>
-      .bg { fill: #05070d; }
-      .panel { fill: url(#panel); stroke: #263244; stroke-width: 1.5; }
-      .title { fill: #f8fafc; font: 700 31px Inter, Arial, sans-serif; }
-      .subtitle { fill: #94a3b8; font: 500 16px Inter, Arial, sans-serif; }
-      .label { fill: #f8fafc; font: 700 18px Inter, Arial, sans-serif; }
-      .body { fill: #aebacd; font: 500 14px Inter, Arial, sans-serif; }
-      .tag { fill: #031a18; font: 800 12px Inter, Arial, sans-serif; letter-spacing: 1px; }
-      .line { stroke: #22c55e; stroke-width: 3; fill: none; marker-end: url(#arrow); }
-      .line2 { stroke: #06b6d4; stroke-width: 3; fill: none; marker-end: url(#arrow); }
-      .accent { fill: #22c55e; }
-      .cyan { fill: #06b6d4; }
-      .red { fill: #ef4444; }
-      .blue { fill: #3b82f6; }
-      .muted { fill: #182133; stroke: #334155; stroke-width: 1; }
-      .pill { fill: #22c55e; }
+      .page { fill: #070b14; }
+      .frame { fill: #0f172a; stroke: #243247; stroke-width: 2; }
+      .lane { fill: #111c2f; stroke: #2c3a52; stroke-width: 1.5; }
+      .node { fill: #182235; stroke: #3a4a64; stroke-width: 1.5; filter: url(#shadow); }
+      .store { fill: #142033; stroke: #2dd4bf; stroke-width: 2; filter: url(#shadow); }
+      .vector { fill: #142033; stroke: #60a5fa; stroke-width: 2; filter: url(#shadow); }
+      text { font-family: Arial, sans-serif; }
+      .title { fill: #f8fafc; font-size: 38px; font-weight: 800; }
+      .subtitle { fill: #b7c4d8; font-size: 18px; font-weight: 500; }
+      .laneText { fill: #8da2c0; font-size: 13px; font-weight: 700; letter-spacing: 1.8px; }
+      .label { fill: #ffffff; font-size: 24px; font-weight: 800; }
+      .body { fill: #cbd5e1; font-size: 17px; font-weight: 500; }
+      .small { fill: #94a3b8; font-size: 14px; font-weight: 600; }
+      .tag { fill: #041314; font-size: 14px; font-weight: 800; letter-spacing: 1px; }
+      .green { stroke: #2dd4bf; stroke-width: 4; fill: none; marker-end: url(#arrowGreen); }
+      .blue { stroke: #60a5fa; stroke-width: 4; fill: none; marker-end: url(#arrowBlue); }
+      .mutedLine { stroke: #45556e; stroke-width: 2; stroke-dasharray: 7 8; fill: none; }
+      .iconGreen { fill: #2dd4bf; }
+      .iconBlue { fill: #60a5fa; }
+      .iconRed { fill: #f87171; }
+      .iconAmber { fill: #fbbf24; }
+      .chip { fill: #2dd4bf; }
     </style>
   </defs>
 
-  <rect class="bg" width="1280" height="640"/>
-  <rect x="38" y="38" width="1204" height="564" rx="18" class="panel"/>
-  <text x="84" y="94" class="title">ENSET AI RAG Storage Architecture</text>
-  <text x="84" y="126" class="subtitle">Postgres keeps metadata, MinIO stores original PDFs, and Qdrant stores reusable embeddings.</text>
+  <rect class="page" width="1440" height="820"/>
+  <rect x="50" y="48" width="1340" height="724" rx="22" class="frame"/>
 
-  <g transform="translate(84 184)">
-    <rect class="muted" width="190" height="110" rx="12"/>
-    <circle cx="42" cy="44" r="18" class="blue"/>
-    <path d="M36 44h12M42 38v12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-    <text x="76" y="42" class="label">User Upload</text>
-    <text x="76" y="66" class="body">PDF files enter</text>
-    <text x="76" y="86" class="body">through Flask API</text>
+  <text x="94" y="112" class="title">Production RAG Storage</text>
+  <text x="94" y="146" class="subtitle">Durable PDFs stay outside the app container. Metadata and vectors scale independently.</text>
+
+  <rect x="94" y="184" width="1252" height="178" rx="16" class="lane"/>
+  <text x="124" y="226" class="laneText">UPLOAD AND INGESTION</text>
+
+  <rect x="94" y="392" width="1252" height="132" rx="16" class="lane"/>
+  <text x="124" y="428" class="laneText">DURABLE STORAGE</text>
+
+  <rect x="94" y="572" width="1252" height="126" rx="16" class="lane"/>
+  <text x="124" y="608" class="laneText">QUESTION ANSWERING</text>
+
+  <g transform="translate(142 238)">
+    <rect width="224" height="134" rx="18" class="node"/>
+    <circle cx="48" cy="50" r="24" class="iconAmber"/>
+    <path d="M48 37v26M35 50h26" stroke="#111827" stroke-width="5" stroke-linecap="round"/>
+    <text x="88" y="48" class="label">Upload PDF</text>
+    <text x="88" y="78" class="body">Authenticated users</text>
+    <text x="88" y="102" class="body">send course files.</text>
   </g>
 
-  <path class="line" d="M286 239 H378"/>
+  <path class="green" d="M378 305 H484"/>
 
-  <g transform="translate(390 170)">
-    <rect class="muted" width="220" height="138" rx="12"/>
-    <rect x="24" y="24" width="42" height="54" rx="5" fill="#0f766e"/>
-    <path d="M34 38h22M34 52h22M34 66h14" stroke="#d1fae5" stroke-width="3" stroke-linecap="round"/>
-    <text x="82" y="44" class="label">Ingestion</text>
-    <text x="82" y="68" class="body">Validate PDF</text>
-    <text x="82" y="88" class="body">extract text</text>
-    <text x="82" y="108" class="body">split chunks</text>
+  <g transform="translate(500 238)">
+    <rect width="250" height="134" rx="18" class="node"/>
+    <rect x="30" y="32" width="48" height="58" rx="8" class="iconGreen"/>
+    <path d="M44 48h20M44 63h20M44 78h14" stroke="#06201d" stroke-width="5" stroke-linecap="round"/>
+    <text x="100" y="48" class="label">Ingest</text>
+    <text x="100" y="78" class="body">Extract text</text>
+    <text x="100" y="102" class="body">split clean chunks.</text>
   </g>
 
-  <path class="line" d="M622 196 C678 166 718 144 770 144"/>
-  <path class="line2" d="M622 239 H770"/>
-  <path class="line" d="M622 282 C678 316 718 340 770 340"/>
+  <path class="green" d="M764 290 C838 254 880 228 944 228"/>
+  <path class="green" d="M764 306 C848 306 879 306 944 306"/>
+  <path class="blue" d="M764 322 C844 374 888 452 944 452"/>
 
-  <g transform="translate(790 92)">
-    <rect class="muted" width="310" height="104" rx="12"/>
-    <rect x="24" y="26" width="56" height="52" rx="8" class="red"/>
-    <text x="38" y="58" fill="#fff" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800">PDF</text>
-    <text x="98" y="42" class="label">MinIO / S3 / R2</text>
-    <text x="98" y="66" class="body">Durable original PDFs</text>
-    <text x="98" y="86" class="body">outside the app container</text>
+  <g transform="translate(962 202)">
+    <rect width="300" height="92" rx="18" class="store"/>
+    <rect x="26" y="26" width="54" height="40" rx="9" class="iconRed"/>
+    <text x="40" y="52" fill="#111827" font-family="Arial, sans-serif" font-size="15" font-weight="900">PDF</text>
+    <text x="104" y="40" class="label">MinIO / S3</text>
+    <text x="104" y="68" class="body">Original files</text>
   </g>
 
-  <g transform="translate(790 218)">
-    <rect class="muted" width="310" height="104" rx="12"/>
-    <rect x="24" y="30" width="56" height="44" rx="8" class="accent"/>
-    <text x="37" y="58" class="tag">SQL</text>
-    <text x="98" y="42" class="label">Postgres</text>
-    <text x="98" y="66" class="body">Users, documents, roles</text>
-    <text x="98" y="86" class="body">sessions, permissions, audit</text>
+  <g transform="translate(962 320)">
+    <rect width="300" height="92" rx="18" class="store"/>
+    <rect x="26" y="26" width="54" height="40" rx="9" class="chip"/>
+    <text x="38" y="52" class="tag">SQL</text>
+    <text x="104" y="40" class="label">Postgres</text>
+    <text x="104" y="68" class="body">Users and metadata</text>
   </g>
 
-  <g transform="translate(790 344)">
-    <rect class="muted" width="310" height="104" rx="12"/>
-    <circle cx="52" cy="52" r="27" class="cyan"/>
-    <circle cx="52" cy="52" r="12" fill="#0f172a"/>
-    <text x="98" y="42" class="label">Qdrant Vectors</text>
-    <text x="98" y="66" class="body">Chunk embeddings for</text>
-    <text x="98" y="86" class="body">semantic retrieval</text>
+  <g transform="translate(962 438)">
+    <rect width="300" height="92" rx="18" class="vector"/>
+    <circle cx="54" cy="46" r="27" class="iconBlue"/>
+    <circle cx="54" cy="46" r="11" fill="#0f172a"/>
+    <text x="104" y="40" class="label">Qdrant</text>
+    <text x="104" y="68" class="body">Embeddings index</text>
   </g>
 
-  <path class="line2" d="M950 464 C906 514 760 520 656 492"/>
-  <path class="line2" d="M790 270 C704 302 664 354 642 438"/>
+  <path class="mutedLine" d="M1112 530 C1018 612 842 636 704 636"/>
+  <path class="mutedLine" d="M1112 412 C1018 570 846 624 704 636"/>
 
-  <g transform="translate(318 432)">
-    <rect class="muted" width="330" height="106" rx="12"/>
-    <rect x="24" y="30" width="64" height="46" rx="10" fill="#1e293b" stroke="#22c55e"/>
-    <path d="M40 53h32" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>
-    <text x="106" y="42" class="label">Chat Retrieval</text>
-    <text x="106" y="66" class="body">Query embeds once, retrieves</text>
-    <text x="106" y="86" class="body">top chunks, streams cited answer</text>
+  <g transform="translate(142 626)">
+    <rect width="262" height="82" rx="18" class="node"/>
+    <circle cx="48" cy="41" r="22" class="iconGreen"/>
+    <path d="M37 41h22" stroke="#07211e" stroke-width="5" stroke-linecap="round"/>
+    <text x="88" y="38" class="label">Ask</text>
+    <text x="88" y="64" class="body">User question</text>
   </g>
 
-  <path class="line" d="M648 485 H770"/>
+  <path class="blue" d="M420 667 H514"/>
 
-  <g transform="translate(790 488)">
-    <rect class="muted" width="310" height="72" rx="12"/>
-    <rect x="24" y="21" width="74" height="30" rx="15" class="pill"/>
-    <text x="42" y="41" class="tag">LLM</text>
-    <text x="116" y="33" class="label">Answer with citations</text>
-    <text x="116" y="55" class="body">Private context stays scoped</text>
+  <g transform="translate(530 626)">
+    <rect width="300" height="82" rx="18" class="node"/>
+    <text x="30" y="38" class="label">Retrieve chunks</text>
+    <text x="30" y="64" class="body">Use vectors and permissions.</text>
   </g>
 
-  <text x="84" y="566" class="subtitle">Local fallback: SQLite + local uploads + ChromaDB. Production path: Postgres + MinIO/S3-compatible storage + Qdrant.</text>
+  <path class="green" d="M846 667 H958"/>
+
+  <g transform="translate(974 626)">
+    <rect width="288" height="82" rx="18" class="node"/>
+    <rect x="26" y="27" width="72" height="30" rx="15" class="chip"/>
+    <text x="46" y="47" class="tag">LLM</text>
+    <text x="116" y="38" class="label">Answer</text>
+    <text x="116" y="64" class="body">Stream with citations.</text>
+  </g>
+
+  <text x="94" y="744" class="small">Local mode can use SQLite, local uploads, and ChromaDB. Production mode uses Postgres, MinIO-compatible object storage, and Qdrant.</text>
 </svg>
