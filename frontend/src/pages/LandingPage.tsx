@@ -35,24 +35,24 @@ export function LandingPage() {
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
             <a href="#about" className="hover:text-gray-400 transition-colors">
-              Notre Établissement
+              Our Institution
             </a>
             <a href="#features" className="hover:text-gray-400 transition-colors">
-              Fonctionnalités
+              Features
             </a>
             {auth.isAuthenticated ? (
               <button
                 onClick={() => navigate("/")}
                 className="px-4 py-2 bg-white text-black rounded-sm hover:bg-gray-200 transition-colors"
               >
-                Tableau de bord
+                Dashboard
               </button>
             ) : (
               <button
                 onClick={() => navigate("/login")}
                 className="px-4 py-2 bg-white text-black rounded-sm hover:bg-gray-200 transition-colors"
               >
-                Se connecter
+                Sign In
               </button>
             )}
           </nav>
@@ -87,14 +87,14 @@ export function LandingPage() {
               variants={fadeUp}
               className="text-xl md:text-2xl font-light text-gray-400 tracking-wide"
             >
-              Plateforme IA académique auto-hébergée
+              Self-hosted academic AI platform
             </motion.p>
             <motion.p
               variants={fadeUp}
               className="text-gray-500 max-w-xl mx-auto text-sm md:text-base"
             >
-              Analyse de documents privés pour les utilisateurs connectés,
-              avec un assistant public limité aux informations validées.
+              Private document analysis for authenticated users,
+              with a public assistant limited to approved information.
             </motion.p>
             <motion.div
               variants={fadeUp}
@@ -105,7 +105,7 @@ export function LandingPage() {
                   onClick={() => navigate("/")}
                   className="px-10 py-4 bg-white text-black font-bold uppercase text-sm tracking-widest hover:bg-gray-200 transition-all duration-300"
                 >
-                  Accéder au Chat
+                  Open Chat
                 </button>
               ) : (
                 <>
@@ -113,13 +113,13 @@ export function LandingPage() {
                     onClick={() => navigate("/login?tab=register")}
                     className="px-10 py-4 bg-white text-black font-bold uppercase text-sm tracking-widest hover:bg-gray-200 transition-all duration-300"
                   >
-                    Commencer gratuitement
+                    Start Free
                   </button>
                   <button
                     onClick={() => navigate("/login")}
                     className="px-10 py-4 border border-white text-white font-bold uppercase text-sm tracking-widest hover:bg-white/10 transition-all duration-300"
                   >
-                    Se connecter
+                    Sign In
                   </button>
                 </>
               )}
@@ -129,7 +129,7 @@ export function LandingPage() {
                 href="#about"
                 className="text-xs uppercase tracking-[0.3em] text-gray-500"
               >
-                Découvrir
+                Explore
               </a>
             </motion.div>
           </motion.div>
@@ -167,28 +167,27 @@ export function LandingPage() {
             >
               <div className="inline-block border-l-2 border-white pl-4">
                 <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                  Notre Établissement
+                  Our Institution
                 </span>
               </div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-                École Normale Supérieure de l'Enseignement Technique
+                Higher Normal School of Technical Education
               </h2>
               <div className="space-y-4 text-gray-400 leading-relaxed">
                 <p>
-                  L'ENSET Mohammedia forme les ingénieurs pédagogues et les cadres
-                  techniques de demain. Établissement d'excellence, elle réunit
-                  des filières d'ingénierie, d'informatique et de génie
-                  industriel au cœur du Maroc.
+                  ENSET Mohammedia trains tomorrow's engineering educators and
+                  technical leaders. As a school of excellence, it brings together
+                  engineering, computer science, and industrial engineering
+                  programs in the heart of Morocco.
                 </p>
                 <p>
-                  ENSET AI est déployé comme une plateforme privée pour
-                  accompagner étudiants et professeurs dans l'exploration de
-                  ressources pédagogiques. L'assistant public de la page
-                  d'accueil sert uniquement de guide pour les visiteurs.
+                  ENSET AI is deployed as a private platform to help students
+                  and professors explore academic resources. The public landing
+                  assistant is only a guide for visitors.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 pt-4">
-                {["Ingénierie", "Informatique", "Génie industriel", "Pédagogie"].map((tag) => (
+                {["Engineering", "Computer Science", "Industrial Engineering", "Teaching"].map((tag) => (
                   <span
                     key={tag}
                     className="px-3 py-1 border border-x-border text-[10px] uppercase tracking-wider text-gray-300"
@@ -213,12 +212,12 @@ export function LandingPage() {
               <div className="inline-flex items-center gap-4 mb-4">
                 <div className="h-px w-8 bg-white"></div>
                 <span className="text-xs font-bold uppercase tracking-[0.4em]">
-                  Fonctionnalités
+                  Features
                 </span>
                 <div className="h-px w-8 bg-white"></div>
               </div>
               <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">
-                Pourquoi ENSET AI ?
+                Why ENSET AI?
               </h2>
             </motion.div>
             <motion.div
@@ -250,11 +249,11 @@ export function LandingPage() {
                 </div>
                 <div className="space-y-3">
                   <h3 className="text-xl font-bold uppercase tracking-tight">
-                    Analyse de documents
+                    Document Analysis
                   </h3>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    Importez vos PDFs, cours, TDs et examens. L'assistant les lit
-                    et répond avec précision.
+                    Upload your PDFs, courses, assignments, and exams. The
+                    assistant reads them and answers precisely.
                   </p>
                 </div>
               </motion.div>
@@ -278,11 +277,11 @@ export function LandingPage() {
                 </div>
                 <div className="space-y-3">
                   <h3 className="text-xl font-bold uppercase tracking-tight">
-                    Réponses sourcées
+                    Cited Answers
                   </h3>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    Chaque réponse cite le passage exact de vos documents. Vérifiez
-                    toujours la source.
+                    Every answer cites the exact passage from your documents.
+                    Always verify the source.
                   </p>
                 </div>
               </motion.div>
@@ -305,11 +304,11 @@ export function LandingPage() {
                 </div>
                 <div className="space-y-3">
                   <h3 className="text-xl font-bold uppercase tracking-tight">
-                    Plusieurs modèles IA
+                    Multiple AI Models
                   </h3>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    Les modèles sont configurés côté plateforme. Les visiteurs
-                    utilisent l'assistant public sans voir ni choisir le modèle.
+                    Models are configured at the platform level. Visitors use
+                    the public assistant without seeing or choosing the model.
                   </p>
                 </div>
               </motion.div>
@@ -331,24 +330,24 @@ export function LandingPage() {
               src="/logo.svg"
             />
             <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">
-              Prêt à explorer vos documents ?
+              Ready to explore your documents?
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Créez votre compte gratuitement et commencez à interroger vos
-              ressources pédagogiques en quelques secondes.
+              Create your free account and start querying your academic
+              resources in seconds.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <button
                 onClick={() => navigate("/login?tab=register")}
                 className="px-12 py-5 bg-white text-black font-bold uppercase text-sm tracking-widest hover:bg-gray-200 transition-all"
               >
-                Créer un compte
+                Create Account
               </button>
               <button
                 onClick={() => navigate("/login")}
                 className="px-12 py-5 border border-white text-white font-bold uppercase text-sm tracking-widest hover:bg-white/10 transition-all"
               >
-                Se connecter
+                Sign In
               </button>
             </div>
           </motion.div>
@@ -369,14 +368,14 @@ export function LandingPage() {
             </span>
           </div>
           <div className="text-[10px] uppercase tracking-[0.2em] text-gray-600 font-medium text-center">
-            © 2026 ENSET AI. Tous droits réservés
+            © 2026 ENSET AI. All rights reserved
           </div>
           <div className="flex gap-6 text-[10px] uppercase tracking-widest text-gray-500">
             <a href="#" className="hover:text-white transition-colors">
-              Confidentialité
+              Privacy
             </a>
             <a href="#" className="hover:text-white transition-colors">
-              Conditions
+              Terms
             </a>
           </div>
         </div>

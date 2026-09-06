@@ -29,11 +29,11 @@ export function LoginPage({ onLogin, onRegister }: Props) {
 
     if (tab === "register") {
       if (password !== confirm) {
-        setError("Les mots de passe ne correspondent pas");
+        setError("Passwords do not match");
         return;
       }
       if (password.length < 8) {
-        setError("Le mot de passe doit contenir au moins 8 caractères");
+        setError("Password must contain at least 8 characters");
         return;
       }
     }
@@ -47,7 +47,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
       }
       navigate("/", { replace: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Une erreur est survenue");
+      setError(e instanceof Error ? e.message : "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -74,16 +74,16 @@ export function LoginPage({ onLogin, onRegister }: Props) {
         
         <div className="max-w-md">
           <h1 className="text-5xl xl:text-6xl font-bold mb-6 tracking-tight leading-none uppercase break-words">
-            Plateforme IA académique
+            Academic AI Platform
           </h1>
           <p className="text-zinc-500 text-lg">
-            Connectez-vous pour analyser vos documents pédagogiques privés,
-            organiser vos conversations et obtenir des réponses sourcées.
+            Sign in to analyze your private academic documents, organize your
+            conversations, and get cited answers.
           </p>
         </div>
         
         <div className="text-zinc-600 text-xs flex flex-col gap-2 uppercase tracking-widest">
-          <p>Plateforme privée ENSET AI</p>
+          <p>Private ENSET AI platform</p>
           <p>© 2026 ENSET AI</p>
         </div>
       </section>
@@ -106,10 +106,10 @@ export function LoginPage({ onLogin, onRegister }: Props) {
           
           <div className="mb-10">
             <h2 className="text-3xl font-bold mb-2">
-              {tab === "login" ? "Ouvrir une session" : "Demander un accès"}
+              {tab === "login" ? "Initialize Session" : "Request Access"}
             </h2>
             <p className="text-zinc-400 text-sm">
-              {tab === "login" ? "Saisissez vos identifiants pour continuer." : "Inscrivez-vous pour rejoindre la plateforme."}
+              {tab === "login" ? "Enter your credentials to continue." : "Register to join the platform."}
             </p>
           </div>
 
@@ -126,7 +126,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                     : "text-zinc-600 hover:text-white"
                 }`}
               >
-                {t === "login" ? "Connexion" : "Inscription"}
+                {t === "login" ? "Login" : "Register"}
               </button>
             ))}
           </div>
@@ -135,7 +135,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
             {tab === "register" && (
               <div className="space-y-2">
                 <label htmlFor="auth-name" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                  Nom complet
+                  Full Name
                 </label>
                 <input
                   id="auth-name"
@@ -143,7 +143,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Prénom Nom"
+                  placeholder="John Doe"
                   required
                   className={inputClass}
                 />
@@ -152,7 +152,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
 
             <div className="space-y-2">
               <label htmlFor="auth-email" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                Email institutionnel
+                Institutional Email
               </label>
               <input
                 id="auth-email"
@@ -169,10 +169,10 @@ export function LoginPage({ onLogin, onRegister }: Props) {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label htmlFor="auth-password" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                  Mot de passe
+                  Security Key
                 </label>
                 {tab === "login" && (
-                  <span className="text-[10px] text-zinc-600 uppercase">Accès administré</span>
+                  <span className="text-[10px] text-zinc-600 uppercase">Managed access</span>
                 )}
               </div>
               <div className="relative">
@@ -188,7 +188,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                 />
                 <button
                   type="button"
-                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
                 >
@@ -204,7 +204,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
             {tab === "register" && (
               <div className="space-y-2">
                 <label htmlFor="auth-confirm" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                  Confirmer le mot de passe
+                  Confirm Key
                 </label>
                 <div className="relative">
                   <input
@@ -219,7 +219,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                   />
                   <button
                     type="button"
-                    aria-label={showConfirm ? "Masquer la confirmation" : "Afficher la confirmation"}
+                    aria-label={showConfirm ? "Hide confirmation" : "Show confirmation"}
                     onClick={() => setShowConfirm(!showConfirm)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
                   >
@@ -247,10 +247,10 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                 className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-zinc-200 transition-colors duration-200 uppercase tracking-tighter text-sm disabled:opacity-50"
               >
                 {loading
-                  ? "Traitement..."
+                  ? "Processing..."
                   : tab === "login"
-                    ? "Se connecter"
-                    : "Créer le compte"}
+                    ? "Authenticate"
+                    : "Create Account"}
               </button>
             </div>
           </form>
@@ -258,14 +258,14 @@ export function LoginPage({ onLogin, onRegister }: Props) {
           {/* Secondary Actions */}
           <div className="mt-12 pt-8 border-t border-zinc-900 flex flex-col items-center gap-4">
             <p className="text-zinc-500 text-xs">
-              {tab === "login" ? "Vous n'avez pas encore de compte ?" : "Vous avez déjà un compte ?"}
+              {tab === "login" ? "Need an account?" : "Already registered?"}
             </p>
             <button
               type="button"
               onClick={() => switchTab(tab === "login" ? "register" : "login")}
               className="text-white text-xs border border-zinc-800 px-6 py-2 hover:bg-zinc-900 transition-all uppercase tracking-widest"
             >
-              {tab === "login" ? "Demander un accès" : "Se connecter"}
+              {tab === "login" ? "Request Access" : "Back to Login"}
             </button>
           </div>
         </div>
@@ -273,7 +273,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
         {/* Bottom Decor */}
         <footer className="absolute bottom-0 left-0 w-full p-4 flex justify-between pointer-events-none opacity-20">
           <div className="text-[8px] tracking-widest uppercase">ENSET_AI_AUTH</div>
-          <div className="text-[8px] tracking-widest uppercase">Accès sécurisé</div>
+          <div className="text-[8px] tracking-widest uppercase">Secure access</div>
         </footer>
       </section>
     </div>

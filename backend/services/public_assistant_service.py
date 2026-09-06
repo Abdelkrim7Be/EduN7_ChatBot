@@ -104,7 +104,7 @@ def public_config() -> dict:
     return {
         "enabled": True,
         "greeting": _setting_text("public_assistant_greeting"),
-        "placeholder": _setting_text("public_assistant_placeholder", "Posez une question sur ENSET AI..."),
+        "placeholder": _setting_text("public_assistant_placeholder", "Ask a question about ENSET AI..."),
         "suggested_questions": _suggested_questions(),
     }
 
@@ -210,18 +210,18 @@ def stream_response(
     input_chars = len(trimmed) + sum(len(turn["content"]) for turn in history)
     if not is_enabled():
         record_event(ip_address=ip_address, user_agent=user_agent, outcome="disabled", input_chars=input_chars)
-        yield f'data: {json.dumps({"type": "error", "content": "L’assistant public est momentanément indisponible."})}\n\n'
+        yield f'data: {json.dumps({"type": "error", "content": "The public assistant is temporarily unavailable."})}\n\n'
         yield f'data: {json.dumps({"type": "done"})}\n\n'
         return
     if not trimmed:
-        yield f'data: {json.dumps({"type": "error", "content": "Veuillez saisir une question."})}\n\n'
+        yield f'data: {json.dumps({"type": "error", "content": "Please enter a question."})}\n\n'
         yield f'data: {json.dumps({"type": "done"})}\n\n'
         return
 
     configured = _configured_model()
     if configured is None:
         record_event(ip_address=ip_address, user_agent=user_agent, outcome="provider_error", input_chars=input_chars)
-        yield f'data: {json.dumps({"type": "error", "content": "L’assistant public est momentanément indisponible."})}\n\n'
+        yield f'data: {json.dumps({"type": "error", "content": "The public assistant is temporarily unavailable."})}\n\n'
         yield f'data: {json.dumps({"type": "done"})}\n\n'
         return
 
@@ -262,5 +262,5 @@ def stream_response(
         latency_ms=int((time.time() - started) * 1000),
         input_chars=input_chars,
     )
-    yield f'data: {json.dumps({"type": "error", "content": "L’assistant public est momentanément indisponible."})}\n\n'
+    yield f'data: {json.dumps({"type": "error", "content": "The public assistant is temporarily unavailable."})}\n\n'
     yield f'data: {json.dumps({"type": "done"})}\n\n'
