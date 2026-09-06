@@ -71,7 +71,7 @@ export function MessageBubble({
       <div className={`w-8 h-8 rounded-sm shrink-0 flex items-center justify-center font-bold text-[10px] ${
         isUser ? "bg-white text-black" : "bg-surface-bright text-white"
       }`}>
-        {isUser ? "USR" : "SYS"}
+        {isUser ? "VOUS" : "IA"}
       </div>
 
       <div className={`flex-1 min-w-0 ${isUser ? "flex flex-col items-end" : ""}`}>

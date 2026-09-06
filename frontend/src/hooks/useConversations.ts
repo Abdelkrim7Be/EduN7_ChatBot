@@ -11,7 +11,7 @@ export function useConversations() {
       const data = await fetchConversations();
       setConversations(data);
     } catch (e) {
-      console.error("Failed to load conversations", e);
+      console.error("Échec du chargement des conversations", e);
     } finally {
       setLoading(false);
     }

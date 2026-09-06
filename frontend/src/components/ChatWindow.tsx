@@ -207,7 +207,7 @@ export function ChatWindow({
           }}
           className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-surface-bright text-white px-4 py-1 rounded-full text-xs shadow-lg hover:bg-white hover:text-black transition-colors z-20 font-mono"
         >
-          ↓ Scroll to bottom
+          ↓ Aller en bas
         </button>
       )}
     </div>

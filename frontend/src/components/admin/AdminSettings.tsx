@@ -28,11 +28,11 @@ const GROUPS: Record<string, string> = {
 };
 
 const LABELS: Record<string, string> = {
-  max_upload_size_mb: "Max Upload Size",
-  max_docs_per_session: "Max Docs Per Session",
-  allow_registration: "Allow Registration",
-  default_role: "Default Role",
-  system_prompt: "System Prompt",
+  max_upload_size_mb: "Taille maximale d'upload",
+  max_docs_per_session: "Documents max par session",
+  allow_registration: "Autoriser les inscriptions",
+  default_role: "Rôle par défaut",
+  system_prompt: "Prompt système",
   public_assistant_enabled: "Assistant public activé",
   public_assistant_context: "Contexte public",
   public_assistant_instructions: "Instructions",
@@ -79,8 +79,8 @@ function SettingControl({
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-36 border border-hairline bg-surface-2 px-3 text-sm text-fg"
       >
-        <option value="true">Enabled</option>
-        <option value="false">Disabled</option>
+        <option value="true">Activé</option>
+        <option value="false">Désactivé</option>
       </select>
     );
   }
@@ -113,7 +113,7 @@ function SettingControl({
       >
         {providers.map((provider) => (
           <option key={provider} value={provider}>
-            {provider === "auto" ? "Auto fallback" : provider}
+            {provider === "auto" ? "Bascule automatique" : provider}
           </option>
         ))}
       </select>
@@ -130,7 +130,8 @@ function SettingControl({
       >
         {publicAssistantOptions.map((option) => (
           <option key={`${option.provider}:${option.model}`} value={option.model}>
-            {option.label}{option.available ? "" : " (non configuré)"}
+            {option.label === "Auto fallback" ? "Bascule automatique" : option.label}
+            {option.available ? "" : " (non configuré)"}
           </option>
         ))}
       </select>
@@ -154,7 +155,7 @@ function SettingControl({
     setting.key === "max_upload_size_mb" ||
     setting.key === "max_docs_per_session"
   ) {
-  const unit = setting.key === "max_upload_size_mb" ? "MB" : "";
+  const unit = setting.key === "max_upload_size_mb" ? "Mo" : "";
     return (
       <div className="flex h-9 w-44 items-center border border-hairline bg-surface-2">
         <input

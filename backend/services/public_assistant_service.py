@@ -73,7 +73,7 @@ def public_model_options() -> list[dict]:
         options.append({
             "provider": provider,
             "model": model,
-            "label": "Auto fallback" if provider == "auto" else f"{provider} / {model}",
+            "label": "Bascule automatique" if provider == "auto" else f"{provider} / {model}",
             "available": (provider, model) in available,
         })
     return options

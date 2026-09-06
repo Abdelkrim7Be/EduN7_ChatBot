@@ -296,7 +296,7 @@ export function CommandPalette({
                 {/* Results list */}
                 <Command.List className="max-h-[380px] overflow-y-auto py-2">
                   <div className="p-4 text-center text-sm text-gray-500">
-                    No results found.
+                    Aucun résultat.
                   </div>
 
                   {/* Actions */}
@@ -395,7 +395,7 @@ export function CommandPalette({
                           </span>
                           {conv.session_id === currentSessionId && (
                             <span className="text-[10px] text-accent font-medium flex-shrink-0">
-                              active
+                              actif
                             </span>
                           )}
                         </Item>
@@ -432,7 +432,7 @@ export function CommandPalette({
                     <kbd className="font-mono">↑↓</kbd> Naviguer
                   </span>
                   <span>
-                    <kbd className="font-mono">↵</kbd> Select
+                    <kbd className="font-mono">↵</kbd> Sélectionner
                   </span>
                   <span>
                     <kbd className="font-mono">Esc</kbd> Fermer

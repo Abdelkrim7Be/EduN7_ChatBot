@@ -57,7 +57,7 @@ export function AdminLayout() {
               onClick={() => navigate("/")}
               className="w-full text-left py-2 px-3 text-sm text-white border border-white/20 hover:border-white hover:bg-white hover:text-black transition-all duration-300 rounded-sm"
             >
-              ← WORKSPACE
+              ← ESPACE DE TRAVAIL
             </button>
           </div>
 

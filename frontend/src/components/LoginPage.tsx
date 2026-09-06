@@ -64,7 +64,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
     "w-full bg-transparent border border-zinc-800 focus:border-white focus:ring-0 text-white p-4 transition-colors duration-200";
 
   return (
-    <div className="min-h-screen flex overflow-x-hidden bg-x-black text-white">
+    <div className="min-h-screen flex overflow-x-hidden bg-x-black font-mono text-white">
       {/* LEFT — Brand panel */}
       <section className="hidden lg:flex flex-col justify-between w-1/2 p-16 border-r border-white/10">
         <div className="flex items-center space-x-4">
@@ -73,18 +73,17 @@ export function LoginPage({ onLogin, onRegister }: Props) {
         </div>
         
         <div className="max-w-md">
-          <h1 className="text-5xl xl:text-6xl font-bold mb-6 tracking-tight leading-none uppercase break-words">
-            Plateforme IA académique
+          <h1 className="text-6xl font-bold mb-6 tracking-tighter leading-none uppercase">
+            Sovereign Intelligence
           </h1>
           <p className="text-zinc-500 text-lg">
-            Connectez-vous pour analyser vos documents pédagogiques privés,
-            organiser vos conversations et obtenir des réponses sourcées.
+            Accédez au nœud de recherche institutionnel. Traitement neuronal sécurisé pour l'excellence académique.
           </p>
         </div>
         
         <div className="text-zinc-600 text-xs flex flex-col gap-2 uppercase tracking-widest">
-          <p>Plateforme privée ENSET AI</p>
-          <p>© 2026 ENSET AI</p>
+          <p>TERMINAL_STATUS: READY</p>
+          <p>© 2026 SOVEREIGN_INTEL_SYSTEMS</p>
         </div>
       </section>
 
@@ -106,10 +105,10 @@ export function LoginPage({ onLogin, onRegister }: Props) {
           
           <div className="mb-10">
             <h2 className="text-3xl font-bold mb-2">
-              {tab === "login" ? "Ouvrir une session" : "Demander un accès"}
+              {tab === "login" ? "Initialize Session" : "Request Access"}
             </h2>
             <p className="text-zinc-400 text-sm">
-              {tab === "login" ? "Saisissez vos identifiants pour continuer." : "Inscrivez-vous pour rejoindre la plateforme."}
+              {tab === "login" ? "Enter your credentials to continue." : "Register to join the research node."}
             </p>
           </div>
 
@@ -126,7 +125,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                     : "text-zinc-600 hover:text-white"
                 }`}
               >
-                {t === "login" ? "Connexion" : "Inscription"}
+                {t === "login" ? "Login" : "Register"}
               </button>
             ))}
           </div>
@@ -135,7 +134,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
             {tab === "register" && (
               <div className="space-y-2">
                 <label htmlFor="auth-name" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                  Nom complet
+                  Full Name
                 </label>
                 <input
                   id="auth-name"
@@ -143,7 +142,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Prénom Nom"
+                  placeholder="John Doe"
                   required
                   className={inputClass}
                 />
@@ -152,7 +151,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
 
             <div className="space-y-2">
               <label htmlFor="auth-email" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                Email institutionnel
+                Institutional Email
               </label>
               <input
                 id="auth-email"
@@ -169,10 +168,10 @@ export function LoginPage({ onLogin, onRegister }: Props) {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label htmlFor="auth-password" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                  Mot de passe
+                  Security Key
                 </label>
                 {tab === "login" && (
-                  <span className="text-[10px] text-zinc-600 uppercase">Accès administré</span>
+                  <span className="text-[10px] text-zinc-600 uppercase">Managed access</span>
                 )}
               </div>
               <div className="relative">
@@ -204,7 +203,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
             {tab === "register" && (
               <div className="space-y-2">
                 <label htmlFor="auth-confirm" className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">
-                  Confirmer le mot de passe
+                  Confirm Key
                 </label>
                 <div className="relative">
                   <input
@@ -247,10 +246,10 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                 className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-zinc-200 transition-colors duration-200 uppercase tracking-tighter text-sm disabled:opacity-50"
               >
                 {loading
-                  ? "Traitement..."
+                  ? "Processing..."
                   : tab === "login"
-                    ? "Se connecter"
-                    : "Créer le compte"}
+                    ? "Authenticate"
+                    : "Create Account"}
               </button>
             </div>
           </form>
@@ -258,14 +257,14 @@ export function LoginPage({ onLogin, onRegister }: Props) {
           {/* Secondary Actions */}
           <div className="mt-12 pt-8 border-t border-zinc-900 flex flex-col items-center gap-4">
             <p className="text-zinc-500 text-xs">
-              {tab === "login" ? "Vous n'avez pas encore de compte ?" : "Vous avez déjà un compte ?"}
+              {tab === "login" ? "Need an account?" : "Already registered?"}
             </p>
             <button
               type="button"
               onClick={() => switchTab(tab === "login" ? "register" : "login")}
               className="text-white text-xs border border-zinc-800 px-6 py-2 hover:bg-zinc-900 transition-all uppercase tracking-widest"
             >
-              {tab === "login" ? "Demander un accès" : "Se connecter"}
+              {tab === "login" ? "Request Access" : "Back to Login"}
             </button>
           </div>
         </div>
@@ -273,7 +272,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
         {/* Bottom Decor */}
         <footer className="absolute bottom-0 left-0 w-full p-4 flex justify-between pointer-events-none opacity-20">
           <div className="text-[8px] tracking-widest uppercase">ENSET_AI_AUTH</div>
-          <div className="text-[8px] tracking-widest uppercase">Accès sécurisé</div>
+          <div className="text-[8px] tracking-widest uppercase">Secure access</div>
         </footer>
       </section>
     </div>

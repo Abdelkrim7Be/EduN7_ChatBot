@@ -66,8 +66,8 @@ export async function loginWithEmail(
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: "Login failed" }));
-    throw new Error(err.error ?? "Login failed");
+    const err = await res.json().catch(() => ({ error: "Échec de la connexion" }));
+    throw new Error(err.error ?? "Échec de la connexion");
   }
   return res.json();
 }
@@ -86,15 +86,15 @@ export async function registerWithEmail(
   if (!res.ok) {
     const err = await res
       .json()
-      .catch(() => ({ error: "Registration failed" }));
-    throw new Error(err.error ?? "Registration failed");
+      .catch(() => ({ error: "Échec de l'inscription" }));
+    throw new Error(err.error ?? "Échec de l'inscription");
   }
   return res.json();
 }
 
 export async function fetchMe(): Promise<User> {
   const res = await apiFetch("/api/auth/me");
-  if (!res.ok) throw new Error("Not authenticated");
+  if (!res.ok) throw new Error("Non authentifié");
   const data = await res.json();
   return data.user as User;
 }
@@ -105,7 +105,7 @@ export async function updateProfile(name?: string, avatar_url?: string): Promise
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, avatar_url }),
   });
-  if (!res.ok) throw await readApiError(res, "Failed to update profile");
+  if (!res.ok) throw await readApiError(res, "Échec de la mise à jour du profil");
   return res.json();
 }
 
@@ -116,8 +116,8 @@ export async function changePassword(currentPassword: string, newPassword: strin
     body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
   });
   if (!res.ok) {
-    const data = await res.json().catch(() => ({ error: 'Failed to change password' }));
-    throw new Error(data.error || 'Failed to change password');
+    const data = await res.json().catch(() => ({ error: "Échec de la modification du mot de passe" }));
+    throw new Error(data.error || "Échec de la modification du mot de passe");
   }
 }
 
@@ -127,7 +127,7 @@ export async function logout(): Promise<void> {
 
 export async function createSession(): Promise<string> {
   const res = await apiFetch("/api/sessions", { method: "POST" });
-  if (!res.ok) throw new Error("Failed to create session");
+  if (!res.ok) throw new Error("Échec de la création de la session");
   const data = await res.json();
   return data.session_id as string;
 }
@@ -152,8 +152,8 @@ export async function uploadDocuments(
     body: form,
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: "Upload failed" }));
-    throw new Error(err.error ?? "Upload failed");
+    const err = await res.json().catch(() => ({ error: "Échec de l'upload" }));
+    throw new Error(err.error ?? "Échec de l'upload");
   }
   const data = await res.json();
   return data.documents as DocumentRecord[];
@@ -161,7 +161,7 @@ export async function uploadDocuments(
 
 export async function listDocuments(): Promise<DocumentRecord[]> {
   const res = await apiFetch("/api/documents");
-  if (!res.ok) throw new Error("Failed to fetch documents");
+  if (!res.ok) throw new Error("Échec du chargement des documents");
   const data = await res.json();
   return data.documents as DocumentRecord[];
 }
@@ -184,7 +184,7 @@ export async function fetchDocumentStatus(
   docId: string,
 ): Promise<DocumentStatus> {
   const res = await apiFetch(`/api/documents/${docId}/status`);
-  if (!res.ok) throw new Error("Status check failed");
+  if (!res.ok) throw new Error("Échec de la vérification du statut");
   return res.json() as Promise<DocumentStatus>;
 }
 
@@ -199,13 +199,13 @@ export async function fetchDocumentPreview(
   page: number,
 ): Promise<DocumentPreview> {
   const res = await apiFetch(`/api/documents/${docId}/preview?page=${page}`);
-  if (!res.ok) throw new Error("Preview not available");
+  if (!res.ok) throw new Error("Aperçu indisponible");
   return res.json() as Promise<DocumentPreview>;
 }
 
 export async function fetchDocumentFile(docId: string): Promise<string> {
   const res = await apiFetch(`/api/documents/${docId}/file`);
-  if (!res.ok) throw new Error("File not available");
+  if (!res.ok) throw new Error("Fichier indisponible");
   const blob = await res.blob();
   return URL.createObjectURL(blob);
 }
@@ -213,19 +213,19 @@ export async function fetchDocumentFile(docId: string): Promise<string> {
 
 export async function deleteDocument(docId: string): Promise<void> {
   const res = await apiFetch(`/api/documents/${docId}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Failed to delete document");
+  if (!res.ok) throw new Error("Échec de la suppression du document");
 }
 
 export async function fetchProviders(): Promise<Provider[]> {
   const res = await apiFetch("/api/providers");
-  if (!res.ok) throw new Error("Failed to fetch providers");
+  if (!res.ok) throw new Error("Échec du chargement des fournisseurs");
   const data = await res.json();
   return data.providers as Provider[];
 }
 
 export async function fetchConversations(): Promise<Conversation[]> {
   const res = await apiFetch("/api/conversations");
-  if (!res.ok) throw new Error("Failed to fetch conversations");
+  if (!res.ok) throw new Error("Échec du chargement des conversations");
   const data = await res.json();
   return data.conversations as Conversation[];
 }
@@ -234,7 +234,7 @@ export async function fetchConversationMessages(
   sessionId: string,
 ): Promise<{ conversation: Conversation; messages: StoredMessage[] }> {
   const res = await apiFetch(`/api/conversations/${sessionId}`);
-  if (!res.ok) throw new Error("Conversation not found");
+  if (!res.ok) throw new Error("Conversation introuvable");
   return res.json();
 }
 
@@ -252,7 +252,7 @@ export async function updateConversationTitle(
 export async function deleteConversationApi(sessionId: string): Promise<void> {
   const res = await apiFetch(`/api/conversations/${sessionId}`, { method: "DELETE" });
   if (!res.ok) {
-    throw new Error(`Failed to delete conversation: ${res.status} ${res.statusText}`);
+    throw new Error(`Échec de la suppression de la conversation : ${res.status} ${res.statusText}`);
   }
 }
 
@@ -275,7 +275,7 @@ export async function fetchAdminUsers(params?: {
   if (params?.search) qs.set("search", params.search);
   if (params?.status && params.status !== "all") qs.set("status", params.status);
   const res = await apiFetch(`/api/admin/users?${qs.toString()}`);
-  if (!res.ok) throw new Error("Failed to fetch users");
+  if (!res.ok) throw new Error("Échec du chargement des utilisateurs");
   const data = await res.json();
   return {
     users: data.users as AdminUser[],
@@ -294,7 +294,7 @@ export async function updateUserRole(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ role }),
   });
-  if (!res.ok) throw new Error("Failed to update role");
+  if (!res.ok) throw new Error("Échec de la mise à jour du rôle");
 }
 
 export async function fetchAdminDocuments(
@@ -311,7 +311,7 @@ export async function fetchAdminDocuments(
   if (params?.offset) qs.set("offset", String(params.offset));
   if (params?.search) qs.set("search", params.search);
   const res = await apiFetch(`/api/admin/documents?${qs.toString()}`);
-  if (!res.ok) throw new Error("Failed to fetch documents");
+  if (!res.ok) throw new Error("Échec du chargement des documents");
   const data = await res.json();
   return {
     documents: data.documents as AdminDocument[],
@@ -326,7 +326,7 @@ export async function fetchAdminDocuments(
 
 export async function fetchAdminDocumentFile(docId: string): Promise<string> {
   const res = await apiFetch(`/api/admin/documents/${docId}/file`);
-  if (!res.ok) throw new Error("File not available");
+  if (!res.ok) throw new Error("Fichier indisponible");
   const blob = await res.blob();
   return URL.createObjectURL(blob);
 }
@@ -335,12 +335,12 @@ export async function deleteAdminDocument(docId: string): Promise<void> {
   const res = await apiFetch(`/api/admin/documents/${docId}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error("Failed to delete document");
+  if (!res.ok) throw new Error("Échec de la suppression du document");
 }
 
 export async function fetchAdminStats(): Promise<AdminStats> {
   const res = await apiFetch("/api/admin/stats");
-  if (!res.ok) throw new Error("Failed to fetch stats");
+  if (!res.ok) throw new Error("Échec du chargement des statistiques");
   return res.json() as Promise<AdminStats>;
 }
 
@@ -370,7 +370,7 @@ export async function fetchAdminConversations(
   if (params?.limit) qs.set("limit", String(params.limit));
   if (params?.offset) qs.set("offset", String(params.offset));
   const res = await apiFetch(`/api/admin/conversations?${qs.toString()}`);
-  if (!res.ok) throw new Error("Failed to fetch conversations");
+  if (!res.ok) throw new Error("Échec du chargement des conversations");
   const data = await res.json();
   return {
     conversations: data.conversations as AdminConversation[],
@@ -385,7 +385,7 @@ export async function fetchAdminConversationMessages(
   messages: AdminConversationMessage[];
 }> {
   const res = await apiFetch(`/api/admin/conversations/${sessionId}`);
-  if (!res.ok) throw new Error("Failed to fetch conversation");
+  if (!res.ok) throw new Error("Échec du chargement de la conversation");
   return res.json();
 }
 
@@ -395,7 +395,7 @@ export async function deleteAdminConversation(
   const res = await apiFetch(`/api/admin/conversations/${sessionId}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error("Failed to delete conversation");
+  if (!res.ok) throw new Error("Échec de la suppression de la conversation");
 }
 
 export interface Setting {
@@ -417,7 +417,7 @@ export interface PublicAssistantModelOption {
 
 export async function fetchSettings(): Promise<Setting[]> {
   const res = await apiFetch("/api/admin/settings");
-  if (!res.ok) throw new Error("Failed to fetch settings");
+  if (!res.ok) throw new Error("Échec du chargement des paramètres");
   const data = await res.json();
   return data.settings as Setting[];
 }
@@ -428,12 +428,12 @@ export async function updateSetting(key: string, value: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ value }),
   });
-  if (!res.ok) throw new Error("Failed to update setting");
+  if (!res.ok) throw new Error("Échec de la mise à jour du paramètre");
 }
 
 export async function fetchPublicAssistantModelOptions(): Promise<PublicAssistantModelOption[]> {
   const res = await apiFetch("/api/admin/public-assistant/model-options");
-  if (!res.ok) throw new Error("Failed to fetch public assistant model options");
+  if (!res.ok) throw new Error("Échec du chargement des modèles de l'assistant public");
   const data = await res.json();
   return data.options as PublicAssistantModelOption[];
 }
@@ -501,7 +501,7 @@ export async function* streamChat(
     if (res.status === 401) {
       window.dispatchEvent(new Event("auth:expired"));
     }
-    throw new Error(`Chat request failed: ${res.status}`);
+    throw new Error(`Échec de la requête de chat : ${res.status}`);
   }
 
   const reader = res.body.getReader();
@@ -547,7 +547,7 @@ export async function* streamPublicAssistant(
 
   if (!res.ok || !res.body) {
     const data = await res.json().catch(() => null);
-    throw new Error(data?.error ?? `Assistant request failed: ${res.status}`);
+    throw new Error(data?.error ?? `Échec de la requête assistant : ${res.status}`);
   }
 
   const reader = res.body.getReader();
@@ -596,7 +596,7 @@ export async function fetchAdminRoles(): Promise<{
   permissions: AdminPermission[];
 }> {
   const res = await apiFetch("/api/admin/roles");
-  if (!res.ok) throw new Error("Failed to fetch roles");
+  if (!res.ok) throw new Error("Échec du chargement des rôles");
   const data = await res.json();
   return {
     roles: data.roles as AdminRole[],
@@ -614,7 +614,7 @@ export async function createAdminRole(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, description, permissions }),
   });
-  if (!res.ok) throw await readApiError(res, "Failed to create role");
+  if (!res.ok) throw await readApiError(res, "Échec de la création du rôle");
 }
 
 export async function updateAdminRolePermissions(
@@ -629,7 +629,7 @@ export async function updateAdminRolePermissions(
       body: JSON.stringify({ permissions }),
     },
   );
-  if (!res.ok) throw new Error("Failed to update role permissions");
+  if (!res.ok) throw new Error("Échec de la mise à jour des permissions du rôle");
   const data = await res.json();
   return data.permissions as string[];
 }
@@ -638,14 +638,14 @@ export async function deleteAdminRole(roleName: string): Promise<void> {
   const res = await apiFetch(`/api/admin/roles/${encodeURIComponent(roleName)}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error("Failed to delete role");
+  if (!res.ok) throw new Error("Échec de la suppression du rôle");
 }
 
 // ─── Extended Stats ──────────────────────────────────────────────────────────
 
 export async function fetchExtendedStats(): Promise<ExtendedStats> {
   const res = await apiFetch("/api/admin/stats/extended");
-  if (!res.ok) throw new Error("Failed to fetch extended stats");
+  if (!res.ok) throw new Error("Échec du chargement des statistiques avancées");
   return res.json() as Promise<ExtendedStats>;
 }
 
@@ -663,7 +663,7 @@ export async function fetchAuditLog(params?: {
   if (params?.limit) qs.set("limit", String(params.limit));
   if (params?.offset) qs.set("offset", String(params.offset));
   const res = await apiFetch(`/api/admin/audit-log?${qs.toString()}`);
-  if (!res.ok) throw new Error("Failed to fetch audit log");
+  if (!res.ok) throw new Error("Échec du chargement du journal d'audit");
   return res.json();
 }
 
@@ -675,26 +675,26 @@ export async function suspendUser(userId: string, suspended: boolean): Promise<v
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ suspended }),
   });
-  if (!res.ok) throw new Error("Failed to update user suspension");
+  if (!res.ok) throw new Error("Échec de la mise à jour de la suspension");
 }
 
 export async function deleteAdminUser(userId: string): Promise<void> {
   const res = await apiFetch(`/api/admin/users/${userId}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Failed to delete user");
+  if (!res.ok) throw new Error("Échec de la suppression de l'utilisateur");
 }
 
 // ─── Announcements ───────────────────────────────────────────────────────────
 
 export async function fetchAnnouncements(): Promise<Announcement[]> {
   const res = await apiFetch("/api/admin/announcements");
-  if (!res.ok) throw new Error("Failed to fetch announcements");
+  if (!res.ok) throw new Error("Échec du chargement des annonces");
   const data = await res.json();
   return data.announcements as Announcement[];
 }
 
 export async function fetchActiveAnnouncements(): Promise<Announcement[]> {
   const res = await apiFetch("/api/announcements/active");
-  if (!res.ok) throw new Error("Failed to fetch announcements");
+  if (!res.ok) throw new Error("Échec du chargement des annonces");
   const data = await res.json();
   return data.announcements as Announcement[];
 }
@@ -710,15 +710,15 @@ export async function createAnnouncement(data: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to create announcement");
+  if (!res.ok) throw new Error("Échec de la création de l'annonce");
 }
 
 export async function deleteAnnouncement(id: number): Promise<void> {
   const res = await apiFetch(`/api/admin/announcements/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Failed to delete announcement");
+  if (!res.ok) throw new Error("Échec de la suppression de l'annonce");
 }
 
 export async function toggleAnnouncement(id: number): Promise<void> {
   const res = await apiFetch(`/api/admin/announcements/${id}/toggle`, { method: "PUT" });
-  if (!res.ok) throw new Error("Failed to toggle announcement");
+  if (!res.ok) throw new Error("Échec du changement d'état de l'annonce");
 }

@@ -29,11 +29,11 @@ def verify_password(password: str, hashed: str) -> bool:
 
 def _validate_password(password: str) -> None:
     if len(password) < 8:
-        raise AuthError("Password must be at least 8 characters", 400)
+        raise AuthError("Le mot de passe doit contenir au moins 8 caractères", 400)
     if not any(c.isupper() for c in password):
-        raise AuthError("Password must contain at least one uppercase letter", 400)
+        raise AuthError("Le mot de passe doit contenir au moins une majuscule", 400)
     if not any(c.isdigit() for c in password):
-        raise AuthError("Password must contain at least one digit", 400)
+        raise AuthError("Le mot de passe doit contenir au moins un chiffre", 400)
 
 
 def register_user(email: str, name: str, password: str) -> UserRecord:
@@ -41,20 +41,20 @@ def register_user(email: str, name: str, password: str) -> UserRecord:
     name = name.strip()
 
     if not email or not name or not password:
-        raise AuthError("email, name, and password are required", 400)
+        raise AuthError("L'email, le nom et le mot de passe sont obligatoires", 400)
     _validate_password(password)
 
     if config.ALLOWED_EMAIL_DOMAINS:
         domain = email.split("@")[-1] if "@" in email else ""
         if domain not in config.ALLOWED_EMAIL_DOMAINS:
             raise AuthError(
-                f"Registration is restricted to: {', '.join(config.ALLOWED_EMAIL_DOMAINS)}", 403
+                f"L'inscription est limitée aux domaines suivants : {', '.join(config.ALLOWED_EMAIL_DOMAINS)}", 403
             )
 
     with database.get_db() as conn:
         existing = conn.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
         if existing:
-            raise AuthError("An account with this email already exists", 409)
+            raise AuthError("Un compte existe déjà avec cet email", 409)
 
         user_id = str(uuid.uuid4())
         now = time.time()
@@ -84,10 +84,10 @@ def authenticate_user(email: str, password: str) -> UserRecord:
         ).fetchone()
 
     if row is None or not verify_password(password, row["password_hash"]):
-        raise AuthError("Invalid email or password", 401)
+        raise AuthError("Email ou mot de passe invalide", 401)
         
     if row["is_suspended"]:
-        raise AuthError("Your account has been suspended. Contact an administrator.", 403)
+        raise AuthError("Votre compte a été suspendu. Contactez un administrateur.", 403)
 
     now = time.time()
     with database.get_db() as conn:
@@ -133,13 +133,13 @@ def decode_jwt(token: str) -> dict:
             "SELECT 1 FROM revoked_tokens WHERE token_hash=?", (_token_hash(token),)
         ).fetchone()
     if row:
-        raise AuthError("Token has been revoked", 401)
+        raise AuthError("Le jeton a été révoqué", 401)
     try:
         return jwt.decode(token, config.JWT_SECRET, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
-        raise AuthError("Token expired", 401)
+        raise AuthError("Le jeton a expiré", 401)
     except jwt.InvalidTokenError as e:
-        raise AuthError(f"Invalid token: {e}", 401)
+        raise AuthError(f"Jeton invalide : {e}", 401)
 
 
 def get_user_by_id(user_id: str) -> UserRecord | None:
@@ -156,11 +156,11 @@ def update_user_profile(user_id: str, name: str | None, avatar_url: str | None) 
     with database.get_db() as conn:
         user = get_user_by_id(user_id)
         if not user:
-            raise AuthError("User not found", 404)
+            raise AuthError("Utilisateur introuvable", 404)
         
         new_name = name.strip() if isinstance(name, str) else user.name
         if not new_name:
-            raise AuthError("Display name cannot be empty", 400)
+            raise AuthError("Le nom affiché ne peut pas être vide", 400)
         new_avatar_url = avatar_url if avatar_url is not None else user.avatar_url
         
         conn.execute(
@@ -175,10 +175,10 @@ def change_password(user_id: str, current_password: str, new_password: str) -> N
     with database.get_db() as conn:
         row = conn.execute("SELECT password_hash FROM users WHERE id=?", (user_id,)).fetchone()
         if row is None:
-            raise AuthError("User not found", 404)
+            raise AuthError("Utilisateur introuvable", 404)
         
         if not verify_password(current_password, row["password_hash"]):
-            raise AuthError("Incorrect current password", 400)
+            raise AuthError("Mot de passe actuel incorrect", 400)
             
         _validate_password(new_password)
         new_hash = hash_password(new_password)

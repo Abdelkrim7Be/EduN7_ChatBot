@@ -11,10 +11,15 @@ interface Props {
 
 const BADGE_COLORS: Record<string, string> = {
   Free: "text-accent border-accent/30 bg-accent/10",
+  Gratuit: "text-accent border-accent/30 bg-accent/10",
   Fastest: "text-accent border-accent/30 bg-accent/10",
+  "Le plus rapide": "text-accent border-accent/30 bg-accent/10",
+  Rapide: "text-accent border-accent/30 bg-accent/10",
   Powerful: "text-white border-border-heavy bg-surface-dim",
+  Puissant: "text-white border-border-heavy bg-surface-dim",
   Standard: "text-gray-400 border-border-subtle bg-black",
   Private: "text-gray-300 border-border-heavy bg-surface-dim",
+  Privé: "text-gray-300 border-border-heavy bg-surface-dim",
   Auto: "text-accent border-accent/30 bg-accent/10",
 };
 
@@ -28,6 +33,22 @@ const PROVIDER_LABELS: Record<string, string> = {
   openrouter: "OR",
   cerebras: "CB",
   auto: "AU",
+};
+
+const BADGE_LABELS: Record<string, string> = {
+  Free: "Gratuit",
+  Fastest: "Le plus rapide",
+  Powerful: "Puissant",
+  Standard: "Standard",
+  Private: "Privé",
+  Auto: "Auto",
+};
+
+const MODEL_DESCRIPTION_LABELS: Record<string, string> = {
+  "Fastest · Lightweight": "Le plus rapide · Léger",
+  "High quality · Fast": "Haute qualité · Rapide",
+  "Agentic · Tool use": "Agentique · Utilisation d'outils",
+  "Agentic · Fastest": "Agentique · Le plus rapide",
 };
 
 export function ModelSelector({
@@ -141,7 +162,7 @@ export function ModelSelector({
                         "bg-black text-gray-500 border-border-subtle"
                       }`}
                     >
-                      {provider.badge}
+                      {BADGE_LABELS[provider.badge] ?? provider.badge}
                     </span>
                   </div>
                   <div className="space-y-0.5">
@@ -172,7 +193,7 @@ export function ModelSelector({
                               {m.name}
                             </p>
                             <p className="text-xs text-gray-500 truncate">
-                              {m.description}
+                              {MODEL_DESCRIPTION_LABELS[m.description] ?? m.description}
                             </p>
                           </div>
                           {isActive && (

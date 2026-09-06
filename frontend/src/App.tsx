@@ -188,7 +188,7 @@ function ChatArea({
       setSelection([]);
       await refreshConvos();
     } catch (e) {
-      console.error("Failed to create conversation", e);
+      console.error("Échec de la création de la conversation", e);
     }
   }
 
@@ -221,7 +221,7 @@ function ChatArea({
   function handleExportConversation() {
     const conv = conversations.find((c) => c.session_id === sessionId);
     const title = conv?.title ?? "Conversation";
-    const date = new Date().toLocaleDateString("en-US", {
+    const date = new Date().toLocaleDateString("fr-FR", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -231,13 +231,13 @@ function ChatArea({
     const lines: string[] = [
       `# ${title}`,
       "",
-      `*Exported on ${date}*`,
+      `*Exporté le ${date}*`,
       "",
       "---",
       "",
     ];
     for (const msg of messages) {
-      lines.push(msg.role === "user" ? "**You**" : "**ENSET AI**");
+      lines.push(msg.role === "user" ? "**Vous**" : "**ENSET AI**");
       lines.push("");
       lines.push(msg.content);
       lines.push("");
@@ -363,9 +363,9 @@ function ChatArea({
           suggestions={
             messages.length > 0 && selectedDocIds.size > 0
               ? [
-                  { label: "Summarize", prompt: "Can you provide a detailed summary of the attached document(s)?" },
-                  { label: "Key Concepts", prompt: "What are the most important concepts discussed in these documents?" },
-                  { label: "Generate Quiz", prompt: "Create a 5-question multiple choice quiz based on these documents." },
+                  { label: "Résumer", prompt: "Peux-tu fournir un résumé détaillé des documents joints ?" },
+                  { label: "Concepts clés", prompt: "Quels sont les concepts les plus importants abordés dans ces documents ?" },
+                  { label: "Générer un quiz", prompt: "Crée un quiz à choix multiples de 5 questions basé sur ces documents." },
                 ]
               : undefined
           }
