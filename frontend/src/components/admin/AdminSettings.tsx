@@ -274,8 +274,8 @@ function SettingRow({
       await updateSetting(setting.key, draft);
       onSaved(setting.key, draft);
       toast(`${LABELS[setting.key] ?? setting.label} updated`, "success");
-    } catch {
-      toast("Failed to save setting", "error");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Failed to save setting", "error");
     } finally {
       setSaving(false);
     }
@@ -405,6 +405,7 @@ export function AdminSettings() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [savingAll, setSavingAll] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -434,6 +435,34 @@ export function AdminSettings() {
     setDraftValues((prev) => ({ ...prev, [key]: value }));
   }
 
+  const dirtySettings = useMemo(
+    () => settings.filter((setting) => (draftValues[setting.key] ?? setting.value) !== setting.value),
+    [draftValues, settings],
+  );
+
+  async function handleSaveAll() {
+    if (dirtySettings.length === 0 || savingAll) return;
+    setSavingAll(true);
+    try {
+      for (const setting of dirtySettings) {
+        await updateSetting(setting.key, draftValues[setting.key] ?? setting.value);
+      }
+      const updatedAt = Date.now() / 1000;
+      setSettings((prev) =>
+        prev.map((setting) =>
+          dirtySettings.some((dirty) => dirty.key === setting.key)
+            ? { ...setting, value: draftValues[setting.key] ?? setting.value, updated_at: updatedAt }
+            : setting,
+        ),
+      );
+      toast(`${dirtySettings.length} setting${dirtySettings.length === 1 ? "" : "s"} saved`, "success");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Failed to save settings", "error");
+    } finally {
+      setSavingAll(false);
+    }
+  }
+
   const grouped = useMemo(() => {
     return settings.reduce<Record<string, Setting[]>>((acc, setting) => {
       const group = GROUPS[setting.key] ?? "Other";
@@ -445,14 +474,25 @@ export function AdminSettings() {
   return (
     <div className="h-full overflow-y-auto p-6">
       <div className="mx-auto flex max-w-6xl flex-col gap-5">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-bold text-fg">
-            <Settings2 className="h-5 w-5 text-accent" />
-            Settings
-          </h1>
-          <p className="mt-1 text-sm text-fg-secondary">
-            Runtime controls applied without redeploying the platform
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="flex items-center gap-2 text-xl font-bold text-fg">
+              <Settings2 className="h-5 w-5 text-accent" />
+              Settings
+            </h1>
+            <p className="mt-1 text-sm text-fg-secondary">
+              Runtime controls applied without redeploying the platform
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void handleSaveAll()}
+            disabled={dirtySettings.length === 0 || savingAll}
+            className="inline-flex h-9 items-center gap-2 border border-white/20 bg-white px-3 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-2 disabled:text-fg-muted"
+          >
+            <Save className="h-3.5 w-3.5" />
+            {savingAll ? "Saving..." : `Save All${dirtySettings.length ? ` (${dirtySettings.length})` : ""}`}
+          </button>
         </div>
 
         {loading ? (

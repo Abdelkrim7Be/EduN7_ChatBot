@@ -429,7 +429,7 @@ export async function updateSetting(key: string, value: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ value }),
   });
-  if (!res.ok) throw new Error("Failed to update setting");
+  if (!res.ok) throw await readApiError(res, "Failed to update setting");
 }
 
 export async function fetchPublicAssistantModelOptions(): Promise<PublicAssistantModelOption[]> {
