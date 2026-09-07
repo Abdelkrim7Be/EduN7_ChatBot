@@ -338,7 +338,7 @@ def list_shared_documents():
             "page_count":          r["page_count"],
             "chunk_count":         r["chunk_count"],
             "scope":               r["scope"],
-            "category":            r["category"] or "Autres",
+            "category":            "Other" if r["category"] == "Autres" else (r["category"] or "Other"),
             "security_status":     security["status"],
             "security_verdict":    security["verdict"],
             "security_checked_at": security["checked_at"],

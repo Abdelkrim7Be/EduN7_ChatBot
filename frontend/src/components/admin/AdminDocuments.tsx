@@ -15,10 +15,21 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Projets":     "bg-purple-500/10 text-purple-400",
   "Corrections": "bg-success/10 text-success",
   "Autres":      "bg-surface-3 text-fg-muted",
+  "Other":       "bg-surface-3 text-fg-muted",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  "Cours": "Courses",
+  "TD / TP": "Exercises / Labs",
+  "Examens": "Exams",
+  "Projets": "Projects",
+  "Corrections": "Corrections",
+  "Autres": "Other",
+  "Other": "Other",
 };
 
 function formatDate(epochSeconds: number): string {
-  return new Date(epochSeconds * 1000).toLocaleDateString("fr-FR", {
+  return new Date(epochSeconds * 1000).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -32,27 +43,27 @@ function securityBadge(doc: AdminDocument) {
   if (status === "clean") {
     return {
       icon: <ShieldCheck className="h-3.5 w-3.5" />,
-      label: "Vérifié",
+      label: "Verified",
       className: "border-accent/25 bg-accent/10 text-accent",
     };
   }
   if (status === "warning") {
     return {
       icon: <ShieldAlert className="h-3.5 w-3.5" />,
-      label: "Risque",
+      label: "Risk",
       className: "border-warning/30 bg-warning/10 text-warning",
     };
   }
   if (status === "blocked" || status === "failed") {
     return {
       icon: <ShieldX className="h-3.5 w-3.5" />,
-      label: "Bloqué",
+      label: "Blocked",
       className: "border-danger/30 bg-danger/10 text-danger",
     };
   }
   return {
     icon: <ShieldAlert className="h-3.5 w-3.5" />,
-    label: "En attente",
+    label: "Pending",
     className: "border-hairline bg-surface-2 text-fg-muted",
   };
 }
@@ -88,7 +99,7 @@ export function AdminDocuments() {
         setScopeCounts(scope_counts);
         setDocs(pageRows);
       })
-      .catch(() => toast("Erreur lors du chargement des documents", "error"))
+      .catch(() => toast("Failed to load documents", "error"))
       .finally(() => setLoading(false));
   }, [debouncedSearch, scopeFilter, toast]);
 
@@ -107,9 +118,9 @@ export function AdminDocuments() {
     try {
       await deleteAdminDocument(docId);
       setDocs((prev) => prev.filter((d) => d.doc_id !== docId));
-      toast("Document supprimé", "success");
+      toast("Document deleted", "success");
     } catch {
-      toast("Erreur lors de la suppression", "error");
+      toast("Failed to delete document", "error");
     } finally {
       setDeleting(null);
       setConfirmDelete(null);
@@ -122,7 +133,7 @@ export function AdminDocuments() {
         <h1 className="text-xl font-bold text-fg">Documents</h1>
         <p className="text-sm text-fg-secondary mt-0.5">
           {total} document{total !== 1 ? "s" : ""} — {scopeCounts.shared}{" "}
-          partagé{scopeCounts.shared !== 1 ? "s" : ""}, {scopeCounts.private} privé{scopeCounts.private !== 1 ? "s" : ""}
+          shared, {scopeCounts.private} private
         </p>
       </div>
 
@@ -132,7 +143,7 @@ export function AdminDocuments() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
           <input
             type="text"
-            placeholder="Nom, auteur ou email..."
+            placeholder="Name, author, or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full border border-hairline bg-surface-1 rounded-xl pl-9 pr-3 py-2.5 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-accent/30 transition-shadow"
@@ -149,7 +160,7 @@ export function AdminDocuments() {
                   : "text-fg-secondary hover:text-fg"
               }`}
             >
-              {s === "all" ? "Tous" : s === "shared" ? "Partagés" : "Privés"}{" "}
+              {s === "all" ? "All" : s === "shared" ? "Shared" : "Private"}{" "}
               <span className="text-fg-muted">({scopeCounts[s]})</span>
             </button>
           ))}
@@ -176,19 +187,19 @@ export function AdminDocuments() {
               <thead>
                 <tr className="bg-surface-2/60 border-b border-hairline">
                   <th className="text-left px-5 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider">Document</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider hidden md:table-cell">Catégorie</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider hidden md:table-cell">Category</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider">Scope</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider">Sécurité</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider hidden lg:table-cell">Auteur</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider hidden md:table-cell">Taille</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider hidden lg:table-cell">Ajouté</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider">Security</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider hidden lg:table-cell">Author</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider hidden md:table-cell">Size</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-fg-muted uppercase tracking-wider hidden lg:table-cell">Added</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-hairline">
                 {docs.map((doc) => {
                   const badge = securityBadge(doc);
-                  const category = doc.category || "Autres";
+                  const category = doc.category || "Other";
                   return (
                     <tr key={doc.doc_id} className="hover:bg-surface-2/40 transition-colors group">
                       <td className="px-5 py-3.5">
@@ -205,8 +216,8 @@ export function AdminDocuments() {
                         </div>
                       </td>
                       <td className="px-4 py-3.5 hidden md:table-cell">
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[category] ?? CATEGORY_COLORS["Autres"]}`}>
-                          {category}
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[category] ?? CATEGORY_COLORS.Other}`}>
+                          {CATEGORY_LABELS[category] ?? category}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
@@ -215,12 +226,12 @@ export function AdminDocuments() {
                             ? "bg-gold/10 text-gold border-gold/30"
                             : "bg-surface-3 text-fg-muted border-hairline"
                         }`}>
-                          {doc.scope === "shared" ? "Partagé" : "Privé"}
+                          {doc.scope === "shared" ? "Shared" : "Private"}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
                         <span
-                          title={doc.security_verdict || "Scan de sécurité en attente"}
+                          title={doc.security_verdict || "Security scan pending"}
                           className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-xs font-semibold ${badge.className}`}
                         >
                           {badge.icon}
@@ -248,7 +259,7 @@ export function AdminDocuments() {
                         <div className="flex items-center justify-end gap-1.5">
                         <button
                             onClick={() => setPreview(doc)}
-                            title="Visualiser"
+                            title="Preview"
                             className="p-1.5 text-fg-muted hover:text-fg hover:bg-white/10 rounded-lg transition-colors"
                         >
                             <Eye className="w-4 h-4" />
@@ -260,19 +271,19 @@ export function AdminDocuments() {
                                 disabled={deleting === doc.doc_id}
                                 className="text-xs font-semibold text-danger hover:text-danger/80 disabled:opacity-50"
                               >
-                                {deleting === doc.doc_id ? "..." : "Confirmer"}
+                                {deleting === doc.doc_id ? "..." : "Confirm"}
                               </button>
                               <button
                                 onClick={() => setConfirmDelete(null)}
                                 className="text-xs text-fg-secondary hover:text-fg"
                               >
-                                Annuler
+                                Cancel
                               </button>
                             </div>
                           ) : (
                             <button
                               onClick={() => setConfirmDelete(doc.doc_id)}
-                              title="Supprimer"
+                              title="Delete"
                               className="p-1.5 text-fg-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-all"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -286,7 +297,7 @@ export function AdminDocuments() {
                 {docs.length === 0 && (
                   <tr>
                     <td colSpan={8} className="px-5 py-12 text-center text-sm text-fg-muted">
-                      Aucun document trouvé
+                      No documents found
                     </td>
                   </tr>
                 )}

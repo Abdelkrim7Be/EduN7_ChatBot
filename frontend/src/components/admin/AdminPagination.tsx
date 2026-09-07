@@ -43,7 +43,7 @@ export function AdminPagination({ page, pageSize, total, loading, onPageChange }
   if (total <= pageSize && totalPages === 1) {
     return (
       <div className="sticky bottom-0 z-10 border-t border-hairline bg-surface-1/95 px-4 py-3 text-xs text-fg-muted backdrop-blur">
-        {total} résultat{total !== 1 ? "s" : ""}
+        {total} result{total !== 1 ? "s" : ""}
       </div>
     );
   }
@@ -60,7 +60,7 @@ export function AdminPagination({ page, pageSize, total, loading, onPageChange }
           onClick={() => onPageChange(page - 1)}
           disabled={loading || page <= 1}
           className="flex h-8 w-8 items-center justify-center border border-hairline text-fg-secondary hover:text-fg disabled:cursor-not-allowed disabled:text-fg-muted"
-          title="Page précédente"
+          title="Previous page"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -92,7 +92,7 @@ export function AdminPagination({ page, pageSize, total, loading, onPageChange }
           onClick={() => onPageChange(page + 1)}
           disabled={loading || page >= totalPages}
           className="flex h-8 w-8 items-center justify-center border border-hairline text-fg-secondary hover:text-fg disabled:cursor-not-allowed disabled:text-fg-muted"
-          title="Page suivante"
+          title="Next page"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

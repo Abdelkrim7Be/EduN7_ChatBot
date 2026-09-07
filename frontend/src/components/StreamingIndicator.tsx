@@ -4,7 +4,7 @@ export function StreamingIndicator() {
   return (
     <span
       className="inline-flex items-center gap-1 py-1"
-      aria-label="Génération en cours"
+      aria-label="Generating response"
       role="status"
     >
       {[0, 1, 2].map((i) => (
@@ -19,13 +19,13 @@ export function StreamingIndicator() {
 }
 
 const VERBS = [
-  "Analyse du contexte",
-  "Synthèse des données",
-  "Modélisation de la réponse",
-  "Structuration du raisonnement",
-  "Compilation des résultats",
-  "Génération de la réponse",
-  "Évaluation des paramètres"
+  "Analyzing context",
+  "Synthesizing data",
+  "Modeling the response",
+  "Structuring the reasoning",
+  "Compiling results",
+  "Generating the response",
+  "Evaluating parameters"
 ];
 
 export function ThinkingStatus() {
