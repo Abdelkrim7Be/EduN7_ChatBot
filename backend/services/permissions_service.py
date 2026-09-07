@@ -105,6 +105,7 @@ ENDPOINT_PERMISSIONS = {
     "admin.get_settings": "admin.settings.manage",
     "admin.update_setting": "admin.settings.manage",
     "admin.public_assistant_model_options": "admin.settings.manage",
+    "admin.public_assistant_preview": "admin.settings.manage",
     "admin.platform_health": "admin.health.view",
     "admin.get_audit_log": "admin.audit.view",
     "admin.list_announcements": "admin.announcements.manage",

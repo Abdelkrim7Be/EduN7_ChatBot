@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Info, Save, Settings2 } from "lucide-react";
+import { Bot, Info, Loader2, Save, Send, Settings2 } from "lucide-react";
 import type { Provider } from "../../types";
 import type { Setting, AdminRole, PublicAssistantModelOption } from "../../api/client";
 import {
@@ -7,6 +7,7 @@ import {
   fetchProviders,
   fetchPublicAssistantModelOptions,
   fetchSettings,
+  previewPublicAssistant,
   updateSetting,
 } from "../../api/client";
 import { useToast } from "../ToastProvider";
@@ -243,29 +244,28 @@ function SettingControl({
 
 function SettingRow({
   setting,
+  draft,
   roles,
   publicAssistantOptions,
   providers,
   settingValues,
+  onDraftChange,
   onSaved,
 }: {
   setting: Setting;
+  draft: string;
   roles: AdminRole[];
   publicAssistantOptions: PublicAssistantModelOption[];
   providers: Provider[];
   settingValues: Record<string, string>;
+  onDraftChange: (key: string, value: string) => void;
   onSaved: (key: string, value: string) => void;
 }) {
   const { toast } = useToast();
-  const [draft, setDraft] = useState(setting.value);
   const [saving, setSaving] = useState(false);
   const dirty = draft !== setting.value;
   const isWide = setting.key === "system_prompt" || setting.kind === "textarea";
   const displayLabel = LABELS[setting.key] ?? setting.label;
-
-  useEffect(() => {
-    setDraft(setting.value);
-  }, [setting.value]);
 
   async function handleSave() {
     if (!dirty) return;
@@ -312,9 +312,88 @@ function SettingRow({
         providers={providers}
         settingValues={settingValues}
         label={displayLabel}
-        onChange={setDraft}
+        onChange={(value) => onDraftChange(setting.key, value)}
       />
     </div>
+  );
+}
+
+function LandingAssistantPreview({
+  settings,
+}: {
+  settings: Record<string, string>;
+}) {
+  const [input, setInput] = useState("What is ENSET AI?");
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  async function runPreview() {
+    const message = input.trim();
+    if (!message || loading) return;
+    setAnswer("");
+    setLoading(true);
+    try {
+      let full = "";
+      for await (const event of previewPublicAssistant(message, settings)) {
+        if (event.type === "token" && event.content) {
+          full += event.content;
+          setAnswer(full);
+        } else if (event.type === "error" && event.content) {
+          full = event.content;
+          setAnswer(event.content);
+        }
+      }
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Preview failed", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const contextReady = Boolean(settings.public_assistant_context?.trim());
+
+  return (
+    <section className="border border-hairline bg-surface-1 p-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="flex items-center gap-2 text-sm font-bold text-fg">
+            <Bot className="h-4 w-4 text-accent" />
+            Landing Assistant Preview
+          </h2>
+          <p className="mt-1 text-xs leading-relaxed text-fg-secondary">
+            Test the current draft settings before enabling the public widget.
+          </p>
+        </div>
+        <span className={`border px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${
+          contextReady ? "border-success/25 bg-success/10 text-success" : "border-warning/30 bg-warning/10 text-warning"
+        }`}>
+          {contextReady ? "Context ready" : "Context required"}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-3 md:flex-row">
+        <input
+          value={input}
+          onChange={(event) => setInput(event.target.value.slice(0, 1000))}
+          className="h-10 flex-1 border border-hairline bg-surface-2 px-3 text-sm text-fg outline-none focus:border-white/50"
+          placeholder="Ask a public visitor question..."
+        />
+        <button
+          type="button"
+          onClick={() => void runPreview()}
+          disabled={loading || !input.trim() || !contextReady}
+          className="inline-flex h-10 items-center justify-center gap-2 border border-white/20 bg-white px-4 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-2 disabled:text-fg-muted"
+        >
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+          Preview
+        </button>
+      </div>
+
+      <div className="mt-3 min-h-20 border border-hairline bg-black p-3 text-sm leading-relaxed text-fg-secondary">
+        {answer ? <p className="whitespace-pre-wrap">{answer}</p> : <p className="text-fg-muted">No preview response yet.</p>}
+      </div>
+    </section>
   );
 }
 
@@ -324,6 +403,7 @@ export function AdminSettings() {
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [publicAssistantOptions, setPublicAssistantOptions] = useState<PublicAssistantModelOption[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
+  const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -335,6 +415,7 @@ export function AdminSettings() {
     ])
       .then(([loadedSettings, roleData, modelOptions, loadedProviders]) => {
         setSettings(loadedSettings);
+        setDraftValues(Object.fromEntries(loadedSettings.map((setting) => [setting.key, setting.value])));
         setRoles(roleData.roles);
         setPublicAssistantOptions(modelOptions);
         setProviders(loadedProviders);
@@ -349,6 +430,10 @@ export function AdminSettings() {
     );
   }
 
+  function handleDraftChange(key: string, value: string) {
+    setDraftValues((prev) => ({ ...prev, [key]: value }));
+  }
+
   const grouped = useMemo(() => {
     return settings.reduce<Record<string, Setting[]>>((acc, setting) => {
       const group = GROUPS[setting.key] ?? "Other";
@@ -356,15 +441,6 @@ export function AdminSettings() {
       return acc;
     }, {});
   }, [settings]);
-
-  const settingValues = useMemo(
-    () =>
-      settings.reduce<Record<string, string>>((acc, setting) => {
-        acc[setting.key] = setting.value;
-        return acc;
-      }, {}),
-    [settings],
-  );
 
   return (
     <div className="h-full overflow-y-auto p-6">
@@ -398,15 +474,22 @@ export function AdminSettings() {
                     </p>
                   )}
                 </div>
+                {group === "Landing Assistant" && (
+                  <div className="mb-3">
+                    <LandingAssistantPreview settings={draftValues} />
+                  </div>
+                )}
                 <div className="grid gap-3 md:grid-cols-2">
                   {items.map((setting) => (
                     <SettingRow
                       key={setting.key}
                       setting={setting}
+                      draft={draftValues[setting.key] ?? setting.value}
                       roles={roles}
                       publicAssistantOptions={publicAssistantOptions}
                       providers={providers}
-                      settingValues={settingValues}
+                      settingValues={draftValues}
+                      onDraftChange={handleDraftChange}
                       onSaved={handleSaved}
                     />
                   ))}

@@ -2,7 +2,7 @@ import re
 import time
 from pathlib import Path
 
-from flask import Blueprint, g, jsonify, request, send_file
+from flask import Blueprint, Response, g, jsonify, request, send_file, stream_with_context
 
 import config
 import database
@@ -498,6 +498,50 @@ def get_settings():
 @require_role("admin")
 def public_assistant_model_options():
     return jsonify({"options": public_assistant_service.public_model_options()}), 200
+
+
+@admin_bp.post("/api/admin/public-assistant/preview")
+@require_auth
+@require_role("admin")
+def public_assistant_preview():
+    data = request.get_json(silent=True) or {}
+    message = str(data.get("message") or "").strip()
+    if len(message) > public_assistant_service.MAX_MESSAGE_CHARS:
+        return jsonify({"error": "The message is too long."}), 400
+
+    overrides = {}
+    raw_settings = data.get("settings") or {}
+    if isinstance(raw_settings, dict):
+        for key, value in raw_settings.items():
+            if not str(key).startswith("public_assistant_"):
+                continue
+            normalized, validation_error = _validate_setting_value(str(key), value)
+            if validation_error:
+                return jsonify({"error": f"{key}: {validation_error}"}), 400
+            overrides[str(key)] = normalized
+
+    history = public_assistant_service.sanitize_history(data.get("history"))
+
+    def generate():
+        yield from public_assistant_service.stream_response(
+            message,
+            history,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get("User-Agent"),
+            overrides=overrides,
+            require_enabled=False,
+            record_events=False,
+        )
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 def _health_item(name: str, status: str, detail: str = "") -> dict:

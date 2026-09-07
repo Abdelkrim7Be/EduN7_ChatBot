@@ -576,6 +576,57 @@ export async function* streamPublicAssistant(
   }
 }
 
+async function* streamEvents(res: Response): AsyncGenerator<StreamEvent> {
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error ?? `Stream request failed: ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const json = line.slice(6).trim();
+      if (!json) continue;
+      try {
+        yield JSON.parse(json) as StreamEvent;
+      } catch {
+        // ignore malformed stream events
+      }
+    }
+  }
+}
+
+export async function* previewPublicAssistant(
+  message: string,
+  settings: Record<string, string>,
+  history: PublicAssistantHistoryTurn[] = [],
+  signal?: AbortSignal,
+): AsyncGenerator<StreamEvent> {
+  const res = await fetch(`${BASE}/api/admin/public-assistant/preview`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...csrfHeaders("POST"),
+    },
+    body: JSON.stringify({ message, settings, history }),
+    signal,
+  });
+
+  yield* streamEvents(res);
+}
+
 export interface AdminRole {
   name: string;
   description: string;
