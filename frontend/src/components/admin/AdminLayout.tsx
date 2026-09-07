@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Settings,
   Shield,
+  Server,
   Users,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
@@ -28,6 +29,7 @@ const NAV: NavItem[] = [
   { to: "/admin/audit-log", label: "Audit Log", permission: "admin.audit.view", icon: <ClipboardList className="w-4 h-4" /> },
   { to: "/admin/announcements", label: "Announcements", permission: "admin.announcements.manage", icon: <Megaphone className="w-4 h-4" /> },
   { to: "/admin/ai-test",   label: "Test ENSET AI",   permission: "admin.ai.test", icon: <Bot className="w-4 h-4" /> },
+  { to: "/admin/health",    label: "Health",          permission: "admin.health.view", icon: <Server className="w-4 h-4" /> },
   { to: "/admin/settings",  label: "Settings",        permission: "admin.settings.manage", icon: <Settings className="w-4 h-4" /> },
 ];
 

@@ -9,6 +9,7 @@ import type {
   AdminDocument,
   AuditLogEntry,
   ExtendedStats,
+  PlatformHealth,
   Announcement,
 } from "../types";
 
@@ -647,6 +648,12 @@ export async function fetchExtendedStats(): Promise<ExtendedStats> {
   const res = await apiFetch("/api/admin/stats/extended");
   if (!res.ok) throw new Error("Failed to fetch extended stats");
   return res.json() as Promise<ExtendedStats>;
+}
+
+export async function fetchPlatformHealth(): Promise<PlatformHealth> {
+  const res = await apiFetch("/api/admin/platform-health");
+  if (!res.ok) throw new Error("Failed to fetch platform health");
+  return res.json() as Promise<PlatformHealth>;
 }
 
 // ─── Audit Log ───────────────────────────────────────────────────────────────

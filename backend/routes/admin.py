@@ -1,8 +1,10 @@
 import re
 import time
+from pathlib import Path
 
 from flask import Blueprint, g, jsonify, request, send_file
 
+import config
 import database
 from middleware.auth import require_auth, require_role
 from services import (
@@ -496,6 +498,88 @@ def get_settings():
 @require_role("admin")
 def public_assistant_model_options():
     return jsonify({"options": public_assistant_service.public_model_options()}), 200
+
+
+def _health_item(name: str, status: str, detail: str = "") -> dict:
+    return {"name": name, "status": status, "detail": detail}
+
+
+def _platform_health_items() -> list[dict]:
+    items = []
+    try:
+        with database.get_db() as conn:
+            conn.execute("SELECT 1").fetchone()
+        items.append(_health_item("Database", "ok", "Connection and query succeeded"))
+    except Exception as exc:
+        items.append(_health_item("Database", "error", str(exc)))
+
+    try:
+        if config.REDIS_URL:
+            import redis
+            redis.from_url(config.REDIS_URL, socket_connect_timeout=1, socket_timeout=1).ping()
+            items.append(_health_item("Rate limits", "ok", "Redis is reachable"))
+        else:
+            items.append(_health_item("Rate limits", "warning", "Using in-memory counters"))
+    except Exception as exc:
+        items.append(_health_item("Rate limits", "error", str(exc)))
+
+    try:
+        if config.DOCUMENT_STORAGE_BACKEND == "local":
+            path = Path(config.UPLOAD_DIR)
+            path.mkdir(parents=True, exist_ok=True)
+            items.append(_health_item("Document storage", "ok", f"Local path: {path}"))
+        elif config.DOCUMENT_STORAGE_BACKEND == "s3":
+            from services import document_storage
+            document_storage._s3_client().head_bucket(Bucket=config.S3_BUCKET)
+            items.append(_health_item("Document storage", "ok", f"S3 bucket: {config.S3_BUCKET}"))
+        else:
+            items.append(_health_item("Document storage", "error", f"Unsupported backend: {config.DOCUMENT_STORAGE_BACKEND}"))
+    except Exception as exc:
+        items.append(_health_item("Document storage", "error", str(exc)))
+
+    try:
+        if config.VECTOR_STORE_BACKEND == "chroma":
+            from services import vector_store_service
+            vector_store_service._chroma_client().heartbeat()
+            items.append(_health_item("Vector store", "ok", "Chroma is reachable"))
+        elif config.VECTOR_STORE_BACKEND == "qdrant":
+            from services import vector_store_service
+            vector_store_service._qdrant_client().get_collections()
+            items.append(_health_item("Vector store", "ok", "Qdrant is reachable"))
+        else:
+            items.append(_health_item("Vector store", "error", f"Unsupported backend: {config.VECTOR_STORE_BACKEND}"))
+    except Exception as exc:
+        items.append(_health_item("Vector store", "error", str(exc)))
+
+    providers = get_available_providers()
+    available = [provider for provider in providers if provider.get("available")]
+    items.append(_health_item(
+        "LLM providers",
+        "ok" if available else "warning",
+        f"{len(available)} of {len(providers)} configured",
+    ))
+
+    public_config = public_assistant_service.public_config()
+    items.append(_health_item(
+        "Landing assistant",
+        "ok" if public_config.get("enabled") else "warning",
+        "Enabled and ready" if public_config.get("enabled") else "Disabled or missing public context/model",
+    ))
+    return items
+
+
+@admin_bp.get("/api/admin/platform-health")
+@require_auth
+@require_role("admin")
+def platform_health():
+    items = _platform_health_items()
+    if any(item["status"] == "error" for item in items):
+        overall = "error"
+    elif any(item["status"] == "warning" for item in items):
+        overall = "warning"
+    else:
+        overall = "ok"
+    return jsonify({"overall": overall, "components": items, "checked_at": time.time()}), 200
 
 
 @admin_bp.put("/api/admin/settings/<key>")

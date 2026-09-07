@@ -26,6 +26,7 @@ import { AdminDocuments } from "./components/admin/AdminDocuments";
 import { AdminConversations } from "./components/admin/AdminConversations";
 import { AdminSettings } from "./components/admin/AdminSettings";
 import { AdminChatTest } from "./components/admin/AdminChatTest";
+import { AdminHealth } from "./components/admin/AdminHealth";
 import { AdminRoles } from "./components/admin/AdminRoles";
 import { AdminAuditLog } from "./components/admin/AdminAuditLog";
 import { AdminAnnouncements } from "./components/admin/AdminAnnouncements";
@@ -485,6 +486,7 @@ export default function App() {
       ["admin.audit.view", "/admin/audit-log"],
       ["admin.announcements.manage", "/admin/announcements"],
       ["admin.ai.test", "/admin/ai-test"],
+      ["admin.health.view", "/admin/health"],
       ["admin.settings.manage", "/admin/settings"],
     ].find(([permission]) => can(permission))?.[1] ?? "/admin/dashboard";
 
@@ -548,6 +550,7 @@ export default function App() {
               <Route path="conversations" element={can("admin.conversations.manage") ? <AdminConversations /> : <ForbiddenPage requiredRole="permission conversations" />} />
               <Route path="settings" element={can("admin.settings.manage") ? <AdminSettings /> : <ForbiddenPage requiredRole="settings permission" />} />
               <Route path="ai-test" element={can("admin.ai.test") ? <AdminChatTest /> : <ForbiddenPage requiredRole="permission test ENSET AI" />} />
+              <Route path="health" element={can("admin.health.view") ? <AdminHealth /> : <ForbiddenPage requiredRole="health permission" />} />
               <Route path="roles" element={can("admin.roles.manage") ? <AdminRoles /> : <ForbiddenPage requiredRole="roles permission" />} />
               <Route path="audit-log" element={can("admin.audit.view") ? <AdminAuditLog /> : <ForbiddenPage requiredRole="permission audit" />} />
               <Route path="announcements" element={can("admin.announcements.manage") ? <AdminAnnouncements /> : <ForbiddenPage requiredRole="announcements permission" />} />
