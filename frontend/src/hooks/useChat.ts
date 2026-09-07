@@ -3,7 +3,11 @@ import { nanoid } from "nanoid";
 import type { Message, Citation, SelectedModel } from "../types";
 import { streamChat, fetchConversationMessages } from "../api/client";
 
-export function useChat(sessionId: string, onError?: (msg: string) => void) {
+export function useChat(
+  sessionId: string,
+  onError?: (msg: string) => void,
+  onConversationLoaded?: (docIds: string[]) => void,
+) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   // Holds the in-flight request so stop()/regenerate() can cancel the stream.
@@ -16,8 +20,10 @@ export function useChat(sessionId: string, onError?: (msg: string) => void) {
     let cancelled = false;
 
     fetchConversationMessages(sessionId)
-      .then(({ messages: stored }) => {
-        if (cancelled || stored.length === 0) return;
+      .then(({ conversation, messages: stored }) => {
+        if (cancelled) return;
+        onConversationLoaded?.(conversation.doc_ids ?? []);
+        if (stored.length === 0) return;
         setMessages(
           stored.map((m) => ({
             id: nanoid(),
@@ -36,7 +42,7 @@ export function useChat(sessionId: string, onError?: (msg: string) => void) {
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, onConversationLoaded]);
 
   const loadMessages = useCallback((msgs: Message[]) => {
     controllerRef.current?.abort();

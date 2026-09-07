@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from "./hooks/useSession";
 import { useDocuments } from "./hooks/useDocuments";
@@ -88,6 +88,10 @@ function ChatArea({
     uploadError,
   } = useDocuments(sessionId);
   const { toast } = useToast();
+  const hydrateConversationDocs = useCallback(
+    (docIds: string[]) => setSelection(docIds),
+    [setSelection],
+  );
   const {
     messages,
     isStreaming,
@@ -96,7 +100,11 @@ function ChatArea({
     editMessage,
     stop,
     clearMessages,
-  } = useChat(sessionId, (msg) => toast(msg, "error"));
+  } = useChat(
+    sessionId,
+    (msg) => toast(msg, "error"),
+    hydrateConversationDocs,
+  );
   const { conversations, refresh: refreshConvos } = useConversations();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
@@ -264,7 +272,7 @@ function ChatArea({
     {
       key: "/",
       mod: false,
-      description: "Focuser input",
+      description: "Focus input",
       handler: () => messageInputRef.current?.focus(),
     },
     {
@@ -277,7 +285,7 @@ function ChatArea({
     {
       key: "e",
       mod: true,
-      description: "Exporter",
+      description: "Export",
       handler: handleExportConversation,
       allowInInput: true,
     },
@@ -484,7 +492,7 @@ export default function App() {
     {
       key: "?",
       mod: false,
-      description: "Raccourcis clavier",
+      description: "Keyboard shortcuts",
       handler: () => setCheatsheetOpen(true),
     },
   ]);
