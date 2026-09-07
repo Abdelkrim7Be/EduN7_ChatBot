@@ -20,15 +20,15 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
-  { to: "/admin/dashboard", label: "Tableau de bord", permission: "admin.dashboard.view", icon: <LayoutDashboard className="w-4 h-4" /> },
-  { to: "/admin/users",     label: "Utilisateurs",    permission: "admin.users.manage", icon: <Users className="w-4 h-4" /> },
-  { to: "/admin/roles",     label: "Rôles",           permission: "admin.roles.manage", icon: <Shield className="w-4 h-4" /> },
+  { to: "/admin/dashboard", label: "Dashboard", permission: "admin.dashboard.view", icon: <LayoutDashboard className="w-4 h-4" /> },
+  { to: "/admin/users",     label: "Users",     permission: "admin.users.manage", icon: <Users className="w-4 h-4" /> },
+  { to: "/admin/roles",     label: "Roles",     permission: "admin.roles.manage", icon: <Shield className="w-4 h-4" /> },
   { to: "/admin/documents", label: "Documents",       permission: "admin.documents.manage", icon: <FileText className="w-4 h-4" /> },
   { to: "/admin/conversations", label: "Conversations", permission: "admin.conversations.manage", icon: <MessageSquare className="w-4 h-4" /> },
-  { to: "/admin/audit-log", label: "Journal d'audit", permission: "admin.audit.view", icon: <ClipboardList className="w-4 h-4" /> },
-  { to: "/admin/announcements", label: "Annonces", permission: "admin.announcements.manage", icon: <Megaphone className="w-4 h-4" /> },
+  { to: "/admin/audit-log", label: "Audit Log", permission: "admin.audit.view", icon: <ClipboardList className="w-4 h-4" /> },
+  { to: "/admin/announcements", label: "Announcements", permission: "admin.announcements.manage", icon: <Megaphone className="w-4 h-4" /> },
   { to: "/admin/ai-test",   label: "Test ENSET AI",   permission: "admin.ai.test", icon: <Bot className="w-4 h-4" /> },
-  { to: "/admin/settings",  label: "Paramètres",      permission: "admin.settings.manage", icon: <Settings className="w-4 h-4" /> },
+  { to: "/admin/settings",  label: "Settings",        permission: "admin.settings.manage", icon: <Settings className="w-4 h-4" /> },
 ];
 
 export function AdminLayout() {

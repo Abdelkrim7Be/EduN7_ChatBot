@@ -21,7 +21,7 @@ interface Props {
 
 function relativeTime(ts: number): string {
   const delta = Date.now() / 1000 - ts;
-  if (delta < 60) return "À l'instant";
+  if (delta < 60) return "Just now";
   if (delta < 3600) return `il y a ${Math.floor(delta / 60)} min`;
   if (delta < 86400) return `il y a ${Math.floor(delta / 3600)} h`;
   return `il y a ${Math.floor(delta / 86400)} j`;
@@ -273,7 +273,7 @@ export function ConversationSidebar({
                     className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-surface-bright flex items-center gap-2"
                 >
                     <Home className="w-4 h-4" />
-                    Accueil
+                    Home
                 </button>
                 
                 <button
@@ -284,7 +284,7 @@ export function ConversationSidebar({
                     className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-surface-bright flex items-center gap-2"
                 >
                     <Settings className="w-4 h-4" />
-                    Paramètres
+                    Settings
                 </button>
                 
                 {(isRole("professor", "admin") || hasPermission("library.view")) && (
@@ -296,7 +296,7 @@ export function ConversationSidebar({
                       className={`w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-surface-bright flex items-center gap-2 ${isRole("admin") || hasPermission("admin.dashboard.view") ? "" : "border-b border-border-subtle"}`}
                   >
                       <Library className="w-4 h-4" />
-                      Bibliothèque
+                      Library
                   </button>
                 )}
                 
@@ -321,7 +321,7 @@ export function ConversationSidebar({
                     className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-surface-bright flex items-center gap-2 mt-1"
                 >
                     <LogOut className="w-4 h-4" />
-                    Déconnexion
+                    Sign Out
                 </button>
             </div>
         )}

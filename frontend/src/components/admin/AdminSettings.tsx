@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Info, Save, Settings2 } from "lucide-react";
+import type { Provider } from "../../types";
 import type { Setting, AdminRole, PublicAssistantModelOption } from "../../api/client";
 import {
   fetchAdminRoles,
+  fetchProviders,
   fetchPublicAssistantModelOptions,
   fetchSettings,
   updateSetting,
@@ -10,21 +12,25 @@ import {
 import { useToast } from "../ToastProvider";
 
 const GROUPS: Record<string, string> = {
-  max_upload_size_mb: "Limites",
-  max_docs_per_session: "Limites",
-  allow_registration: "Accès",
-  default_role: "Accès",
-  system_prompt: "IA",
-  public_assistant_enabled: "Assistant public",
-  public_assistant_context: "Assistant public",
-  public_assistant_instructions: "Assistant public",
-  public_assistant_greeting: "Assistant public",
-  public_assistant_placeholder: "Assistant public",
-  public_assistant_fallback_message: "Assistant public",
-  public_assistant_suggested_questions: "Assistant public",
-  public_assistant_provider: "Assistant public",
-  public_assistant_model: "Assistant public",
-  public_assistant_rate_limit_per_hour: "Assistant public",
+  max_upload_size_mb: "Limits",
+  max_docs_per_session: "Limits",
+  allow_registration: "Access",
+  default_role: "Access",
+  system_prompt: "AI",
+  model_mode_light: "Model Modes",
+  model_mode_flash: "Model Modes",
+  model_mode_normal: "Model Modes",
+  model_mode_complex: "Model Modes",
+  public_assistant_enabled: "Public Assistant",
+  public_assistant_context: "Public Assistant",
+  public_assistant_instructions: "Public Assistant",
+  public_assistant_greeting: "Public Assistant",
+  public_assistant_placeholder: "Public Assistant",
+  public_assistant_fallback_message: "Public Assistant",
+  public_assistant_suggested_questions: "Public Assistant",
+  public_assistant_provider: "Public Assistant",
+  public_assistant_model: "Public Assistant",
+  public_assistant_rate_limit_per_hour: "Public Assistant",
 };
 
 const LABELS: Record<string, string> = {
@@ -33,21 +39,25 @@ const LABELS: Record<string, string> = {
   allow_registration: "Allow Registration",
   default_role: "Default Role",
   system_prompt: "System Prompt",
-  public_assistant_enabled: "Assistant public activé",
-  public_assistant_context: "Contexte public",
+  model_mode_light: "Light",
+  model_mode_flash: "Flash",
+  model_mode_normal: "Normal",
+  model_mode_complex: "Complex",
+  public_assistant_enabled: "Public Assistant Enabled",
+  public_assistant_context: "Public Context",
   public_assistant_instructions: "Instructions",
-  public_assistant_greeting: "Message d'accueil",
-  public_assistant_placeholder: "Texte de saisie",
-  public_assistant_fallback_message: "Message de refus",
-  public_assistant_suggested_questions: "Questions suggérées",
-  public_assistant_provider: "Fournisseur public",
-  public_assistant_model: "Modèle public",
-  public_assistant_rate_limit_per_hour: "Limite horaire",
+  public_assistant_greeting: "Greeting",
+  public_assistant_placeholder: "Input Placeholder",
+  public_assistant_fallback_message: "Fallback Message",
+  public_assistant_suggested_questions: "Suggested Questions",
+  public_assistant_provider: "Public Provider",
+  public_assistant_model: "Public Model",
+  public_assistant_rate_limit_per_hour: "Hourly Limit",
 };
 
 function formatDate(ts: number | null): string {
-  if (!ts) return "Jamais modifié";
-  return new Date(ts * 1000).toLocaleDateString("fr-FR", {
+  if (!ts) return "Never updated";
+  return new Date(ts * 1000).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -61,6 +71,7 @@ function SettingControl({
   draft,
   roles,
   publicAssistantOptions,
+  providers,
   label,
   onChange,
 }: {
@@ -68,6 +79,7 @@ function SettingControl({
   draft: string;
   roles: AdminRole[];
   publicAssistantOptions: PublicAssistantModelOption[];
+  providers: Provider[];
   label: string;
   onChange: (value: string) => void;
 }) {
@@ -120,6 +132,32 @@ function SettingControl({
     );
   }
 
+  if (setting.key.startsWith("model_mode_")) {
+    const options = providers
+      .filter((provider) => provider.available)
+      .flatMap((provider) =>
+        provider.models.map((model) => ({
+          value: `${provider.id}:${model.id}`,
+          label: `${provider.name} / ${model.name}`,
+        })),
+      );
+
+    return (
+      <select
+        aria-label={label}
+        value={draft}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-full border border-hairline bg-surface-2 px-3 text-sm text-fg"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
   if (setting.key === "public_assistant_model") {
     return (
       <select
@@ -130,7 +168,7 @@ function SettingControl({
       >
         {publicAssistantOptions.map((option) => (
           <option key={`${option.provider}:${option.model}`} value={option.model}>
-            {option.label}{option.available ? "" : " (non configuré)"}
+            {option.label}{option.available ? "" : " (not configured)"}
           </option>
         ))}
       </select>
@@ -189,11 +227,13 @@ function SettingRow({
   setting,
   roles,
   publicAssistantOptions,
+  providers,
   onSaved,
 }: {
   setting: Setting;
   roles: AdminRole[];
   publicAssistantOptions: PublicAssistantModelOption[];
+  providers: Provider[];
   onSaved: (key: string, value: string) => void;
 }) {
   const { toast } = useToast();
@@ -213,9 +253,9 @@ function SettingRow({
     try {
       await updateSetting(setting.key, draft);
       onSaved(setting.key, draft);
-      toast(`${LABELS[setting.key] ?? setting.label} mis à jour`, "success");
+      toast(`${LABELS[setting.key] ?? setting.label} updated`, "success");
     } catch {
-      toast("Erreur lors de la sauvegarde", "error");
+      toast("Failed to save setting", "error");
     } finally {
       setSaving(false);
     }
@@ -227,7 +267,7 @@ function SettingRow({
         <div className="min-w-0">
           <p className="text-sm font-bold text-fg">{displayLabel}</p>
           <p className="mt-1 text-xs leading-relaxed text-fg-secondary">
-            {setting.description || "Paramètre runtime appliqué immédiatement."}
+            {setting.description || "Runtime setting applied immediately."}
           </p>
           <p className="mt-2 text-[10px] uppercase tracking-widest text-fg-muted">
             {formatDate(setting.updated_at)}
@@ -236,11 +276,11 @@ function SettingRow({
         <button
           onClick={handleSave}
           disabled={!dirty || saving}
-          aria-label={`Enregistrer ${displayLabel}`}
+          aria-label={`Save ${displayLabel}`}
           className="flex h-9 shrink-0 items-center gap-2 border border-white/20 bg-white px-3 text-xs font-bold text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-2 disabled:text-fg-muted"
         >
           <Save className="h-3.5 w-3.5" />
-          {saving ? "..." : "Enregistrer"}
+          {saving ? "..." : "Save"}
         </button>
       </div>
 
@@ -249,6 +289,7 @@ function SettingRow({
         draft={draft}
         roles={roles}
         publicAssistantOptions={publicAssistantOptions}
+        providers={providers}
         label={displayLabel}
         onChange={setDraft}
       />
@@ -261,6 +302,7 @@ export function AdminSettings() {
   const [settings, setSettings] = useState<Setting[]>([]);
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [publicAssistantOptions, setPublicAssistantOptions] = useState<PublicAssistantModelOption[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -268,13 +310,15 @@ export function AdminSettings() {
       fetchSettings(),
       fetchAdminRoles().catch(() => ({ roles: [] as AdminRole[], permissions: [] })),
       fetchPublicAssistantModelOptions().catch(() => [] as PublicAssistantModelOption[]),
+      fetchProviders().catch(() => [] as Provider[]),
     ])
-      .then(([loadedSettings, roleData, modelOptions]) => {
+      .then(([loadedSettings, roleData, modelOptions, loadedProviders]) => {
         setSettings(loadedSettings);
         setRoles(roleData.roles);
         setPublicAssistantOptions(modelOptions);
+        setProviders(loadedProviders);
       })
-      .catch(() => toast("Erreur chargement des paramètres", "error"))
+      .catch(() => toast("Failed to load settings", "error"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -286,7 +330,7 @@ export function AdminSettings() {
 
   const grouped = useMemo(() => {
     return settings.reduce<Record<string, Setting[]>>((acc, setting) => {
-      const group = GROUPS[setting.key] ?? "Autres";
+      const group = GROUPS[setting.key] ?? "Other";
       acc[group] = [...(acc[group] || []), setting];
       return acc;
     }, {});
@@ -298,10 +342,10 @@ export function AdminSettings() {
         <div>
           <h1 className="flex items-center gap-2 text-xl font-bold text-fg">
             <Settings2 className="h-5 w-5 text-accent" />
-            Paramètres
+            Settings
           </h1>
           <p className="mt-1 text-sm text-fg-secondary">
-            Contrôles runtime clairs, typés et appliqués sans redéploiement
+            Runtime controls applied without redeploying the platform
           </p>
         </div>
 
@@ -323,6 +367,7 @@ export function AdminSettings() {
                       setting={setting}
                       roles={roles}
                       publicAssistantOptions={publicAssistantOptions}
+                      providers={providers}
                       onSaved={handleSaved}
                     />
                   ))}
@@ -335,9 +380,9 @@ export function AdminSettings() {
         <div className="flex gap-3 border border-accent/20 bg-accent/5 p-4">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
           <p className="text-xs leading-relaxed text-fg-secondary">
-            <span className="font-semibold text-fg">Note :</span> ces valeurs sont stockées en base et
-            appliquées en temps réel. Les variables <code className="bg-surface-2 px-1 text-accent">.env</code>{" "}
-            servent seulement de valeurs initiales.
+            <span className="font-semibold text-fg">Note:</span> these values are stored in the database and
+            applied in real time. <code className="bg-surface-2 px-1 text-accent">.env</code>{" "}
+            variables are only initial defaults.
           </p>
         </div>
       </div>

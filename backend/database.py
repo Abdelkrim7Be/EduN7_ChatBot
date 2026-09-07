@@ -450,6 +450,34 @@ def init_db() -> None:
                 "Sustained anonymous assistant requests allowed per IP per hour.",
                 "number",
             ),
+            (
+                "model_mode_light",
+                "groq:openai/gpt-oss-20b",
+                "Light Model Mode",
+                "Provider/model used when users choose Light.",
+                "select",
+            ),
+            (
+                "model_mode_flash",
+                "cerebras:llama3.1-8b",
+                "Flash Model Mode",
+                "Provider/model used when users choose Flash.",
+                "select",
+            ),
+            (
+                "model_mode_normal",
+                "groq:openai/gpt-oss-120b",
+                "Normal Model Mode",
+                "Provider/model used when users choose Normal.",
+                "select",
+            ),
+            (
+                "model_mode_complex",
+                "sambanova:DeepSeek-V3.2",
+                "Complex Model Mode",
+                "Provider/model used when users choose Complex.",
+                "select",
+            ),
         ]
         for setting in default_settings:
             if len(setting) == 3:

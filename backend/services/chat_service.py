@@ -6,7 +6,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 import config
 from services import retrieval_service, session_service
-from services.llm_factory import AUTO_FALLBACK_ORDER, build_llm
+from services.llm_factory import AUTO_FALLBACK_ORDER, MODEL_MODE_DEFAULTS, build_llm, resolve_model_mode
 from services.retrieval_service import ChunkResult
 
 logger = logging.getLogger(__name__)
@@ -136,6 +136,9 @@ def stream_response(
 ) -> Generator[str, None, None]:
 
     session = session_service.get_or_create(session_id)
+    requested_mode = provider if provider in MODEL_MODE_DEFAULTS else None
+    if requested_mode:
+        provider, model = resolve_model_mode(requested_mode)
     is_auto = (provider == "auto")
     
     rewrite_provider = config.DEFAULT_PROVIDER if is_auto else provider
@@ -156,7 +159,6 @@ def stream_response(
     context = _build_context(chunks) if chunks else ""
     messages = _build_messages(session_id, message, context)
 
-    is_auto = provider == "auto"
     providers_to_try = AUTO_FALLBACK_ORDER if is_auto else [(provider, model)]
 
     for try_provider, try_model in providers_to_try:
@@ -195,7 +197,7 @@ def stream_response(
             return
 
         # Success
-        if is_auto:
+        if is_auto or requested_mode:
             yield f'data: {json.dumps({"type": "provider_used", "provider": try_provider, "model": try_model})}\n\n'
         citations_list = [c.to_dict() for c in chunks]
         yield f'data: {json.dumps({"type": "citations", "citations": citations_list})}\n\n'

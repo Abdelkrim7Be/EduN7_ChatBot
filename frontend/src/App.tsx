@@ -160,7 +160,7 @@ function ChatArea({
 
   function handleEditMessage(id: string, text: string) {
     if (!selected) {
-      toast("Choisissez un modèle avant de renvoyer le message modifié", "error");
+      toast("Choose a model mode before resending the edited message", "error");
       return;
     }
     editMessage(id, text, Array.from(selectedDocIds), selected);
@@ -194,7 +194,7 @@ function ChatArea({
 
   function handleClearConversation() {
     if (!messages.length) return;
-    const confirmed = window.confirm("Effacer cette conversation et démarrer une nouvelle session ?");
+    const confirmed = window.confirm("Clear this conversation and start a new session?");
     if (confirmed) void handleNewConversation(true);
   }
 
@@ -520,12 +520,12 @@ export default function App() {
 
         <Routes>
           {!canAccessAdmin && (
-            <Route path="/admin/*" element={<ForbiddenPage requiredRole="administrateur" />} />
+            <Route path="/admin/*" element={<ForbiddenPage requiredRole="administrator" />} />
           )}
           {!can("library.view") && !auth.isRole("professor") && (
             <Route
               path="/library"
-              element={<ForbiddenPage requiredRole="professeur ou administrateur" />}
+              element={<ForbiddenPage requiredRole="professor or administrator" />}
             />
           )}
           {canAccessAdmin && (
@@ -534,15 +534,15 @@ export default function App() {
                 index
                 element={<Navigate to={adminDefault} replace />}
               />
-              <Route path="dashboard" element={can("admin.dashboard.view") ? <AdminDashboard /> : <ForbiddenPage requiredRole="permission tableau de bord" />} />
-              <Route path="users" element={can("admin.users.manage") ? <AdminUsers /> : <ForbiddenPage requiredRole="permission utilisateurs" />} />
+              <Route path="dashboard" element={can("admin.dashboard.view") ? <AdminDashboard /> : <ForbiddenPage requiredRole="dashboard permission" />} />
+              <Route path="users" element={can("admin.users.manage") ? <AdminUsers /> : <ForbiddenPage requiredRole="users permission" />} />
               <Route path="documents" element={can("admin.documents.manage") ? <AdminDocuments /> : <ForbiddenPage requiredRole="permission documents" />} />
               <Route path="conversations" element={can("admin.conversations.manage") ? <AdminConversations /> : <ForbiddenPage requiredRole="permission conversations" />} />
-              <Route path="settings" element={can("admin.settings.manage") ? <AdminSettings /> : <ForbiddenPage requiredRole="permission paramètres" />} />
+              <Route path="settings" element={can("admin.settings.manage") ? <AdminSettings /> : <ForbiddenPage requiredRole="settings permission" />} />
               <Route path="ai-test" element={can("admin.ai.test") ? <AdminChatTest /> : <ForbiddenPage requiredRole="permission test ENSET AI" />} />
-              <Route path="roles" element={can("admin.roles.manage") ? <AdminRoles /> : <ForbiddenPage requiredRole="permission rôles" />} />
+              <Route path="roles" element={can("admin.roles.manage") ? <AdminRoles /> : <ForbiddenPage requiredRole="roles permission" />} />
               <Route path="audit-log" element={can("admin.audit.view") ? <AdminAuditLog /> : <ForbiddenPage requiredRole="permission audit" />} />
-              <Route path="announcements" element={can("admin.announcements.manage") ? <AdminAnnouncements /> : <ForbiddenPage requiredRole="permission annonces" />} />
+              <Route path="announcements" element={can("admin.announcements.manage") ? <AdminAnnouncements /> : <ForbiddenPage requiredRole="announcements permission" />} />
             </Route>
           )}
           {(can("library.view") || auth.isRole("professor")) && (

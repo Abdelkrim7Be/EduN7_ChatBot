@@ -11,6 +11,7 @@ from services import (
     document_storage,
     public_assistant_service,
 )
+from services.llm_factory import available_model_pairs, parse_model_pair
 from services.permissions_service import (
     PERMISSIONS,
     get_role_permissions,
@@ -95,6 +96,14 @@ def _validate_setting_value(key: str, value) -> tuple[str | None, str | None]:
         if model not in allowed:
             return None, "model is not allowed for the public assistant"
         return model, None
+
+    if key.startswith("model_mode_"):
+        pair = parse_model_pair(text.strip())
+        if pair is None:
+            return None, "value must use provider:model format"
+        if pair not in available_model_pairs():
+            return None, "model mode must reference a configured provider and available model"
+        return text.strip(), None
 
     return text, None
 
@@ -334,7 +343,7 @@ def list_shared_documents():
             "security_verdict":    security["verdict"],
             "security_checked_at": security["checked_at"],
             "uploaded_at":         r["uploaded_at"],
-            "uploader_name":       r["uploader_name"] or "Compte supprimé",
+            "uploader_name":       r["uploader_name"] or "Deleted account",
             "uploader_email":      r["uploader_email"] or "—",
         })
     scope_counts = {r["scope"]: r["c"] for r in scope_rows}

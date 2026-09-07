@@ -37,7 +37,7 @@ function StatCard({ label, value, icon, tone = "normal" }: StatCardProps) {
       </div>
       <div className="min-w-0">
         <p className="text-2xl font-bold leading-none text-fg tabular-nums">
-          {typeof value === "number" ? value.toLocaleString("fr-FR") : value}
+          {typeof value === "number" ? value.toLocaleString("en-US") : value}
         </p>
         <p className="mt-1.5 text-xs font-medium leading-tight text-fg-secondary">{label}</p>
       </div>
@@ -70,14 +70,14 @@ function MiniBarChart({
       <div className="mb-2 flex items-center justify-between gap-4">
         <div className="text-[10px] uppercase tracking-widest text-fg-muted">
           <span className="mr-2 text-sm font-bold text-fg tabular-nums">
-            {total.toLocaleString("fr-FR")}
+            {total.toLocaleString("en-US")}
           </span>
-          Messages sur 30 jours
+          Messages over 30 days
         </div>
         <div className="text-[10px] uppercase tracking-widest text-fg-muted">
-          Pic
+          Peak
           <span className="ml-2 text-sm font-bold text-accent tabular-nums">
-            {maxCount.toLocaleString("fr-FR")}
+            {maxCount.toLocaleString("en-US")}
           </span>
         </div>
       </div>
@@ -93,7 +93,7 @@ function MiniBarChart({
               <div
                 key={i}
                 className="flex h-full flex-1 items-end bg-surface-dim"
-                title={`Jour -${maxBars - 1 - i}: ${count} messages`}
+                title={`Day -${maxBars - 1 - i}: ${count} messages`}
               >
                 <div
                   className={`w-full transition-colors ${
@@ -108,8 +108,8 @@ function MiniBarChart({
       </div>
 
       <div className="mt-2 flex justify-between text-[10px] text-fg-muted">
-        <span>Il y a 30j</span>
-        <span>Aujourd'hui</span>
+        <span>30 days ago</span>
+        <span>Today</span>
       </div>
     </div>
   );
@@ -117,21 +117,21 @@ function MiniBarChart({
 
 function actionLabel(action: string): string {
   const map: Record<string, string> = {
-    "user.login": "Connexion",
-    "user.register": "Inscription",
-    "user.role_changed": "Rôle modifié",
-    "user.suspended": "Suspendu",
-    "user.unsuspended": "Réactivé",
-    "user.deleted": "Supprimé",
-    "document.deleted": "Document supprimé",
-    "setting.changed": "Paramètre modifié",
-    "conversation.deleted": "Conversation supprimée",
-    "announcement.created": "Annonce créée",
-    "announcement.deleted": "Annonce supprimée",
-    "announcement.toggled": "Annonce modifiée",
-    "role.created": "Rôle créé",
-    "role.deleted": "Rôle supprimé",
-    "role.permissions_changed": "Permissions modifiées",
+    "user.login": "Login",
+    "user.register": "Registration",
+    "user.role_changed": "Role changed",
+    "user.suspended": "Suspended",
+    "user.unsuspended": "Reactivated",
+    "user.deleted": "User deleted",
+    "document.deleted": "Document deleted",
+    "setting.changed": "Setting changed",
+    "conversation.deleted": "Conversation deleted",
+    "announcement.created": "Announcement created",
+    "announcement.deleted": "Announcement deleted",
+    "announcement.toggled": "Announcement updated",
+    "role.created": "Role created",
+    "role.deleted": "Role deleted",
+    "role.permissions_changed": "Permissions changed",
   };
   return map[action] || action;
 }
@@ -144,7 +144,7 @@ export function AdminDashboard() {
   useEffect(() => {
     fetchExtendedStats()
       .then(setStats)
-      .catch(() => toast("Erreur lors du chargement des statistiques", "error"))
+      .catch(() => toast("Failed to load statistics", "error"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -161,39 +161,39 @@ export function AdminDashboard() {
   const { totals: t, activity: a } = stats;
 
   return (
-    <div className="h-full overflow-hidden p-5 max-md:h-auto max-md:overflow-y-auto">
-      <div className="mx-auto grid h-full max-w-7xl grid-rows-[auto_auto_minmax(0,1.7fr)_minmax(0,0.9fr)] gap-3 max-md:flex max-md:h-auto max-md:flex-col">
+    <div className="min-h-full overflow-y-auto p-5">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3">
         <div>
-          <h1 className="text-xl font-bold text-fg">Tableau de bord</h1>
+          <h1 className="text-xl font-bold text-fg">Dashboard</h1>
           <p className="mt-1 text-sm text-fg-secondary">
-            Vue d'ensemble de la plateforme ENSET AI
+            ENSET AI platform overview
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-          <StatCard label="Utilisateurs" value={t.total_users} icon={<Users className="h-5 w-5" />} />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-7">
+          <StatCard label="Users" value={t.total_users} icon={<Users className="h-5 w-5" />} />
           <StatCard label="Conversations" value={t.total_conversations} icon={<MessageSquare className="h-5 w-5" />} />
           <StatCard label="Messages" value={t.total_messages} icon={<BarChart3 className="h-5 w-5" />} />
           <StatCard label="Documents" value={t.total_documents} icon={<FileText className="h-5 w-5" />} />
-          <StatCard label="Actifs aujourd'hui" value={a.active_users_today} icon={<UserCheck className="h-5 w-5" />} />
-          <StatCard label="Suspendus" value={t.suspended_users} icon={<Ban className="h-5 w-5" />} tone="danger" />
-          <StatCard label="Assistant public" value={stats.public_assistant.requests_today ?? 0} icon={<MessageCircle className="h-5 w-5" />} />
+          <StatCard label="Active Today" value={a.active_users_today} icon={<UserCheck className="h-5 w-5" />} />
+          <StatCard label="Suspended" value={t.suspended_users} icon={<Ban className="h-5 w-5" />} tone="danger" />
+          <StatCard label="Public Assistant" value={stats.public_assistant.requests_today ?? 0} icon={<MessageCircle className="h-5 w-5" />} />
         </div>
 
-        <div className="grid min-h-0 grid-cols-[minmax(320px,0.9fr)_minmax(420px,1.1fr)] gap-3 max-lg:grid-cols-1 max-md:min-h-[720px]">
-          <section className="flex min-h-0 flex-col border border-hairline bg-surface-1 p-4">
+        <div className="grid grid-cols-[minmax(320px,0.9fr)_minmax(420px,1.1fr)] gap-3 max-lg:grid-cols-1">
+          <section className="flex min-h-80 flex-col border border-hairline bg-surface-1 p-4">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-fg">
               <TrendingUp className="h-4 w-4 text-accent" />
-              Activité récente
+              Recent Activity
             </h2>
             <div className="grid flex-1 content-stretch">
               {[
-                { label: "Messages aujourd'hui", value: a.messages_today },
-                { label: "Messages cette semaine", value: a.messages_this_week },
-                { label: "Messages ce mois", value: a.messages_this_month },
-                { label: "Nouveaux utilisateurs (7j)", value: a.new_users_this_week },
-                { label: "Uploads cette semaine", value: a.uploads_this_week },
-                { label: "Documents partagés", value: t.shared_documents },
+                { label: "Messages today", value: a.messages_today },
+                { label: "Messages this week", value: a.messages_this_week },
+                { label: "Messages this month", value: a.messages_this_month },
+                { label: "New users (7d)", value: a.new_users_this_week },
+                { label: "Uploads this week", value: a.uploads_this_week },
+                { label: "Shared documents", value: t.shared_documents },
               ].map((row) => (
                 <div
                   key={row.label}
@@ -201,14 +201,14 @@ export function AdminDashboard() {
                 >
                   <span className="text-xs text-fg-secondary">{row.label}</span>
                   <span className="text-lg font-bold text-fg tabular-nums">
-                    {row.value.toLocaleString("fr-FR")}
+                    {row.value.toLocaleString("en-US")}
                   </span>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="flex min-h-0 flex-col border border-hairline bg-surface-1 p-4">
+          <section className="flex min-h-80 flex-col border border-hairline bg-surface-1 p-4">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-fg">
               <Activity className="h-4 w-4 text-accent" />
               Messages
@@ -217,9 +217,9 @@ export function AdminDashboard() {
           </section>
         </div>
 
-        <div className="grid min-h-0 grid-cols-4 gap-3 max-lg:grid-cols-2 max-md:grid-cols-1">
-          <section className="min-h-0 border border-hairline bg-surface-1 p-4">
-            <h2 className="mb-3 text-sm font-semibold text-fg">Rôles</h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <section className="min-h-44 border border-hairline bg-surface-1 p-4">
+            <h2 className="mb-3 text-sm font-semibold text-fg">Roles</h2>
             <div className="space-y-2">
               {Object.entries(stats.roles_breakdown).map(([role, count]) => (
                 <div key={role} className="flex items-center justify-between">
@@ -232,11 +232,11 @@ export function AdminDashboard() {
             </div>
           </section>
 
-          <section className="min-h-0 border border-hairline bg-surface-1 p-4">
-            <h2 className="mb-3 text-sm font-semibold text-fg">Top utilisateurs</h2>
+          <section className="min-h-44 border border-hairline bg-surface-1 p-4">
+            <h2 className="mb-3 text-sm font-semibold text-fg">Top Users</h2>
             <div className="space-y-2 overflow-hidden">
               {stats.top_users.length === 0 ? (
-                <p className="text-xs text-fg-muted">Pas encore de données</p>
+                <p className="text-xs text-fg-muted">No data yet</p>
               ) : (
                 stats.top_users.slice(0, 3).map((u, i) => (
                   <div key={u.email} className="flex items-center gap-2">
@@ -256,14 +256,14 @@ export function AdminDashboard() {
             </div>
           </section>
 
-          <section className="min-h-0 border border-hairline bg-surface-1 p-4">
+          <section className="min-h-44 border border-hairline bg-surface-1 p-4">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-fg">
               <Server className="h-3.5 w-3.5 text-fg-muted" />
               Providers LLM
             </h2>
             <div className="space-y-2">
               {stats.provider_usage.length === 0 ? (
-                <p className="text-xs text-fg-muted">Pas encore de données</p>
+                <p className="text-xs text-fg-muted">No data yet</p>
               ) : (
                 stats.provider_usage.slice(0, 4).map((p) => (
                   <div key={`${p.actual_provider}-${p.actual_model}`} className="flex items-center justify-between gap-3">
@@ -282,14 +282,14 @@ export function AdminDashboard() {
             </div>
           </section>
 
-          <section className="min-h-0 overflow-hidden border border-hairline bg-surface-1 p-4">
+          <section className="min-h-44 overflow-hidden border border-hairline bg-surface-1 p-4">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-fg">
               <Clock className="h-3.5 w-3.5 text-fg-muted" />
-              Activité récente
+              Recent Activity
             </h2>
             <div className="h-full min-h-0 space-y-2 overflow-y-auto pb-6 pr-1 custom-scrollbar">
               {stats.recent_activity.length === 0 ? (
-                <p className="text-xs text-fg-muted">Aucune activité enregistrée</p>
+                <p className="text-xs text-fg-muted">No activity recorded</p>
               ) : (
                 stats.recent_activity.map((item, i) => (
                   <div key={i} className="flex items-start gap-2">
@@ -297,8 +297,8 @@ export function AdminDashboard() {
                     <div className="min-w-0">
                       <p className="truncate text-xs text-fg">{actionLabel(item.action)}</p>
                       <p className="truncate text-[10px] text-fg-muted">
-                        {item.user_email || "Système"} ·{" "}
-                        {new Date(item.created_at * 1000).toLocaleTimeString("fr-FR", {
+                        {item.user_email || "System"} ·{" "}
+                        {new Date(item.created_at * 1000).toLocaleTimeString("en-US", {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
@@ -310,26 +310,26 @@ export function AdminDashboard() {
             </div>
           </section>
 
-          <section className="min-h-0 border border-hairline bg-surface-1 p-4">
+          <section className="min-h-44 border border-hairline bg-surface-1 p-4">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-fg">
               <MessageCircle className="h-3.5 w-3.5 text-fg-muted" />
-              Assistant public
+              Public Assistant
             </h2>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-fg-secondary">Total</span>
                 <span className="text-xs font-semibold text-fg tabular-nums">
-                  {(stats.public_assistant.total_requests ?? 0).toLocaleString("fr-FR")}
+                  {(stats.public_assistant.total_requests ?? 0).toLocaleString("en-US")}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-fg-secondary">Échecs</span>
+                <span className="text-xs text-fg-secondary">Failures</span>
                 <span className="text-xs font-semibold text-fg tabular-nums">
-                  {(stats.public_assistant.failed_requests ?? 0).toLocaleString("fr-FR")}
+                  {(stats.public_assistant.failed_requests ?? 0).toLocaleString("en-US")}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-fg-secondary">Latence moy.</span>
+                <span className="text-xs text-fg-secondary">Avg. latency</span>
                 <span className="text-xs font-semibold text-fg tabular-nums">
                   {stats.public_assistant.avg_latency_ms
                     ? `${Math.round(stats.public_assistant.avg_latency_ms)} ms`
@@ -338,7 +338,7 @@ export function AdminDashboard() {
               </div>
               <div className="pt-1">
                 {stats.public_assistant.outcomes.length === 0 ? (
-                  <p className="text-xs text-fg-muted">Pas encore de données</p>
+                  <p className="text-xs text-fg-muted">No data yet</p>
                 ) : (
                   stats.public_assistant.outcomes.slice(0, 3).map((row) => (
                     <div key={row.outcome} className="flex items-center justify-between">
