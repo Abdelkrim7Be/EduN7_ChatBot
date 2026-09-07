@@ -217,7 +217,7 @@ export function AdminDashboard() {
           </section>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 xl:grid-cols-5">
           <section className="min-h-44 border border-hairline bg-surface-1 p-4">
             <h2 className="mb-3 text-sm font-semibold text-fg">Roles</h2>
             <div className="space-y-2">
@@ -259,7 +259,7 @@ export function AdminDashboard() {
           <section className="min-h-44 border border-hairline bg-surface-1 p-4">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-fg">
               <Server className="h-3.5 w-3.5 text-fg-muted" />
-              Providers LLM
+              LLM Providers
             </h2>
             <div className="space-y-2">
               {stats.provider_usage.length === 0 ? (
@@ -287,7 +287,7 @@ export function AdminDashboard() {
               <Clock className="h-3.5 w-3.5 text-fg-muted" />
               Recent Activity
             </h2>
-            <div className="h-full min-h-0 space-y-2 overflow-y-auto pb-6 pr-1 custom-scrollbar">
+            <div className="max-h-36 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
               {stats.recent_activity.length === 0 ? (
                 <p className="text-xs text-fg-muted">No activity recorded</p>
               ) : (

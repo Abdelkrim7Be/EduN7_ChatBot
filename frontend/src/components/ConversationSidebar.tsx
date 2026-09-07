@@ -22,9 +22,9 @@ interface Props {
 function relativeTime(ts: number): string {
   const delta = Date.now() / 1000 - ts;
   if (delta < 60) return "Just now";
-  if (delta < 3600) return `il y a ${Math.floor(delta / 60)} min`;
-  if (delta < 86400) return `il y a ${Math.floor(delta / 3600)} h`;
-  return `il y a ${Math.floor(delta / 86400)} j`;
+  if (delta < 3600) return `${Math.floor(delta / 60)} min ago`;
+  if (delta < 86400) return `${Math.floor(delta / 3600)}h ago`;
+  return `${Math.floor(delta / 86400)}d ago`;
 }
 
 type Group = { label: string; items: Conversation[] };
@@ -32,17 +32,17 @@ type Group = { label: string; items: Conversation[] };
 function groupByRecency(conversations: Conversation[]): Group[] {
   const now = Date.now() / 1000;
   const buckets: Record<string, Conversation[]> = {
-    "Aujourd'hui": [],
-    "Hier": [],
+    "Today": [],
+    "Yesterday": [],
     "Last 7 Days": [],
-    "Plus ancien": [],
+    "Older": [],
   };
   for (const c of conversations) {
     const delta = now - c.last_active;
-    if (delta < 86400) buckets["Aujourd'hui"].push(c);
-    else if (delta < 172800) buckets["Hier"].push(c);
+    if (delta < 86400) buckets["Today"].push(c);
+    else if (delta < 172800) buckets["Yesterday"].push(c);
     else if (delta < 604800) buckets["Last 7 Days"].push(c);
-    else buckets["Plus ancien"].push(c);
+    else buckets["Older"].push(c);
   }
   return Object.entries(buckets)
     .filter(([, items]) => items.length > 0)
@@ -105,7 +105,7 @@ export function ConversationSidebar({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const displayName = user?.name?.trim() || user?.email?.split("@")[0] || "Utilisateur";
+  const displayName = user?.name?.trim() || user?.email?.split("@")[0] || "User";
 
   if (collapsed) {
     return (
@@ -120,7 +120,7 @@ export function ConversationSidebar({
         <button
           onClick={onNewConversation}
           className="p-2 text-gray-500 hover:text-white rounded-sm hover:bg-surface-dim transition-colors"
-          title="Nouvelle conversation"
+          title="New conversation"
         >
           <Plus className="w-5 h-5" />
         </button>
@@ -205,7 +205,7 @@ export function ConversationSidebar({
                             setRenamingId(c.session_id);
                             }}
                             className="p-1 text-gray-500 hover:text-white"
-                            title="Renommer"
+                            title="Rename"
                         >
                             <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -215,7 +215,7 @@ export function ConversationSidebar({
                             onDeleteConversation(c.session_id);
                             }}
                             className="p-1 text-gray-500 hover:text-red-400"
-                            title="Supprimer"
+                            title="Delete"
                         >
                             <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -244,7 +244,7 @@ export function ConversationSidebar({
           type="button"
           className="text-gray-600 cursor-pointer hover:text-white px-2 py-1"
           onClick={() => setShowMenu(!showMenu)}
-          aria-label="Ouvrir le menu utilisateur"
+          aria-label="Open user menu"
           aria-expanded={showMenu}
         >
           ⁝

@@ -493,6 +493,33 @@ def init_db() -> None:
                     (k, v, l, description, kind),
                 )
 
+        public_assistant_default_migrations = [
+            (
+                "public_assistant_greeting",
+                "Bonjour, je suis l'assistant public ENSET AI. Je peux répondre aux questions couvertes par les informations publiques configurées par l'administration.",
+                "Hi, I am the ENSET AI public assistant. I can answer questions covered by the public information approved by the administration.",
+            ),
+            (
+                "public_assistant_placeholder",
+                "Posez une question sur ENSET AI...",
+                "Ask a question about ENSET AI...",
+            ),
+            (
+                "public_assistant_placeholder",
+                "Question publique...",
+                "Public question...",
+            ),
+            (
+                "public_assistant_fallback_message",
+                "Je n'ai pas assez d'informations dans le contexte public ENSET AI pour répondre à cette question. Vous pouvez vous connecter pour utiliser l'assistant complet ou contacter l'administration pour plus de détails.",
+                "I do not have enough information in the ENSET AI public context to answer that question. You can sign in to use the full assistant or contact the administration for more details.",
+            ),
+        ]
+        for key, old_value, new_value in public_assistant_default_migrations:
+            conn.execute(
+                "UPDATE settings SET value=? WHERE key=? AND value=?",
+                (new_value, key, old_value),
+            )
 
         # Migrate: replace the old placeholder system prompt with the real
         # RAG prompt (the placeholder lost the citation instructions).

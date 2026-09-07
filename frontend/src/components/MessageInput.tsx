@@ -72,7 +72,7 @@ export function MessageInput({
             onClick={onAttach}
             type="button"
             className="p-3 text-gray-500 hover:text-white transition-colors shrink-0"
-            title="Joindre un fichier"
+            title="Attach file"
           >
             <Paperclip className="w-5 h-5" />
           </button>
@@ -87,7 +87,7 @@ export function MessageInput({
                 handleSend();
               }
             }}
-            placeholder="Saisissez votre question ici..."
+            placeholder="Type your question here..."
             className="flex-1 max-h-[200px] bg-transparent text-white placeholder-gray-600 outline-none resize-none py-3 px-2 font-mono text-sm min-h-[44px]"
             rows={1}
             disabled={disabled && !isStreaming}
@@ -97,7 +97,7 @@ export function MessageInput({
             <button
               onClick={onStop}
               className="p-3 text-white hover:text-red-400 transition-colors shrink-0"
-              title="Arrêter"
+              title="Stop"
             >
               <Square className="w-5 h-5 fill-current" />
             </button>
@@ -106,14 +106,14 @@ export function MessageInput({
               onClick={handleSend}
               disabled={disabled || !value.trim()}
               className="p-3 text-gray-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-              title="Envoyer"
+              title="Send"
             >
               <Send className="w-5 h-5" />
             </button>
           )}
         </div>
         <div className="text-center mt-2 text-[10px] text-gray-600 font-mono uppercase tracking-widest">
-          Une IA peut générer des informations inexactes. Vérifiez les réponses importantes.
+          AI can generate inaccurate information. Verify important answers.
         </div>
       </div>
     </div>

@@ -270,7 +270,7 @@ function ChatArea({
     {
       key: "n",
       mod: true,
-      description: "Nouvelle conversation",
+      description: "New conversation",
       handler: handleNewConversation,
       allowInInput: true,
     },
@@ -332,7 +332,7 @@ function ChatArea({
       <div className="flex flex-col flex-1 overflow-hidden bg-[#000000] paper-texture relative min-h-0">
         <ChatWindow
           messages={messages}
-          userName={auth.user!.name?.trim() || auth.user!.email.split("@")[0] || "Utilisateur"}
+          userName={auth.user!.name?.trim() || auth.user!.email.split("@")[0] || "User"}
           onSuggestion={(text) => handleSend(text)}
           documents={documents}
           onUpload={handleAttach}

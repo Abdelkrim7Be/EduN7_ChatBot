@@ -141,6 +141,7 @@ function SettingControl({
           label: `${provider.name} / ${model.name}`,
         })),
       );
+    const hasDraftOption = options.some((option) => option.value === draft);
 
     return (
       <select
@@ -149,6 +150,11 @@ function SettingControl({
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-full border border-hairline bg-surface-2 px-3 text-sm text-fg"
       >
+        {!hasDraftOption && (
+          <option value={draft}>
+            {draft} (not configured)
+          </option>
+        )}
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
