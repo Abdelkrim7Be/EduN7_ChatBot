@@ -21,16 +21,16 @@ const GROUPS: Record<string, string> = {
   model_mode_flash: "Model Modes",
   model_mode_normal: "Model Modes",
   model_mode_complex: "Model Modes",
-  public_assistant_enabled: "Public Assistant",
-  public_assistant_context: "Public Assistant",
-  public_assistant_instructions: "Public Assistant",
-  public_assistant_greeting: "Public Assistant",
-  public_assistant_placeholder: "Public Assistant",
-  public_assistant_fallback_message: "Public Assistant",
-  public_assistant_suggested_questions: "Public Assistant",
-  public_assistant_provider: "Public Assistant",
-  public_assistant_model: "Public Assistant",
-  public_assistant_rate_limit_per_hour: "Public Assistant",
+  public_assistant_enabled: "Landing Assistant",
+  public_assistant_context: "Landing Assistant",
+  public_assistant_instructions: "Landing Assistant",
+  public_assistant_greeting: "Landing Assistant",
+  public_assistant_placeholder: "Landing Assistant",
+  public_assistant_fallback_message: "Landing Assistant",
+  public_assistant_suggested_questions: "Landing Assistant",
+  public_assistant_provider: "Landing Assistant",
+  public_assistant_model: "Landing Assistant",
+  public_assistant_rate_limit_per_hour: "Landing Assistant",
 };
 
 const LABELS: Record<string, string> = {
@@ -43,15 +43,15 @@ const LABELS: Record<string, string> = {
   model_mode_flash: "Flash",
   model_mode_normal: "Normal",
   model_mode_complex: "Complex",
-  public_assistant_enabled: "Public Assistant Enabled",
-  public_assistant_context: "Public Context",
-  public_assistant_instructions: "Instructions",
-  public_assistant_greeting: "Greeting",
-  public_assistant_placeholder: "Input Placeholder",
-  public_assistant_fallback_message: "Fallback Message",
-  public_assistant_suggested_questions: "Suggested Questions",
-  public_assistant_provider: "Public Provider",
-  public_assistant_model: "Public Model",
+  public_assistant_enabled: "Landing Assistant Enabled",
+  public_assistant_context: "Landing Assistant Public Context",
+  public_assistant_instructions: "Landing Assistant Instructions",
+  public_assistant_greeting: "Landing Assistant Greeting",
+  public_assistant_placeholder: "Landing Assistant Input Placeholder",
+  public_assistant_fallback_message: "Landing Assistant Fallback Message",
+  public_assistant_suggested_questions: "Landing Assistant Suggested Questions",
+  public_assistant_provider: "Landing Assistant Provider",
+  public_assistant_model: "Landing Assistant Model",
   public_assistant_rate_limit_per_hour: "Hourly Limit",
 };
 
@@ -72,6 +72,7 @@ function SettingControl({
   roles,
   publicAssistantOptions,
   providers,
+  settingValues,
   label,
   onChange,
 }: {
@@ -80,6 +81,7 @@ function SettingControl({
   roles: AdminRole[];
   publicAssistantOptions: PublicAssistantModelOption[];
   providers: Provider[];
+  settingValues: Record<string, string>;
   label: string;
   onChange: (value: string) => void;
 }) {
@@ -115,7 +117,7 @@ function SettingControl({
   }
 
   if (setting.key === "public_assistant_provider") {
-    const providers = [...new Set(publicAssistantOptions.map((option) => option.provider))];
+    const publicProviders = [...new Set(publicAssistantOptions.map((option) => option.provider))];
     return (
       <select
         aria-label={label}
@@ -123,7 +125,7 @@ function SettingControl({
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-64 border border-hairline bg-surface-2 px-3 text-sm text-fg"
       >
-        {providers.map((provider) => (
+        {publicProviders.map((provider) => (
           <option key={provider} value={provider}>
             {provider === "auto" ? "Auto fallback" : provider}
           </option>
@@ -165,6 +167,11 @@ function SettingControl({
   }
 
   if (setting.key === "public_assistant_model") {
+    const selectedProvider = settingValues.public_assistant_provider || "auto";
+    const modelOptions = publicAssistantOptions.filter(
+      (option) => option.provider === selectedProvider,
+    );
+    const hasDraftOption = modelOptions.some((option) => option.model === draft);
     return (
       <select
         aria-label={label}
@@ -172,7 +179,12 @@ function SettingControl({
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-full border border-hairline bg-surface-2 px-3 text-sm text-fg"
       >
-        {publicAssistantOptions.map((option) => (
+        {!hasDraftOption && draft && (
+          <option value={draft}>
+            {draft} (not configured for {selectedProvider})
+          </option>
+        )}
+        {modelOptions.map((option) => (
           <option key={`${option.provider}:${option.model}`} value={option.model}>
             {option.label}{option.available ? "" : " (not configured)"}
           </option>
@@ -234,12 +246,14 @@ function SettingRow({
   roles,
   publicAssistantOptions,
   providers,
+  settingValues,
   onSaved,
 }: {
   setting: Setting;
   roles: AdminRole[];
   publicAssistantOptions: PublicAssistantModelOption[];
   providers: Provider[];
+  settingValues: Record<string, string>;
   onSaved: (key: string, value: string) => void;
 }) {
   const { toast } = useToast();
@@ -296,6 +310,7 @@ function SettingRow({
         roles={roles}
         publicAssistantOptions={publicAssistantOptions}
         providers={providers}
+        settingValues={settingValues}
         label={displayLabel}
         onChange={setDraft}
       />
@@ -342,6 +357,15 @@ export function AdminSettings() {
     }, {});
   }, [settings]);
 
+  const settingValues = useMemo(
+    () =>
+      settings.reduce<Record<string, string>>((acc, setting) => {
+        acc[setting.key] = setting.value;
+        return acc;
+      }, {}),
+    [settings],
+  );
+
   return (
     <div className="h-full overflow-y-auto p-6">
       <div className="mx-auto flex max-w-6xl flex-col gap-5">
@@ -363,8 +387,16 @@ export function AdminSettings() {
           <div className="space-y-6">
             {Object.entries(grouped).map(([group, items]) => (
               <section key={group}>
-                <div className="mb-2 text-[10px] uppercase tracking-widest text-fg-muted">
-                  {group}
+                <div className="mb-2">
+                  <div className="text-[10px] uppercase tracking-widest text-fg-muted">
+                    {group}
+                  </div>
+                  {group === "Landing Assistant" && (
+                    <p className="mt-1 max-w-3xl text-xs leading-relaxed text-fg-secondary">
+                      Configure the anonymous assistant shown on the landing page. It stays hidden until it is enabled,
+                      public context is provided, and a configured allowlisted model is available.
+                    </p>
+                  )}
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   {items.map((setting) => (
@@ -374,6 +406,7 @@ export function AdminSettings() {
                       roles={roles}
                       publicAssistantOptions={publicAssistantOptions}
                       providers={providers}
+                      settingValues={settingValues}
                       onSaved={handleSaved}
                     />
                   ))}
