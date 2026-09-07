@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { Plus, Trash2, Edit2, LogOut, PanelLeftClose, PanelLeftOpen, Settings, Library, Check, X, Home, Shield } from "lucide-react";
+import { Plus, Trash2, Edit2, LogOut, PanelLeftClose, PanelLeftOpen, Settings, Library, Check, X, Home } from "lucide-react";
 import { ProfileModal } from "./ProfileModal";
 import type { Conversation } from "../types";
 import { conversationTitle } from "../utils/conversationTitle";
@@ -149,16 +149,6 @@ export function ConversationSidebar({
           >
             + NEW SESSION
           </button>
-          
-          {(isRole("admin") || hasPermission("admin.dashboard.view")) && (
-            <button
-              onClick={() => navigate("/admin/dashboard")}
-              className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-3 text-sm font-bold text-accent bg-accent/10 hover:bg-accent/20 border border-accent/20 hover:border-accent/40 transition-all duration-300 rounded-sm uppercase tracking-widest"
-            >
-              <Shield className="w-4 h-4" />
-              Admin Panel
-            </button>
-          )}
         </div>
 
         {groups.map((g) => (
