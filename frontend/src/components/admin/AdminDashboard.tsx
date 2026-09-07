@@ -159,13 +159,32 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchExtendedStats(), fetchPlatformHealth()])
-      .then(([nextStats, nextHealth]) => {
-        setStats(nextStats);
-        setHealth(nextHealth);
-      })
-      .catch(() => toast("Failed to load dashboard", "error"))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    async function load() {
+      const [statsResult, healthResult] = await Promise.allSettled([
+        fetchExtendedStats(),
+        fetchPlatformHealth(),
+      ]);
+      if (cancelled) return;
+
+      if (statsResult.status === "fulfilled") {
+        setStats(statsResult.value);
+      } else {
+        toast("Failed to load statistics", "error");
+      }
+      if (healthResult.status === "fulfilled") {
+        setHealth(healthResult.value);
+      } else {
+        toast("Failed to load platform health", "error");
+      }
+      setLoading(false);
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) {
