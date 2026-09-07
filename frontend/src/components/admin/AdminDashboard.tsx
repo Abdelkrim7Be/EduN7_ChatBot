@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Activity,
+  AlertTriangle,
   Ban,
   BarChart3,
+  CheckCircle2,
   Clock,
   FileText,
   MessageCircle,
@@ -11,9 +14,10 @@ import {
   TrendingUp,
   UserCheck,
   Users,
+  XCircle,
 } from "lucide-react";
-import type { ExtendedStats } from "../../types";
-import { fetchExtendedStats } from "../../api/client";
+import type { ExtendedStats, PlatformHealth } from "../../types";
+import { fetchExtendedStats, fetchPlatformHealth } from "../../api/client";
 import { useToast } from "../ToastProvider";
 
 interface StatCardProps {
@@ -43,6 +47,18 @@ function StatCard({ label, value, icon, tone = "normal" }: StatCardProps) {
       </div>
     </div>
   );
+}
+
+function healthClass(status: PlatformHealth["overall"]) {
+  if (status === "ok") return "border-success/25 bg-success/10 text-success";
+  if (status === "warning") return "border-warning/30 bg-warning/10 text-warning";
+  return "border-danger/30 bg-danger/10 text-danger";
+}
+
+function healthIcon(status: PlatformHealth["overall"]) {
+  if (status === "ok") return <CheckCircle2 className="h-4 w-4" />;
+  if (status === "warning") return <AlertTriangle className="h-4 w-4" />;
+  return <XCircle className="h-4 w-4" />;
 }
 
 function MiniBarChart({
@@ -139,12 +155,16 @@ function actionLabel(action: string): string {
 export function AdminDashboard() {
   const { toast } = useToast();
   const [stats, setStats] = useState<ExtendedStats | null>(null);
+  const [health, setHealth] = useState<PlatformHealth | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchExtendedStats()
-      .then(setStats)
-      .catch(() => toast("Failed to load statistics", "error"))
+    Promise.all([fetchExtendedStats(), fetchPlatformHealth()])
+      .then(([nextStats, nextHealth]) => {
+        setStats(nextStats);
+        setHealth(nextHealth);
+      })
+      .catch(() => toast("Failed to load dashboard", "error"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -159,6 +179,14 @@ export function AdminDashboard() {
   if (!stats) return null;
 
   const { totals: t, activity: a } = stats;
+  const healthCounts = health?.components.reduce(
+    (acc, component) => {
+      acc[component.status] += 1;
+      return acc;
+    },
+    { ok: 0, warning: 0, error: 0 },
+  );
+  const keyHealth = health?.components.find((component) => component.status !== "ok") ?? health?.components[0];
 
   return (
     <div className="min-h-full overflow-y-auto p-5">
@@ -179,6 +207,41 @@ export function AdminDashboard() {
           <StatCard label="Suspended" value={t.suspended_users} icon={<Ban className="h-5 w-5" />} tone="danger" />
           <StatCard label="Public Assistant" value={stats.public_assistant.requests_today ?? 0} icon={<MessageCircle className="h-5 w-5" />} />
         </div>
+
+        {health && healthCounts && (
+          <section className="border border-hairline bg-surface-1 p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center border ${healthClass(health.overall)}`}>
+                  {healthIcon(health.overall)}
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-fg">Platform Health</h2>
+                  <p className="mt-1 break-words text-xs leading-relaxed text-fg-secondary">
+                    {keyHealth ? `${keyHealth.name}: ${keyHealth.detail}` : "No health checks reported"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {(["ok", "warning", "error"] as const).map((status) => (
+                  <span
+                    key={status}
+                    className={`inline-flex h-8 items-center gap-1.5 border px-2 text-[10px] font-bold uppercase tracking-widest ${healthClass(status)}`}
+                  >
+                    {healthIcon(status)}
+                    {status}: {healthCounts[status]}
+                  </span>
+                ))}
+                <Link
+                  to="/admin/health"
+                  className="inline-flex h-8 items-center border border-white/20 bg-white px-3 text-[10px] font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200"
+                >
+                  View Details
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
 
         <div className="grid grid-cols-[minmax(320px,0.9fr)_minmax(420px,1.1fr)] gap-3 max-lg:grid-cols-1">
           <section className="flex min-h-80 flex-col border border-hairline bg-surface-1 p-4">
