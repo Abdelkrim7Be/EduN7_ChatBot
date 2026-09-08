@@ -2,7 +2,15 @@ import re
 import time
 from pathlib import Path
 
-from flask import Blueprint, Response, g, jsonify, request, send_file, stream_with_context
+from flask import (
+    Blueprint,
+    Response,
+    g,
+    jsonify,
+    request,
+    send_file,
+    stream_with_context,
+)
 
 import config
 import database
@@ -13,7 +21,11 @@ from services import (
     document_storage,
     public_assistant_service,
 )
-from services.llm_factory import available_model_pairs, get_available_providers, parse_model_pair
+from services.llm_factory import (
+    available_model_pairs,
+    get_available_providers,
+    parse_model_pair,
+)
 from services.permissions_service import (
     PERMISSIONS,
     get_role_permissions,

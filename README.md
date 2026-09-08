@@ -33,7 +33,7 @@ The platform also includes an optional public landing assistant. That public ass
 - **Source citations**: every document-grounded answer shows the source pages used as context.
 - **Streaming responses**: answers stream as they are generated.
 - **Conversation history**: sessions and messages are stored per user.
-- **Admin controls**: manage users, roles, documents, conversations, announcements, audit logs, and runtime settings.
+- **Admin controls**: manage users, roles, documents, conversations, announcements, audit logs, runtime settings, and a live platform health check (database, storage, vector store, LLM providers, rate limiter, public assistant).
 - **Scalable RAG storage**: Postgres for metadata, MinIO or S3-compatible storage for PDFs, and Qdrant for vectors.
 - **Self-hosted deployment**: Docker Compose runs the full stack.
 
@@ -60,6 +60,8 @@ The platform also includes an optional public landing assistant. That public ass
 ### Administration
 
 ![Admin dashboard](docs/screenshots/admin-dashboard.png)
+
+![Platform health](docs/screenshots/admin-health.png)
 
 ![Admin settings](docs/screenshots/admin-settings.png)
 
@@ -125,7 +127,7 @@ Latest local results:
 - Frontend lint: passed
 - Frontend production build: passed
 - Backend lint: passed
-- Backend tests: `29 passed`
+- Backend tests: `30 passed`
 - Docker Compose config: valid
 - Postgres, MinIO, Qdrant, and app boot smoke checks: passed
 

@@ -6,7 +6,12 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 import config
 from services import retrieval_service, session_service
-from services.llm_factory import AUTO_FALLBACK_ORDER, MODEL_MODE_DEFAULTS, build_llm, resolve_model_mode
+from services.llm_factory import (
+    AUTO_FALLBACK_ORDER,
+    MODEL_MODE_DEFAULTS,
+    build_llm,
+    resolve_model_mode,
+)
 from services.retrieval_service import ChunkResult
 
 logger = logging.getLogger(__name__)
