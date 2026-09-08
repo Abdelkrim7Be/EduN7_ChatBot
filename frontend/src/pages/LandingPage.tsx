@@ -87,7 +87,7 @@ export function LandingPage() {
               variants={fadeUp}
               className="text-xl md:text-2xl font-light text-gray-400 tracking-wide"
             >
-              Self-hosted academic AI platform
+              Academic AI assistant for ENSET Mohammedia
             </motion.p>
             <motion.p
               variants={fadeUp}
@@ -113,7 +113,7 @@ export function LandingPage() {
                     onClick={() => navigate("/login?tab=register")}
                     className="px-10 py-4 bg-white text-black font-bold uppercase text-sm tracking-widest hover:bg-gray-200 transition-all duration-300"
                   >
-                    Start Free
+                    Request Access
                   </button>
                   <button
                     onClick={() => navigate("/login")}
@@ -333,15 +333,15 @@ export function LandingPage() {
               Ready to explore your documents?
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Create your free account and start querying your academic
-              resources in seconds.
+              Sign in with your institutional account to start querying your
+              academic resources.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <button
                 onClick={() => navigate("/login?tab=register")}
                 className="px-12 py-5 bg-white text-black font-bold uppercase text-sm tracking-widest hover:bg-gray-200 transition-all"
               >
-                Create Account
+                Request Access
               </button>
               <button
                 onClick={() => navigate("/login")}

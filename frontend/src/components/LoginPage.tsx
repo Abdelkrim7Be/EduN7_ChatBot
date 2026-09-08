@@ -161,6 +161,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="professor@enset.ma"
+                autoComplete="username"
                 required
                 className={inputClass}
               />
@@ -183,6 +184,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  autoComplete={tab === "login" ? "current-password" : "new-password"}
                   required
                   className={inputClass}
                 />
@@ -214,6 +216,7 @@ export function LoginPage({ onLogin, onRegister }: Props) {
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                     placeholder="••••••••"
+                    autoComplete="new-password"
                     required
                     className={inputClass}
                   />
@@ -241,9 +244,8 @@ export function LoginPage({ onLogin, onRegister }: Props) {
 
             <div className="pt-4">
               <button
-                type="button"
+                type="submit"
                 disabled={loading}
-                onClick={() => void handleSubmit()}
                 className="w-full bg-white text-black font-bold py-4 px-6 hover:bg-zinc-200 transition-colors duration-200 uppercase tracking-tighter text-sm disabled:opacity-50"
               >
                 {loading

@@ -348,6 +348,23 @@ def _create_postgres_schema(conn) -> None:
 
 
 def init_db() -> None:
+    # Multiple gunicorn workers call init_db() on boot; without serializing,
+    # concurrent DDL/UPDATE statements against Postgres can deadlock.
+    if _use_postgres():
+        lock_conn = PostgresConnection()
+        lock_conn.execute("SELECT pg_advisory_lock(727271)")
+        lock_conn.commit()
+        try:
+            _init_db_locked()
+        finally:
+            lock_conn.execute("SELECT pg_advisory_unlock(727271)")
+            lock_conn.commit()
+            lock_conn.close()
+    else:
+        _init_db_locked()
+
+
+def _init_db_locked() -> None:
     with get_db() as conn:
         if _use_postgres():
             _create_postgres_schema(conn)
