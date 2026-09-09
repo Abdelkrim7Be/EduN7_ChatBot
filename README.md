@@ -131,6 +131,12 @@ Latest local results:
 - Docker Compose config: valid
 - Postgres, MinIO, Qdrant, and app boot smoke checks: passed
 
+### Notable fixes
+
+- **Login form ignored Enter**: the submit button was `type="button"` instead of `type="submit"`, so the form had no real submit element — pressing Enter in the email/password fields did nothing. Fixed by using a proper submit button.
+- **Backend crash-looped under multi-worker boot**: every gunicorn worker ran the startup migrations independently; two workers racing the same `documents.category` backfill `UPDATE` could deadlock in Postgres and crash the worker. Fixed by serializing `init_db()` behind a Postgres advisory lock.
+- **Admin settings changes didn't reach all workers**: the settings cache was invalidated only in the worker process that handled the write, so other workers kept serving stale values (e.g. the landing assistant toggle) until restart. Fixed with a short TTL so every worker's cache self-heals within seconds.
+
 ---
 
 ## Local Development (no Docker)
