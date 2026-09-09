@@ -77,7 +77,7 @@ export function DocumentPreviewModal({ docId, docName, onClose, loadFile = fetch
           {loading ? (
             <div className="flex h-full flex-col items-center justify-center">
               <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mb-4" />
-              <p className="text-xs text-white/50 uppercase tracking-widest">Chargement du document...</p>
+              <p className="text-xs text-white/50 uppercase tracking-widest">Loading document...</p>
             </div>
           ) : error ? (
             <div className="flex h-full flex-col items-center justify-center text-center p-8">

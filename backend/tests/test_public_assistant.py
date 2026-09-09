@@ -168,7 +168,7 @@ def test_public_assistant_stream_disabled(client):
     response = client.post("/api/public-assistant/stream", json={"message": "Hello"}, buffered=True)
 
     assert response.status_code == 200
-    assert "indisponible" in response.data.decode()
+    assert "temporarily unavailable" in response.data.decode()
 
 
 def test_public_assistant_stream_ignores_attacker_controlled_fields(client, monkeypatch):
@@ -264,7 +264,7 @@ def test_public_assistant_provider_errors_do_not_leak_details(client, monkeypatc
     response = client.post("/api/public-assistant/stream", json={"message": "Hello"}, buffered=True)
 
     assert response.status_code == 200
-    assert "indisponible" in response.data.decode()
+    assert "temporarily unavailable" in response.data.decode()
     assert b"secret provider failure" not in response.data
     with database.get_db() as conn:
         row = conn.execute("SELECT outcome FROM public_assistant_events ORDER BY id DESC LIMIT 1").fetchone()
@@ -291,7 +291,7 @@ def test_public_assistant_mid_stream_provider_error_is_generic(client, monkeypat
 
     assert response.status_code == 200
     assert b"partial" in response.data
-    assert "indisponible" in response.data.decode()
+    assert "temporarily unavailable" in response.data.decode()
     assert b"mid-stream secret failure" not in response.data
     with database.get_db() as conn:
         row = conn.execute("SELECT outcome FROM public_assistant_events ORDER BY id DESC LIMIT 1").fetchone()
@@ -378,6 +378,7 @@ def test_public_assistant_public_only_access_boundary(client):
     assert client.post("/api/public-assistant/stream", json={"message": "Hello"}, buffered=True).status_code == 200
     assert client.get("/api/admin/settings").status_code == 401
     assert client.get("/api/admin/public-assistant/model-options").status_code == 401
+    assert client.post("/api/admin/public-assistant/preview", json={"message": "Hello"}, buffered=True).status_code == 401
     assert client.get("/api/admin/stats/extended").status_code == 401
     assert client.get("/api/providers").status_code == 401
     assert client.get("/api/documents").status_code == 401
@@ -399,7 +400,7 @@ def test_public_assistant_malformed_json_is_safe(client):
 
     assert response.status_code == 200
     body = response.data.decode()
-    assert "Veuillez saisir une question" in body or "indisponible" in body
+    assert "Please enter a question" in body or "temporarily unavailable" in body
 
 
 def test_admin_setting_audit_redacts_assistant_context(client):
@@ -448,9 +449,42 @@ def test_admin_public_assistant_setting_validation_allows_valid_values(client):
         ("public_assistant_rate_limit_per_hour", "30"),
         ("public_assistant_provider", "auto"),
         ("public_assistant_model", "auto"),
-        ("public_assistant_placeholder", "Question publique..."),
+        ("public_assistant_placeholder", "Public question..."),
     ]
 
     for key, value in cases:
         response = client.put(f"/api/admin/settings/{key}", json={"value": value}, headers=headers)
         assert response.status_code == 200, key
+
+
+def test_admin_public_assistant_preview_uses_draft_settings_without_metrics(client, monkeypatch):
+    clear_public_assistant_events()
+    set_public_assistant("false", "")
+    fake, calls = public_provider(monkeypatch)
+
+    response = client.post(
+        "/api/admin/public-assistant/preview",
+        json={
+            "message": "What is ENSET AI?",
+            "settings": {
+                "public_assistant_enabled": "false",
+                "public_assistant_context": "ENSET AI is an academic assistant.",
+                "public_assistant_provider": "groq",
+                "public_assistant_model": "openai/gpt-oss-20b",
+            },
+        },
+        headers=admin_auth_headers(),
+        buffered=True,
+    )
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert '"content": "Grounded "' in body
+    assert '"content": "answer."' in body
+    assert calls == [("groq", "openai/gpt-oss-20b")]
+    combined = "\n".join(message.content for message in fake.messages)
+    assert "ENSET AI is an academic assistant." in combined
+
+    with database.get_db() as conn:
+        count = conn.execute("SELECT COUNT(*) AS c FROM public_assistant_events").fetchone()["c"]
+    assert count == 0

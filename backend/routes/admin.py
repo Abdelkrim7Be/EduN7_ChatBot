@@ -1,8 +1,18 @@
 import re
 import time
+from pathlib import Path
 
-from flask import Blueprint, g, jsonify, request, send_file
+from flask import (
+    Blueprint,
+    Response,
+    g,
+    jsonify,
+    request,
+    send_file,
+    stream_with_context,
+)
 
+import config
 import database
 from middleware.auth import require_auth, require_role
 from services import (
@@ -10,6 +20,11 @@ from services import (
     document_service,
     document_storage,
     public_assistant_service,
+)
+from services.llm_factory import (
+    available_model_pairs,
+    get_available_providers,
+    parse_model_pair,
 )
 from services.permissions_service import (
     PERMISSIONS,
@@ -95,6 +110,14 @@ def _validate_setting_value(key: str, value) -> tuple[str | None, str | None]:
         if model not in allowed:
             return None, "model is not allowed for the public assistant"
         return model, None
+
+    if key.startswith("model_mode_"):
+        pair = parse_model_pair(text.strip())
+        if pair is None:
+            return None, "value must use provider:model format"
+        if pair not in available_model_pairs():
+            return None, "model mode must reference a configured provider and available model"
+        return text.strip(), None
 
     return text, None
 
@@ -329,12 +352,12 @@ def list_shared_documents():
             "page_count":          r["page_count"],
             "chunk_count":         r["chunk_count"],
             "scope":               r["scope"],
-            "category":            r["category"] or "Autres",
+            "category":            "Other" if r["category"] == "Autres" else (r["category"] or "Other"),
             "security_status":     security["status"],
             "security_verdict":    security["verdict"],
             "security_checked_at": security["checked_at"],
             "uploaded_at":         r["uploaded_at"],
-            "uploader_name":       r["uploader_name"] or "Compte supprimé",
+            "uploader_name":       r["uploader_name"] or "Deleted account",
             "uploader_email":      r["uploader_email"] or "—",
         })
     scope_counts = {r["scope"]: r["c"] for r in scope_rows}
@@ -487,6 +510,132 @@ def get_settings():
 @require_role("admin")
 def public_assistant_model_options():
     return jsonify({"options": public_assistant_service.public_model_options()}), 200
+
+
+@admin_bp.post("/api/admin/public-assistant/preview")
+@require_auth
+@require_role("admin")
+def public_assistant_preview():
+    data = request.get_json(silent=True) or {}
+    message = str(data.get("message") or "").strip()
+    if len(message) > public_assistant_service.MAX_MESSAGE_CHARS:
+        return jsonify({"error": "The message is too long."}), 400
+
+    overrides = {}
+    raw_settings = data.get("settings") or {}
+    if isinstance(raw_settings, dict):
+        for key, value in raw_settings.items():
+            if not str(key).startswith("public_assistant_"):
+                continue
+            normalized, validation_error = _validate_setting_value(str(key), value)
+            if validation_error:
+                return jsonify({"error": f"{key}: {validation_error}"}), 400
+            overrides[str(key)] = normalized
+
+    history = public_assistant_service.sanitize_history(data.get("history"))
+
+    def generate():
+        yield from public_assistant_service.stream_response(
+            message,
+            history,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get("User-Agent"),
+            overrides=overrides,
+            require_enabled=False,
+            record_events=False,
+        )
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+def _health_item(name: str, status: str, detail: str = "") -> dict:
+    return {"name": name, "status": status, "detail": detail}
+
+
+def _platform_health_items() -> list[dict]:
+    items = []
+    try:
+        with database.get_db() as conn:
+            conn.execute("SELECT 1").fetchone()
+        items.append(_health_item("Database", "ok", "Connection and query succeeded"))
+    except Exception as exc:
+        items.append(_health_item("Database", "error", str(exc)))
+
+    try:
+        if config.REDIS_URL:
+            import redis
+            redis.from_url(config.REDIS_URL, socket_connect_timeout=1, socket_timeout=1).ping()
+            items.append(_health_item("Rate limits", "ok", "Redis is reachable"))
+        else:
+            items.append(_health_item("Rate limits", "warning", "Using in-memory counters"))
+    except Exception as exc:
+        items.append(_health_item("Rate limits", "error", str(exc)))
+
+    try:
+        if config.DOCUMENT_STORAGE_BACKEND == "local":
+            path = Path(config.UPLOAD_DIR)
+            path.mkdir(parents=True, exist_ok=True)
+            items.append(_health_item("Document storage", "ok", f"Local path: {path}"))
+        elif config.DOCUMENT_STORAGE_BACKEND == "s3":
+            from services import document_storage
+            document_storage._s3_client().head_bucket(Bucket=config.S3_BUCKET)
+            items.append(_health_item("Document storage", "ok", f"S3 bucket: {config.S3_BUCKET}"))
+        else:
+            items.append(_health_item("Document storage", "error", f"Unsupported backend: {config.DOCUMENT_STORAGE_BACKEND}"))
+    except Exception as exc:
+        items.append(_health_item("Document storage", "error", str(exc)))
+
+    try:
+        if config.VECTOR_STORE_BACKEND == "chroma":
+            from services import vector_store_service
+            vector_store_service._chroma_client().heartbeat()
+            items.append(_health_item("Vector store", "ok", "Chroma is reachable"))
+        elif config.VECTOR_STORE_BACKEND == "qdrant":
+            from services import vector_store_service
+            vector_store_service._qdrant_client().get_collections()
+            items.append(_health_item("Vector store", "ok", "Qdrant is reachable"))
+        else:
+            items.append(_health_item("Vector store", "error", f"Unsupported backend: {config.VECTOR_STORE_BACKEND}"))
+    except Exception as exc:
+        items.append(_health_item("Vector store", "error", str(exc)))
+
+    providers = get_available_providers()
+    available = [provider for provider in providers if provider.get("available")]
+    items.append(_health_item(
+        "LLM providers",
+        "ok" if available else "warning",
+        f"{len(available)} of {len(providers)} configured",
+    ))
+
+    public_config = public_assistant_service.public_config()
+    items.append(_health_item(
+        "Landing assistant",
+        "ok" if public_config.get("enabled") else "warning",
+        "Enabled and ready" if public_config.get("enabled") else "Disabled or missing public context/model",
+    ))
+    return items
+
+
+@admin_bp.get("/api/admin/platform-health")
+@require_auth
+@require_role("admin")
+def platform_health():
+    items = _platform_health_items()
+    if any(item["status"] == "error" for item in items):
+        overall = "error"
+    elif any(item["status"] == "warning" for item in items):
+        overall = "warning"
+    else:
+        overall = "ok"
+    return jsonify({"overall": overall, "components": items, "checked_at": time.time()}), 200
 
 
 @admin_bp.put("/api/admin/settings/<key>")

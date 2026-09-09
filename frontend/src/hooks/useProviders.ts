@@ -3,6 +3,7 @@ import type { Provider, SelectedModel } from "../types";
 import { fetchProviders } from "../api/client";
 
 const STORAGE_KEY = "ensetai_selected_model";
+const MODEL_MODES = new Set(["light", "flash", "normal", "complex"]);
 
 function loadStored(): SelectedModel | null {
   try {
@@ -30,21 +31,15 @@ export function useProviders(isAuthenticated: boolean) {
       setProviders(data);
 
       const stored = loadStored();
-      const isAuto = stored?.provider === "auto";
       const stillValid =
-        isAuto ||
-        (stored &&
-          data.some(
-            (p) =>
-              p.id === stored.provider &&
-              p.available &&
-              p.models.some((m) => m.id === stored.model),
-          ));
+        stored &&
+        MODEL_MODES.has(stored.provider) &&
+        stored.model === stored.provider;
 
       if (stillValid && stored) {
         setSelected(stored);
       } else {
-        const sel = { provider: "auto", model: "auto" };
+        const sel = { provider: "normal", model: "normal" };
         setSelected(sel);
         saveStored(sel);
       }

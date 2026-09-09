@@ -109,7 +109,7 @@ export function LandingAssistant() {
       full =
         error instanceof Error && error.message
           ? error.message
-          : "L'assistant est momentanément indisponible.";
+          : "The assistant is temporarily unavailable.";
       setMessages((prev) =>
         prev.map((message) =>
           message.id === assistantId
@@ -142,8 +142,8 @@ export function LandingAssistant() {
           <motion.button
             type="button"
             onClick={() => setOpen(true)}
-            aria-label="Assistant public"
-            title="Assistant public"
+            aria-label="Public assistant"
+            title="Public assistant"
             className="fixed bottom-5 right-5 z-40 flex h-16 w-16 items-center justify-center rounded-full border border-white/25 bg-black/85 text-white shadow-2xl backdrop-blur transition-colors hover:border-white/60 hover:bg-white hover:text-black focus:outline-none focus:ring-2 focus:ring-white/70 md:bottom-7 md:right-7 md:h-[72px] md:w-[72px]"
             initial={{ opacity: 0, y: 14, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -175,14 +175,14 @@ export function LandingAssistant() {
                 </div>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.22em]">ENSET AI</p>
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Assistant public</p>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Public assistant</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={closePanel}
                 className="p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
-                title="Fermer"
+                title="Close"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -239,14 +239,14 @@ export function LandingAssistant() {
                 onChange={(event) => setInput(event.target.value.slice(0, 1000))}
                 rows={1}
                 disabled={streaming}
-                placeholder={config.placeholder || "Posez une question sur ENSET AI..."}
+                placeholder={config.placeholder || "Ask a question about ENSET AI..."}
                 className="max-h-28 min-h-11 flex-1 resize-none border border-white/15 bg-white/5 px-3 py-2 text-[13px] text-white outline-none placeholder:text-white/35 focus:border-white/50 disabled:opacity-60"
               />
               <button
                 type="submit"
                 disabled={streaming || !input.trim()}
                 className="flex h-11 w-11 shrink-0 items-center justify-center bg-white text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40"
-                title="Envoyer"
+                title="Send"
               >
                 {streaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </button>

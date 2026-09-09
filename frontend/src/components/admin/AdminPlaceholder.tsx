@@ -16,11 +16,10 @@ export function AdminPlaceholder({ title, description, icon }: Props) {
           {icon}
         </div>
         <p className="text-sm font-medium text-brand-navy">
-          Bientôt disponible
+          Coming soon
         </p>
         <p className="text-xs text-brand-gray-text mt-1 max-w-xs">
-          Cette section est en cours de développement et sera disponible dans
-          une prochaine version.
+          This section is still in development and will be available in a future release.
         </p>
       </div>
     </div>

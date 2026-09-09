@@ -1,30 +1,37 @@
 import { useEffect, useMemo, useState } from "react";
-import { Info, Save, Settings2 } from "lucide-react";
+import { Bot, Info, Loader2, Save, Send, Settings2 } from "lucide-react";
+import type { Provider } from "../../types";
 import type { Setting, AdminRole, PublicAssistantModelOption } from "../../api/client";
 import {
   fetchAdminRoles,
+  fetchProviders,
   fetchPublicAssistantModelOptions,
   fetchSettings,
+  previewPublicAssistant,
   updateSetting,
 } from "../../api/client";
 import { useToast } from "../ToastProvider";
 
 const GROUPS: Record<string, string> = {
-  max_upload_size_mb: "Limites",
-  max_docs_per_session: "Limites",
-  allow_registration: "Accès",
-  default_role: "Accès",
-  system_prompt: "IA",
-  public_assistant_enabled: "Assistant public",
-  public_assistant_context: "Assistant public",
-  public_assistant_instructions: "Assistant public",
-  public_assistant_greeting: "Assistant public",
-  public_assistant_placeholder: "Assistant public",
-  public_assistant_fallback_message: "Assistant public",
-  public_assistant_suggested_questions: "Assistant public",
-  public_assistant_provider: "Assistant public",
-  public_assistant_model: "Assistant public",
-  public_assistant_rate_limit_per_hour: "Assistant public",
+  max_upload_size_mb: "Limits",
+  max_docs_per_session: "Limits",
+  allow_registration: "Access",
+  default_role: "Access",
+  system_prompt: "AI",
+  model_mode_light: "Model Modes",
+  model_mode_flash: "Model Modes",
+  model_mode_normal: "Model Modes",
+  model_mode_complex: "Model Modes",
+  public_assistant_enabled: "Landing Assistant",
+  public_assistant_context: "Landing Assistant",
+  public_assistant_instructions: "Landing Assistant",
+  public_assistant_greeting: "Landing Assistant",
+  public_assistant_placeholder: "Landing Assistant",
+  public_assistant_fallback_message: "Landing Assistant",
+  public_assistant_suggested_questions: "Landing Assistant",
+  public_assistant_provider: "Landing Assistant",
+  public_assistant_model: "Landing Assistant",
+  public_assistant_rate_limit_per_hour: "Landing Assistant",
 };
 
 const LABELS: Record<string, string> = {
@@ -33,21 +40,25 @@ const LABELS: Record<string, string> = {
   allow_registration: "Allow Registration",
   default_role: "Default Role",
   system_prompt: "System Prompt",
-  public_assistant_enabled: "Assistant public activé",
-  public_assistant_context: "Contexte public",
-  public_assistant_instructions: "Instructions",
-  public_assistant_greeting: "Message d'accueil",
-  public_assistant_placeholder: "Texte de saisie",
-  public_assistant_fallback_message: "Message de refus",
-  public_assistant_suggested_questions: "Questions suggérées",
-  public_assistant_provider: "Fournisseur public",
-  public_assistant_model: "Modèle public",
-  public_assistant_rate_limit_per_hour: "Limite horaire",
+  model_mode_light: "Light",
+  model_mode_flash: "Flash",
+  model_mode_normal: "Normal",
+  model_mode_complex: "Complex",
+  public_assistant_enabled: "Landing Assistant Enabled",
+  public_assistant_context: "Landing Assistant Public Context",
+  public_assistant_instructions: "Landing Assistant Instructions",
+  public_assistant_greeting: "Landing Assistant Greeting",
+  public_assistant_placeholder: "Landing Assistant Input Placeholder",
+  public_assistant_fallback_message: "Landing Assistant Fallback Message",
+  public_assistant_suggested_questions: "Landing Assistant Suggested Questions",
+  public_assistant_provider: "Landing Assistant Provider",
+  public_assistant_model: "Landing Assistant Model",
+  public_assistant_rate_limit_per_hour: "Hourly Limit",
 };
 
 function formatDate(ts: number | null): string {
-  if (!ts) return "Jamais modifié";
-  return new Date(ts * 1000).toLocaleDateString("fr-FR", {
+  if (!ts) return "Never updated";
+  return new Date(ts * 1000).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -61,6 +72,8 @@ function SettingControl({
   draft,
   roles,
   publicAssistantOptions,
+  providers,
+  settingValues,
   label,
   onChange,
 }: {
@@ -68,6 +81,8 @@ function SettingControl({
   draft: string;
   roles: AdminRole[];
   publicAssistantOptions: PublicAssistantModelOption[];
+  providers: Provider[];
+  settingValues: Record<string, string>;
   label: string;
   onChange: (value: string) => void;
 }) {
@@ -103,7 +118,7 @@ function SettingControl({
   }
 
   if (setting.key === "public_assistant_provider") {
-    const providers = [...new Set(publicAssistantOptions.map((option) => option.provider))];
+    const publicProviders = [...new Set(publicAssistantOptions.map((option) => option.provider))];
     return (
       <select
         aria-label={label}
@@ -111,7 +126,7 @@ function SettingControl({
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-64 border border-hairline bg-surface-2 px-3 text-sm text-fg"
       >
-        {providers.map((provider) => (
+        {publicProviders.map((provider) => (
           <option key={provider} value={provider}>
             {provider === "auto" ? "Auto fallback" : provider}
           </option>
@@ -120,7 +135,17 @@ function SettingControl({
     );
   }
 
-  if (setting.key === "public_assistant_model") {
+  if (setting.key.startsWith("model_mode_")) {
+    const options = providers
+      .filter((provider) => provider.available)
+      .flatMap((provider) =>
+        provider.models.map((model) => ({
+          value: `${provider.id}:${model.id}`,
+          label: `${provider.name} / ${model.name}`,
+        })),
+      );
+    const hasDraftOption = options.some((option) => option.value === draft);
+
     return (
       <select
         aria-label={label}
@@ -128,9 +153,41 @@ function SettingControl({
         onChange={(e) => onChange(e.target.value)}
         className="h-9 w-full border border-hairline bg-surface-2 px-3 text-sm text-fg"
       >
-        {publicAssistantOptions.map((option) => (
+        {!hasDraftOption && (
+          <option value={draft}>
+            {draft} (not configured)
+          </option>
+        )}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (setting.key === "public_assistant_model") {
+    const selectedProvider = settingValues.public_assistant_provider || "auto";
+    const modelOptions = publicAssistantOptions.filter(
+      (option) => option.provider === selectedProvider,
+    );
+    const hasDraftOption = modelOptions.some((option) => option.model === draft);
+    return (
+      <select
+        aria-label={label}
+        value={draft}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-full border border-hairline bg-surface-2 px-3 text-sm text-fg"
+      >
+        {!hasDraftOption && draft && (
+          <option value={draft}>
+            {draft} (not configured for {selectedProvider})
+          </option>
+        )}
+        {modelOptions.map((option) => (
           <option key={`${option.provider}:${option.model}`} value={option.model}>
-            {option.label}{option.available ? "" : " (non configuré)"}
+            {option.label}{option.available ? "" : " (not configured)"}
           </option>
         ))}
       </select>
@@ -187,25 +244,28 @@ function SettingControl({
 
 function SettingRow({
   setting,
+  draft,
   roles,
   publicAssistantOptions,
+  providers,
+  settingValues,
+  onDraftChange,
   onSaved,
 }: {
   setting: Setting;
+  draft: string;
   roles: AdminRole[];
   publicAssistantOptions: PublicAssistantModelOption[];
+  providers: Provider[];
+  settingValues: Record<string, string>;
+  onDraftChange: (key: string, value: string) => void;
   onSaved: (key: string, value: string) => void;
 }) {
   const { toast } = useToast();
-  const [draft, setDraft] = useState(setting.value);
   const [saving, setSaving] = useState(false);
   const dirty = draft !== setting.value;
   const isWide = setting.key === "system_prompt" || setting.kind === "textarea";
   const displayLabel = LABELS[setting.key] ?? setting.label;
-
-  useEffect(() => {
-    setDraft(setting.value);
-  }, [setting.value]);
 
   async function handleSave() {
     if (!dirty) return;
@@ -213,9 +273,9 @@ function SettingRow({
     try {
       await updateSetting(setting.key, draft);
       onSaved(setting.key, draft);
-      toast(`${LABELS[setting.key] ?? setting.label} mis à jour`, "success");
-    } catch {
-      toast("Erreur lors de la sauvegarde", "error");
+      toast(`${LABELS[setting.key] ?? setting.label} updated`, "success");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Failed to save setting", "error");
     } finally {
       setSaving(false);
     }
@@ -227,7 +287,7 @@ function SettingRow({
         <div className="min-w-0">
           <p className="text-sm font-bold text-fg">{displayLabel}</p>
           <p className="mt-1 text-xs leading-relaxed text-fg-secondary">
-            {setting.description || "Paramètre runtime appliqué immédiatement."}
+            {setting.description || "Runtime setting applied immediately."}
           </p>
           <p className="mt-2 text-[10px] uppercase tracking-widest text-fg-muted">
             {formatDate(setting.updated_at)}
@@ -236,11 +296,11 @@ function SettingRow({
         <button
           onClick={handleSave}
           disabled={!dirty || saving}
-          aria-label={`Enregistrer ${displayLabel}`}
+          aria-label={`Save ${displayLabel}`}
           className="flex h-9 shrink-0 items-center gap-2 border border-white/20 bg-white px-3 text-xs font-bold text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-2 disabled:text-fg-muted"
         >
           <Save className="h-3.5 w-3.5" />
-          {saving ? "..." : "Enregistrer"}
+          {saving ? "..." : "Save"}
         </button>
       </div>
 
@@ -249,10 +309,91 @@ function SettingRow({
         draft={draft}
         roles={roles}
         publicAssistantOptions={publicAssistantOptions}
+        providers={providers}
+        settingValues={settingValues}
         label={displayLabel}
-        onChange={setDraft}
+        onChange={(value) => onDraftChange(setting.key, value)}
       />
     </div>
+  );
+}
+
+function LandingAssistantPreview({
+  settings,
+}: {
+  settings: Record<string, string>;
+}) {
+  const [input, setInput] = useState("What is ENSET AI?");
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  async function runPreview() {
+    const message = input.trim();
+    if (!message || loading) return;
+    setAnswer("");
+    setLoading(true);
+    try {
+      let full = "";
+      for await (const event of previewPublicAssistant(message, settings)) {
+        if (event.type === "token" && event.content) {
+          full += event.content;
+          setAnswer(full);
+        } else if (event.type === "error" && event.content) {
+          full = event.content;
+          setAnswer(event.content);
+        }
+      }
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Preview failed", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const contextReady = Boolean(settings.public_assistant_context?.trim());
+
+  return (
+    <section className="border border-hairline bg-surface-1 p-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="flex items-center gap-2 text-sm font-bold text-fg">
+            <Bot className="h-4 w-4 text-accent" />
+            Landing Assistant Preview
+          </h2>
+          <p className="mt-1 text-xs leading-relaxed text-fg-secondary">
+            Test the current draft settings before enabling the public widget.
+          </p>
+        </div>
+        <span className={`border px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${
+          contextReady ? "border-success/25 bg-success/10 text-success" : "border-warning/30 bg-warning/10 text-warning"
+        }`}>
+          {contextReady ? "Context ready" : "Context required"}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-3 md:flex-row">
+        <input
+          value={input}
+          onChange={(event) => setInput(event.target.value.slice(0, 1000))}
+          className="h-10 flex-1 border border-hairline bg-surface-2 px-3 text-sm text-fg outline-none focus:border-white/50"
+          placeholder="Ask a public visitor question..."
+        />
+        <button
+          type="button"
+          onClick={() => void runPreview()}
+          disabled={loading || !input.trim() || !contextReady}
+          className="inline-flex h-10 items-center justify-center gap-2 border border-white/20 bg-white px-4 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-2 disabled:text-fg-muted"
+        >
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+          Preview
+        </button>
+      </div>
+
+      <div className="mt-3 min-h-20 border border-hairline bg-black p-3 text-sm leading-relaxed text-fg-secondary">
+        {answer ? <p className="whitespace-pre-wrap">{answer}</p> : <p className="text-fg-muted">No preview response yet.</p>}
+      </div>
+    </section>
   );
 }
 
@@ -261,20 +402,26 @@ export function AdminSettings() {
   const [settings, setSettings] = useState<Setting[]>([]);
   const [roles, setRoles] = useState<AdminRole[]>([]);
   const [publicAssistantOptions, setPublicAssistantOptions] = useState<PublicAssistantModelOption[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [savingAll, setSavingAll] = useState(false);
 
   useEffect(() => {
     Promise.all([
       fetchSettings(),
       fetchAdminRoles().catch(() => ({ roles: [] as AdminRole[], permissions: [] })),
       fetchPublicAssistantModelOptions().catch(() => [] as PublicAssistantModelOption[]),
+      fetchProviders().catch(() => [] as Provider[]),
     ])
-      .then(([loadedSettings, roleData, modelOptions]) => {
+      .then(([loadedSettings, roleData, modelOptions, loadedProviders]) => {
         setSettings(loadedSettings);
+        setDraftValues(Object.fromEntries(loadedSettings.map((setting) => [setting.key, setting.value])));
         setRoles(roleData.roles);
         setPublicAssistantOptions(modelOptions);
+        setProviders(loadedProviders);
       })
-      .catch(() => toast("Erreur chargement des paramètres", "error"))
+      .catch(() => toast("Failed to load settings", "error"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -284,9 +431,41 @@ export function AdminSettings() {
     );
   }
 
+  function handleDraftChange(key: string, value: string) {
+    setDraftValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const dirtySettings = useMemo(
+    () => settings.filter((setting) => (draftValues[setting.key] ?? setting.value) !== setting.value),
+    [draftValues, settings],
+  );
+
+  async function handleSaveAll() {
+    if (dirtySettings.length === 0 || savingAll) return;
+    setSavingAll(true);
+    try {
+      for (const setting of dirtySettings) {
+        await updateSetting(setting.key, draftValues[setting.key] ?? setting.value);
+      }
+      const updatedAt = Date.now() / 1000;
+      setSettings((prev) =>
+        prev.map((setting) =>
+          dirtySettings.some((dirty) => dirty.key === setting.key)
+            ? { ...setting, value: draftValues[setting.key] ?? setting.value, updated_at: updatedAt }
+            : setting,
+        ),
+      );
+      toast(`${dirtySettings.length} setting${dirtySettings.length === 1 ? "" : "s"} saved`, "success");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Failed to save settings", "error");
+    } finally {
+      setSavingAll(false);
+    }
+  }
+
   const grouped = useMemo(() => {
     return settings.reduce<Record<string, Setting[]>>((acc, setting) => {
-      const group = GROUPS[setting.key] ?? "Autres";
+      const group = GROUPS[setting.key] ?? "Other";
       acc[group] = [...(acc[group] || []), setting];
       return acc;
     }, {});
@@ -295,14 +474,25 @@ export function AdminSettings() {
   return (
     <div className="h-full overflow-y-auto p-6">
       <div className="mx-auto flex max-w-6xl flex-col gap-5">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-bold text-fg">
-            <Settings2 className="h-5 w-5 text-accent" />
-            Paramètres
-          </h1>
-          <p className="mt-1 text-sm text-fg-secondary">
-            Contrôles runtime clairs, typés et appliqués sans redéploiement
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="flex items-center gap-2 text-xl font-bold text-fg">
+              <Settings2 className="h-5 w-5 text-accent" />
+              Settings
+            </h1>
+            <p className="mt-1 text-sm text-fg-secondary">
+              Runtime controls applied without redeploying the platform
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void handleSaveAll()}
+            disabled={dirtySettings.length === 0 || savingAll}
+            className="inline-flex h-9 items-center gap-2 border border-white/20 bg-white px-3 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-2 disabled:text-fg-muted"
+          >
+            <Save className="h-3.5 w-3.5" />
+            {savingAll ? "Saving..." : `Save All${dirtySettings.length ? ` (${dirtySettings.length})` : ""}`}
+          </button>
         </div>
 
         {loading ? (
@@ -313,16 +503,33 @@ export function AdminSettings() {
           <div className="space-y-6">
             {Object.entries(grouped).map(([group, items]) => (
               <section key={group}>
-                <div className="mb-2 text-[10px] uppercase tracking-widest text-fg-muted">
-                  {group}
+                <div className="mb-2">
+                  <div className="text-[10px] uppercase tracking-widest text-fg-muted">
+                    {group}
+                  </div>
+                  {group === "Landing Assistant" && (
+                    <p className="mt-1 max-w-3xl text-xs leading-relaxed text-fg-secondary">
+                      Configure the anonymous assistant shown on the landing page. It stays hidden until it is enabled,
+                      public context is provided, and a configured allowlisted model is available.
+                    </p>
+                  )}
                 </div>
+                {group === "Landing Assistant" && (
+                  <div className="mb-3">
+                    <LandingAssistantPreview settings={draftValues} />
+                  </div>
+                )}
                 <div className="grid gap-3 md:grid-cols-2">
                   {items.map((setting) => (
                     <SettingRow
                       key={setting.key}
                       setting={setting}
+                      draft={draftValues[setting.key] ?? setting.value}
                       roles={roles}
                       publicAssistantOptions={publicAssistantOptions}
+                      providers={providers}
+                      settingValues={draftValues}
+                      onDraftChange={handleDraftChange}
                       onSaved={handleSaved}
                     />
                   ))}
@@ -335,9 +542,9 @@ export function AdminSettings() {
         <div className="flex gap-3 border border-accent/20 bg-accent/5 p-4">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
           <p className="text-xs leading-relaxed text-fg-secondary">
-            <span className="font-semibold text-fg">Note :</span> ces valeurs sont stockées en base et
-            appliquées en temps réel. Les variables <code className="bg-surface-2 px-1 text-accent">.env</code>{" "}
-            servent seulement de valeurs initiales.
+            <span className="font-semibold text-fg">Note:</span> these values are stored in the database and
+            applied in real time. <code className="bg-surface-2 px-1 text-accent">.env</code>{" "}
+            variables are only initial defaults.
           </p>
         </div>
       </div>

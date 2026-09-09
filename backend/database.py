@@ -130,7 +130,7 @@ def _create_sqlite_schema(conn) -> None:
             page_count        INTEGER NOT NULL DEFAULT 0,
             chunk_count       INTEGER NOT NULL DEFAULT 0,
             scope             TEXT NOT NULL DEFAULT 'private',
-            category          TEXT NOT NULL DEFAULT 'Autres',
+            category          TEXT NOT NULL DEFAULT 'Other',
             security_status   TEXT NOT NULL DEFAULT 'pending',
             security_verdict  TEXT NOT NULL DEFAULT '',
             security_checked_at REAL,
@@ -257,7 +257,7 @@ def _create_postgres_schema(conn) -> None:
             page_count INTEGER NOT NULL DEFAULT 0,
             chunk_count INTEGER NOT NULL DEFAULT 0,
             scope TEXT NOT NULL DEFAULT 'private',
-            category TEXT NOT NULL DEFAULT 'Autres',
+            category TEXT NOT NULL DEFAULT 'Other',
             security_status TEXT NOT NULL DEFAULT 'pending',
             security_verdict TEXT NOT NULL DEFAULT '',
             security_checked_at DOUBLE PRECISION,
@@ -348,6 +348,23 @@ def _create_postgres_schema(conn) -> None:
 
 
 def init_db() -> None:
+    # Multiple gunicorn workers call init_db() on boot; without serializing,
+    # concurrent DDL/UPDATE statements against Postgres can deadlock.
+    if _use_postgres():
+        lock_conn = PostgresConnection()
+        lock_conn.execute("SELECT pg_advisory_lock(727271)")
+        lock_conn.commit()
+        try:
+            _init_db_locked()
+        finally:
+            lock_conn.execute("SELECT pg_advisory_unlock(727271)")
+            lock_conn.commit()
+            lock_conn.close()
+    else:
+        _init_db_locked()
+
+
+def _init_db_locked() -> None:
     with get_db() as conn:
         if _use_postgres():
             _create_postgres_schema(conn)
@@ -403,21 +420,21 @@ def init_db() -> None:
             ),
             (
                 "public_assistant_greeting",
-                "Bonjour, je suis l'assistant public ENSET AI. Je peux répondre aux questions couvertes par les informations publiques configurées par l'administration.",
+                "Hi, I am the ENSET AI public assistant. I can answer questions covered by the public information approved by the administration.",
                 "Public Assistant Greeting",
                 "Greeting shown when the landing assistant opens.",
                 "textarea",
             ),
             (
                 "public_assistant_placeholder",
-                "Posez une question sur ENSET AI...",
+                "Ask a question about ENSET AI...",
                 "Public Assistant Placeholder",
                 "Input placeholder for visitors.",
                 "text",
             ),
             (
                 "public_assistant_fallback_message",
-                "Je n'ai pas assez d'informations dans le contexte public ENSET AI pour répondre à cette question. Vous pouvez vous connecter pour utiliser l'assistant complet ou contacter l'administration pour plus de détails.",
+                "I do not have enough information in the ENSET AI public context to answer that question. You can sign in to use the full assistant or contact the administration for more details.",
                 "Public Assistant Fallback",
                 "Fallback used when an answer is not supported by the public context.",
                 "textarea",
@@ -450,6 +467,34 @@ def init_db() -> None:
                 "Sustained anonymous assistant requests allowed per IP per hour.",
                 "number",
             ),
+            (
+                "model_mode_light",
+                "groq:openai/gpt-oss-20b",
+                "Light Model Mode",
+                "Provider/model used when users choose Light.",
+                "select",
+            ),
+            (
+                "model_mode_flash",
+                "cerebras:llama3.1-8b",
+                "Flash Model Mode",
+                "Provider/model used when users choose Flash.",
+                "select",
+            ),
+            (
+                "model_mode_normal",
+                "groq:openai/gpt-oss-120b",
+                "Normal Model Mode",
+                "Provider/model used when users choose Normal.",
+                "select",
+            ),
+            (
+                "model_mode_complex",
+                "sambanova:DeepSeek-V3.2",
+                "Complex Model Mode",
+                "Provider/model used when users choose Complex.",
+                "select",
+            ),
         ]
         for setting in default_settings:
             if len(setting) == 3:
@@ -465,6 +510,36 @@ def init_db() -> None:
                     (k, v, l, description, kind),
                 )
 
+        def legacy_text(hex_value: str) -> str:
+            return bytes.fromhex(hex_value).decode("utf-8")
+
+        public_assistant_default_migrations = [
+            (
+                "public_assistant_greeting",
+                legacy_text("426f6e6a6f75722c206a652073756973206c27617373697374616e74207075626c696320454e5345542041492e204a6520706575782072c3a9706f6e64726520617578207175657374696f6e7320636f7576657274657320706172206c657320696e666f726d6174696f6e73207075626c697175657320636f6e6669677572c3a9657320706172206c2761646d696e697374726174696f6e2e"),
+                "Hi, I am the ENSET AI public assistant. I can answer questions covered by the public information approved by the administration.",
+            ),
+            (
+                "public_assistant_placeholder",
+                legacy_text("506f73657a20756e65207175657374696f6e2073757220454e5345542041492e2e2e"),
+                "Ask a question about ENSET AI...",
+            ),
+            (
+                "public_assistant_placeholder",
+                legacy_text("5175657374696f6e207075626c697175652e2e2e"),
+                "Public question...",
+            ),
+            (
+                "public_assistant_fallback_message",
+                legacy_text("4a65206e2761692070617320617373657a206427696e666f726d6174696f6e732064616e73206c6520636f6e7465787465207075626c696320454e53455420414920706f75722072c3a9706f6e64726520c3a0206365747465207175657374696f6e2e20566f757320706f7576657a20766f757320636f6e6e656374657220706f7572207574696c69736572206c27617373697374616e7420636f6d706c6574206f7520636f6e746163746572206c2761646d696e697374726174696f6e20706f757220706c75732064652064c3a97461696c732e"),
+                "I do not have enough information in the ENSET AI public context to answer that question. You can sign in to use the full assistant or contact the administration for more details.",
+            ),
+        ]
+        for key, old_value, new_value in public_assistant_default_migrations:
+            conn.execute(
+                "UPDATE settings SET value=? WHERE key=? AND value=?",
+                (new_value, key, old_value),
+            )
 
         # Migrate: replace the old placeholder system prompt with the real
         # RAG prompt (the placeholder lost the citation instructions).
@@ -492,7 +567,8 @@ def init_db() -> None:
         # Migrate: documents — add category column
         dcols = table_columns(conn, "documents")
         if "category" not in dcols:
-            conn.execute("ALTER TABLE documents ADD COLUMN category TEXT NOT NULL DEFAULT 'Autres'")
+            conn.execute("ALTER TABLE documents ADD COLUMN category TEXT NOT NULL DEFAULT 'Other'")
+        conn.execute("UPDATE documents SET category='Other' WHERE category='Autres'")
         if "security_status" not in dcols:
             conn.execute("ALTER TABLE documents ADD COLUMN security_status TEXT NOT NULL DEFAULT 'pending'")
         if "security_verdict" not in dcols:

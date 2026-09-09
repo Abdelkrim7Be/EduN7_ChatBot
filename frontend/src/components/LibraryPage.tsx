@@ -13,10 +13,25 @@ const CATEGORY_COLORS: Record<string, string> = {
   Projets: "bg-white/10 text-white",
   Corrections: "bg-white/10 text-white",
   Autres: "bg-white/10 text-white",
+  Other: "bg-white/10 text-white",
 };
 
+const CATEGORY_LABELS: Record<string, string> = {
+  Cours: "Courses",
+  "TD / TP": "Exercises / Labs",
+  Examens: "Exams",
+  Projets: "Projects",
+  Corrections: "Corrections",
+  Autres: "Other",
+  Other: "Other",
+};
+
+function categoryLabel(category: string): string {
+  return CATEGORY_LABELS[category] ?? category;
+}
+
 function formatDate(epochSeconds: number): string {
-  return new Date(epochSeconds * 1000).toLocaleDateString("fr-FR", {
+  return new Date(epochSeconds * 1000).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -53,7 +68,7 @@ export function LibraryPage({ user, isRole }: Props) {
       // Refetch documents after upload
       fetchAdminDocuments("shared")
         .then(({ documents }) => setDocs(documents))
-        .catch(() => toast("Erreur lors du chargement de la bibliothèque", "error"));
+        .catch(() => toast("Failed to load library", "error"));
     }
     e.target.value = "";
   }
@@ -61,7 +76,7 @@ export function LibraryPage({ user, isRole }: Props) {
   useEffect(() => {
     fetchAdminDocuments("shared")
       .then(({ documents }) => setDocs(documents))
-      .catch(() => toast("Erreur lors du chargement de la bibliothèque", "error"))
+      .catch(() => toast("Failed to load library", "error"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -77,9 +92,9 @@ export function LibraryPage({ user, isRole }: Props) {
         next.delete(docId);
         return next;
       });
-      toast("Document retiré de la bibliothèque", "success");
+      toast("Document removed from library", "success");
     } catch {
-      toast("Erreur lors de la suppression", "error");
+      toast("Failed to delete document", "error");
     } finally {
       setDeleting(null);
       setConfirmDelete(null);
@@ -170,8 +185,8 @@ export function LibraryPage({ user, isRole }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <p>
-              Les documents partagés sont automatiquement disponibles dans le panneau latéral du <Link to="/" className="text-white underline underline-offset-4 decoration-white/30 hover:decoration-white">Chat</Link>.
-              Sélectionnez-les dans la section « Documents » pour les interroger.
+              Shared documents are automatically available in the <Link to="/" className="text-white underline underline-offset-4 decoration-white/30 hover:decoration-white">Chat</Link> sidebar.
+              Select them in the Documents section to ask questions about them.
             </p>
           </div>
 
@@ -192,7 +207,7 @@ export function LibraryPage({ user, isRole }: Props) {
                 {confirmBulk ? (
                   <>
                     <button onClick={handleBulkDelete} disabled={bulkDeleting} className="bg-red-600 text-white px-6 py-2 font-bold uppercase tracking-widest hover:bg-red-700 transition-all text-xs disabled:opacity-50">
-                      {bulkDeleting ? "Suppression..." : "Confirmer"}
+                      {bulkDeleting ? "Deleting..." : "Confirm"}
                     </button>
                     <button onClick={() => setConfirmBulk(false)} className="border border-white/40 text-white px-4 py-2 font-bold uppercase tracking-widest hover:bg-white/10 transition-all text-xs">
                       Cancel
@@ -218,7 +233,7 @@ export function LibraryPage({ user, isRole }: Props) {
                   onChange={handleFileChange}
                 />
                 <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="bg-white text-black px-8 py-3 font-bold uppercase tracking-widest hover:bg-white/90 transition-all text-sm disabled:opacity-50">
-                  {isUploading ? "Envoi en cours..." : "Téléverser un document"}
+                  {isUploading ? "Uploading..." : "Upload Document"}
                 </button>
               </div>
             )}
@@ -250,7 +265,7 @@ export function LibraryPage({ user, isRole }: Props) {
                 type="text" 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="RECHERCHER PAR NOM, AUTEUR OU CATÉGORIE..." 
+                placeholder="SEARCH BY NAME, AUTHOR, OR CATEGORY..." 
                 className="w-full bg-transparent border border-white/20 py-2.5 pl-12 pr-4 text-xs uppercase tracking-widest focus:border-white focus:ring-0 placeholder:text-white/30 transition-colors" 
               />
             </div>
@@ -259,16 +274,16 @@ export function LibraryPage({ user, isRole }: Props) {
           {/* Document Grid */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <div className="text-white/50 text-sm uppercase tracking-widest animate-pulse">Chargement...</div>
+              <div className="text-white/50 text-sm uppercase tracking-widest animate-pulse">Loading...</div>
             </div>
           ) : filtered.length === 0 ? (
             <div className="border border-white/20 bg-white/5 p-12 text-center flex flex-col items-center">
                <svg className="w-8 h-8 text-white/30 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path>
                 </svg>
-                <p className="text-sm font-bold uppercase tracking-widest text-white/70">Bibliothèque vide</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-white/70">Empty Library</p>
                 <p className="text-xs text-white/40 mt-2 max-w-sm uppercase tracking-wider leading-relaxed">
-                  {search ? "Aucun résultat." : "Aucun document partagé pour le moment."}
+                  {search ? "No results." : "No shared documents yet."}
                 </p>
             </div>
           ) : (
@@ -307,21 +322,21 @@ export function LibraryPage({ user, isRole }: Props) {
                   </div>
                   
                   <div className="flex items-center gap-4 flex-shrink-0">
-                    <span className={`px-3 py-1 border border-white/10 text-[10px] uppercase font-bold tracking-widest ${CATEGORY_COLORS[doc.category] || CATEGORY_COLORS["Autres"]}`}>
-                      {doc.category}
+                    <span className={`px-3 py-1 border border-white/10 text-[10px] uppercase font-bold tracking-widest ${CATEGORY_COLORS[doc.category] || CATEGORY_COLORS.Other}`}>
+                      {categoryLabel(doc.category)}
                     </span>
                     {canDelete(doc) && (
                       confirmDelete === doc.doc_id ? (
                         <div className="flex items-center gap-2">
                            <button onClick={() => handleDelete(doc.doc_id)} disabled={deleting === doc.doc_id} className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-400">
-                             {deleting === doc.doc_id ? "..." : "OUI"}
+                             {deleting === doc.doc_id ? "..." : "YES"}
                            </button>
                            <button onClick={() => setConfirmDelete(null)} className="text-[10px] font-bold uppercase tracking-widest text-white/50 hover:text-white">
-                             NON
+                             NO
                            </button>
                         </div>
                       ) : (
-                        <button onClick={() => setConfirmDelete(doc.doc_id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-white/40 hover:text-red-500" title="Supprimer">
+                        <button onClick={() => setConfirmDelete(doc.doc_id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-white/40 hover:text-red-500" title="Delete">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
                           </svg>

@@ -67,7 +67,7 @@ def create_app() -> Flask:
                 user_agent=request.headers.get("User-Agent"),
                 outcome="rate_limited",
             )
-        return jsonify({"error": "Trop de requêtes. Veuillez réessayer plus tard."}), 429
+        return jsonify({"error": "Too many requests. Please try again later."}), 429
 
     return app
 

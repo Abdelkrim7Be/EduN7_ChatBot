@@ -12,7 +12,7 @@ class DocumentRecord:
     chunk_count: int
     uploaded_at: float
     scope: str = "private"
-    category: str = "Autres"
+    category: str = "Other"
     security_status: str = "pending"
     security_verdict: str = ""
     security_checked_at: float | None = None
@@ -41,7 +41,7 @@ class DocumentRecord:
         page_count: int,
         chunk_count: int,
         scope: str = "private",
-        category: str = "Autres",
+        category: str = "Other",
         security_status: str = "pending",
         security_verdict: str = "",
         security_checked_at: float | None = None,

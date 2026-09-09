@@ -20,10 +20,10 @@ interface Props {
 }
 
 const aiTools = [
-  { label: "Résumé", prompt: "Génère un résumé structuré et complet de ce document", icon: FileText },
-  { label: "Expliquer les concepts", prompt: "Explique les concepts clés de ce document simplement", icon: Sparkles },
-  { label: "Points clés", prompt: "Extraire les points les plus importants du texte", icon: List },
-  { label: "Créer un Quiz", prompt: "Crée un quiz à choix multiples de 5 questions basé sur ce document", icon: BookOpen },
+  { label: "Summary", prompt: "Generate a structured and complete summary of this document", icon: FileText },
+  { label: "Explain Concepts", prompt: "Explain the key concepts in this document simply", icon: Sparkles },
+  { label: "Key Points", prompt: "Extract the most important points from the text", icon: List },
+  { label: "Create Quiz", prompt: "Create a 5-question multiple choice quiz based on this document", icon: BookOpen },
 ];
 
 function DashboardState({
@@ -68,13 +68,13 @@ function DashboardState({
     >
       <div className="max-w-2xl w-full flex flex-col items-center text-center">
         <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-4 font-mono">
-          Système initialisé
+          System initialized
         </div>
         <h2 className="text-3xl font-serif mb-2 text-white">
-          Bon retour, {userName.split(" ")[0]}.
+          Welcome back, {userName.split(" ")[0]}.
         </h2>
         <p className="text-gray-400 text-sm mb-12 max-w-md font-mono">
-          Prêt à exploiter les ressources pédagogiques, synthétiser vos documents ou construire de nouvelles solutions.
+          Ready to explore academic resources, summarize documents, or build new solutions.
         </p>
 
         <div className="w-full flex flex-col items-center gap-6">
@@ -86,10 +86,10 @@ function DashboardState({
                 <UploadCloud className="w-6 h-6" />
             </div>
             <div className="text-sm text-gray-300 font-mono mb-1">
-              Glissez-déposez vos ressources
+              Drag and drop your resources
             </div>
             <div className="text-[10px] text-gray-500 uppercase tracking-widest">
-              PDF uniquement · 50 Mo max
+              PDF only · 50 MB max
             </div>
           </div>
 
@@ -157,15 +157,15 @@ export function ChatWindow({
     <div className="flex-1 flex flex-col relative min-h-0">
       <div className="h-14 border-b border-border-subtle flex items-center justify-between px-6 shrink-0 bg-[#000000]/80 backdrop-blur-md absolute top-0 left-0 w-full z-10">
         <div className="text-xs text-gray-500 uppercase tracking-widest font-mono">
-          Espace de discussion
+          Discussion Space
         </div>
         <div className="flex items-center gap-4 text-xs font-mono">
           {toolbar}
           <button onClick={onExport} className="text-gray-500 hover:text-white flex items-center gap-1 transition-colors">
-            <Download className="w-3 h-3" /> EXPORTER
+            <Download className="w-3 h-3" /> EXPORT
           </button>
           <button onClick={onClear} className="text-gray-500 hover:text-red-400 flex items-center gap-1 transition-colors">
-            <Trash2 className="w-3 h-3" /> EFFACER
+            <Trash2 className="w-3 h-3" /> CLEAR
           </button>
         </div>
       </div>

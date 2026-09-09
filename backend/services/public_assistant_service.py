@@ -34,15 +34,20 @@ def _hash(value: str | None) -> str | None:
     return hashlib.sha256(value.encode()).hexdigest()[:32]
 
 
-def _setting_text(key: str, default: str = "", limit: int | None = None) -> str:
-    value = get_setting(key, default).strip()
+def _setting_text(
+    key: str,
+    default: str = "",
+    limit: int | None = None,
+    overrides: dict[str, str] | None = None,
+) -> str:
+    value = str(overrides[key] if overrides and key in overrides else get_setting(key, default)).strip()
     if limit is not None:
         return value[:limit]
     return value
 
 
-def _suggested_questions() -> list[str]:
-    raw = _setting_text("public_assistant_suggested_questions")
+def _suggested_questions(overrides: dict[str, str] | None = None) -> list[str]:
+    raw = _setting_text("public_assistant_suggested_questions", overrides=overrides)
     questions = []
     for line in raw.splitlines():
         question = line.strip()
@@ -79,9 +84,9 @@ def public_model_options() -> list[dict]:
     return options
 
 
-def _configured_model() -> tuple[str, str] | None:
-    provider = _setting_text("public_assistant_provider", "auto")
-    model = _setting_text("public_assistant_model", "auto")
+def _configured_model(overrides: dict[str, str] | None = None) -> tuple[str, str] | None:
+    provider = _setting_text("public_assistant_provider", "auto", overrides=overrides)
+    model = _setting_text("public_assistant_model", "auto", overrides=overrides)
     pair = (provider, model)
     allowed = set(PUBLIC_MODEL_ALLOWLIST)
     available = _available_pairs()
@@ -93,19 +98,29 @@ def _configured_model() -> tuple[str, str] | None:
     return None
 
 
+def _has_context(overrides: dict[str, str] | None = None) -> bool:
+    return bool(_setting_text("public_assistant_context", overrides=overrides))
+
+
+def _enabled_flag(overrides: dict[str, str] | None = None) -> bool:
+    if overrides and "public_assistant_enabled" in overrides:
+        return str(overrides["public_assistant_enabled"]).lower() in ("true", "1", "yes")
+    return get_bool("public_assistant_enabled", False)
+
+
 def is_enabled() -> bool:
-    return get_bool("public_assistant_enabled", False) and bool(_setting_text("public_assistant_context"))
+    return _enabled_flag() and _has_context()
 
 
-def public_config() -> dict:
-    enabled = is_enabled() and _configured_model() is not None
+def public_config(overrides: dict[str, str] | None = None) -> dict:
+    enabled = _enabled_flag(overrides) and _has_context(overrides) and _configured_model(overrides) is not None
     if not enabled:
         return {"enabled": False}
     return {
         "enabled": True,
-        "greeting": _setting_text("public_assistant_greeting"),
-        "placeholder": _setting_text("public_assistant_placeholder", "Posez une question sur ENSET AI..."),
-        "suggested_questions": _suggested_questions(),
+        "greeting": _setting_text("public_assistant_greeting", overrides=overrides),
+        "placeholder": _setting_text("public_assistant_placeholder", "Ask a question about ENSET AI...", overrides=overrides),
+        "suggested_questions": _suggested_questions(overrides),
     }
 
 
@@ -138,10 +153,14 @@ def sanitize_history(raw_history) -> list[dict[str, str]]:
     return sanitized
 
 
-def _build_messages(message: str, history: list[dict[str, str]]) -> list:
-    context = _setting_text("public_assistant_context", limit=MAX_CONTEXT_CHARS)
-    instructions = _setting_text("public_assistant_instructions", limit=MAX_INSTRUCTIONS_CHARS)
-    fallback = _setting_text("public_assistant_fallback_message")
+def _build_messages(
+    message: str,
+    history: list[dict[str, str]],
+    overrides: dict[str, str] | None = None,
+) -> list:
+    context = _setting_text("public_assistant_context", limit=MAX_CONTEXT_CHARS, overrides=overrides)
+    instructions = _setting_text("public_assistant_instructions", limit=MAX_INSTRUCTIONS_CHARS, overrides=overrides)
+    fallback = _setting_text("public_assistant_fallback_message", overrides=overrides)
     system = (
         "You are the public landing-page assistant for ENSET AI.\n"
         "You are not a general-purpose assistant.\n"
@@ -204,29 +223,35 @@ def stream_response(
     history: list[dict[str, str]],
     ip_address: str | None = None,
     user_agent: str | None = None,
+    overrides: dict[str, str] | None = None,
+    require_enabled: bool = True,
+    record_events: bool = True,
 ) -> Generator[str, None, None]:
     started = time.time()
     trimmed = message.strip()[:MAX_MESSAGE_CHARS]
     input_chars = len(trimmed) + sum(len(turn["content"]) for turn in history)
-    if not is_enabled():
-        record_event(ip_address=ip_address, user_agent=user_agent, outcome="disabled", input_chars=input_chars)
-        yield f'data: {json.dumps({"type": "error", "content": "L’assistant public est momentanément indisponible."})}\n\n'
+    ready = is_enabled() if require_enabled else _has_context(overrides)
+    if not ready:
+        if record_events:
+            record_event(ip_address=ip_address, user_agent=user_agent, outcome="disabled", input_chars=input_chars)
+        yield f'data: {json.dumps({"type": "error", "content": "The public assistant is temporarily unavailable."})}\n\n'
         yield f'data: {json.dumps({"type": "done"})}\n\n'
         return
     if not trimmed:
-        yield f'data: {json.dumps({"type": "error", "content": "Veuillez saisir une question."})}\n\n'
+        yield f'data: {json.dumps({"type": "error", "content": "Please enter a question."})}\n\n'
         yield f'data: {json.dumps({"type": "done"})}\n\n'
         return
 
-    configured = _configured_model()
+    configured = _configured_model(overrides)
     if configured is None:
-        record_event(ip_address=ip_address, user_agent=user_agent, outcome="provider_error", input_chars=input_chars)
-        yield f'data: {json.dumps({"type": "error", "content": "L’assistant public est momentanément indisponible."})}\n\n'
+        if record_events:
+            record_event(ip_address=ip_address, user_agent=user_agent, outcome="provider_error", input_chars=input_chars)
+        yield f'data: {json.dumps({"type": "error", "content": "The public assistant is temporarily unavailable."})}\n\n'
         yield f'data: {json.dumps({"type": "done"})}\n\n'
         return
 
     pairs = AUTO_FALLBACK_ORDER if configured == ("auto", "auto") else [configured]
-    messages = _build_messages(trimmed, history)
+    messages = _build_messages(trimmed, history, overrides)
 
     for provider, model in pairs:
         if (provider, model) not in set(PUBLIC_MODEL_ALLOWLIST):
@@ -239,28 +264,30 @@ def stream_response(
                 if delta:
                     output += delta
                     yield f'data: {json.dumps({"type": "token", "content": delta})}\n\n'
-            record_event(
-                ip_address=ip_address,
-                user_agent=user_agent,
-                outcome="success",
-                provider=provider,
-                model=model,
-                latency_ms=int((time.time() - started) * 1000),
-                input_chars=input_chars,
-                output_chars=len(output),
-            )
+            if record_events:
+                record_event(
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    outcome="success",
+                    provider=provider,
+                    model=model,
+                    latency_ms=int((time.time() - started) * 1000),
+                    input_chars=input_chars,
+                    output_chars=len(output),
+                )
             yield f'data: {json.dumps({"type": "done"})}\n\n'
             return
         except Exception as exc:
             logger.warning("Public assistant provider error [%s/%s]: %s", provider, model, exc)
             continue
 
-    record_event(
-        ip_address=ip_address,
-        user_agent=user_agent,
-        outcome="provider_error",
-        latency_ms=int((time.time() - started) * 1000),
-        input_chars=input_chars,
-    )
-    yield f'data: {json.dumps({"type": "error", "content": "L’assistant public est momentanément indisponible."})}\n\n'
+    if record_events:
+        record_event(
+            ip_address=ip_address,
+            user_agent=user_agent,
+            outcome="provider_error",
+            latency_ms=int((time.time() - started) * 1000),
+            input_chars=input_chars,
+        )
+    yield f'data: {json.dumps({"type": "error", "content": "The public assistant is temporarily unavailable."})}\n\n'
     yield f'data: {json.dumps({"type": "done"})}\n\n'

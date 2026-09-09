@@ -174,6 +174,18 @@ export interface ExtendedStats {
   }[];
 }
 
+export interface PlatformHealthComponent {
+  name: string;
+  status: "ok" | "warning" | "error";
+  detail: string;
+}
+
+export interface PlatformHealth {
+  overall: "ok" | "warning" | "error";
+  checked_at: number;
+  components: PlatformHealthComponent[];
+}
+
 export interface Announcement {
   id: number;
   title: string;

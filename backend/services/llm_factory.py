@@ -94,6 +94,13 @@ AUTO_FALLBACK_ORDER = [
     ("gemini",     "gemini-2.0-flash"),
 ]
 
+MODEL_MODE_DEFAULTS = {
+    "light": ("groq", "openai/gpt-oss-20b"),
+    "flash": ("cerebras", "llama3.1-8b"),
+    "normal": ("groq", "openai/gpt-oss-120b"),
+    "complex": ("sambanova", "DeepSeek-V3.2"),
+}
+
 
 def get_available_providers() -> list[dict]:
     result = []
@@ -145,6 +152,46 @@ def get_available_providers() -> list[dict]:
         })
 
     return result
+
+
+def available_model_pairs() -> set[tuple[str, str]]:
+    pairs: set[tuple[str, str]] = set()
+    for provider in get_available_providers():
+        if not provider.get("available"):
+            continue
+        provider_id = provider["id"]
+        for model in provider.get("models", []):
+            pairs.add((provider_id, model["id"]))
+    return pairs
+
+
+def parse_model_pair(value: str) -> tuple[str, str] | None:
+    if ":" not in value:
+        return None
+    provider, model = value.split(":", 1)
+    provider = provider.strip()
+    model = model.strip()
+    if not provider or not model:
+        return None
+    return provider, model
+
+
+def resolve_model_mode(mode: str) -> tuple[str, str]:
+    default_pair = MODEL_MODE_DEFAULTS.get(mode, MODEL_MODE_DEFAULTS["normal"])
+    from services.settings_service import get_setting
+
+    configured = parse_model_pair(
+        get_setting(f"model_mode_{mode}", f"{default_pair[0]}:{default_pair[1]}")
+    )
+    available = available_model_pairs()
+    if configured in available:
+        return configured
+    if default_pair in available:
+        return default_pair
+    for pair in AUTO_FALLBACK_ORDER:
+        if pair in available:
+            return pair
+    return default_pair
 
 
 def build_llm(provider: str, model: str):

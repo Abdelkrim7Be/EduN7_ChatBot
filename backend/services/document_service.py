@@ -49,10 +49,10 @@ _PDF_RISK_PATTERNS = [
 ]
 
 _CATEGORY_RULES = [
-    ("Cours",        r"\b(cours|cm|chapitre|lecture|poly|polycopie|support)\b"),
+    ("Courses",      r"\b(cours|course|cm|chapitre|chapter|lecture|poly|polycopie|support)\b"),
     ("TD / TP",      r"\b(td|tp|travaux|exercice|atelier|labo|pratique)\b"),
-    ("Examens",      r"\b(exam|examen|ds|controle|contrôle|qcm|epreuve|épreuve|partiel)\b"),
-    ("Projets",      r"\b(projet|rapport|pfe|memoire|mémoire|stage|these)\b"),
+    ("Exams",        r"\b(exam|examen|ds|controle|contrôle|qcm|epreuve|épreuve|partiel)\b"),
+    ("Projects",     r"\b(projet|project|rapport|report|pfe|memoire|mémoire|stage|these|thesis)\b"),
     ("Corrections",  r"\b(correction|corrige|corrigé|solution|reponse|réponse)\b"),
 ]
 
@@ -62,7 +62,7 @@ def detect_category(filename: str) -> str:
     for category, pattern in _CATEGORY_RULES:
         if re.search(pattern, normalized):
             return category
-    return "Autres"
+    return "Other"
 
 
 def scan_pdf_security(file_path: str) -> dict:
@@ -78,14 +78,14 @@ def scan_pdf_security(file_path: str) -> dict:
     except OSError as exc:
         return {
             "status": "failed",
-            "verdict": f"Impossible de lire le fichier: {exc}",
+            "verdict": f"Could not read file: {exc}",
             "checked_at": time.time(),
         }
 
     if not data.startswith(b"%PDF-"):
         return {
             "status": "blocked",
-            "verdict": "Fichier rejeté: signature PDF invalide",
+            "verdict": "File rejected: invalid PDF signature",
             "checked_at": time.time(),
         }
 
@@ -99,13 +99,13 @@ def scan_pdf_security(file_path: str) -> dict:
         unique = sorted(set(found))
         return {
             "status": "warning",
-            "verdict": "Contenu actif détecté: " + ", ".join(unique),
+            "verdict": "Active PDF content detected: " + ", ".join(unique),
             "checked_at": time.time(),
         }
 
     return {
         "status": "clean",
-        "verdict": "PDF vérifié: aucun contenu actif connu détecté",
+        "verdict": "PDF verified: no known active content detected",
         "checked_at": time.time(),
     }
 
@@ -124,7 +124,7 @@ def _record_from_row(row) -> DocumentRecord:
         chunk_count=row["chunk_count"],
         uploaded_at=float(row["uploaded_at"] or 0),
         scope=row["scope"],
-        category=row["category"] or "Autres",
+        category="Other" if row["category"] == "Autres" else (row["category"] or "Other"),
         security_status=row["security_status"] or "pending",
         security_verdict=row["security_verdict"] or "",
         security_checked_at=(
@@ -163,7 +163,7 @@ def ensure_security_scan(doc_id: str, original_filename: str, current_status: st
         if not data.startswith(b"%PDF-"):
             scan = {
                 "status": "blocked",
-                "verdict": "Fichier rejeté: signature PDF invalide",
+                "verdict": "File rejected: invalid PDF signature",
                 "checked_at": time.time(),
             }
         else:
@@ -174,11 +174,11 @@ def ensure_security_scan(doc_id: str, original_filename: str, current_status: st
                     found.append(label)
             scan = {
                 "status": "warning",
-                "verdict": "Contenu actif détecté: " + ", ".join(sorted(set(found))),
+                "verdict": "Active PDF content detected: " + ", ".join(sorted(set(found))),
                 "checked_at": time.time(),
             } if found else {
                 "status": "clean",
-                "verdict": "PDF vérifié: aucun contenu actif connu détecté",
+                "verdict": "PDF verified: no known active content detected",
                 "checked_at": time.time(),
             }
     with database.get_db() as conn:

@@ -35,7 +35,7 @@ test('uploaded document survives a reload', async ({ page }) => {
 
   await page.locator('input[type="email"]').fill(process.env.E2E_EMAIL || 'admin@enset.ma');
   await page.locator('input[type="password"]').first().fill(process.env.E2E_PASSWORD || 'Password123!');
-  await page.getByRole('button', { name: 'Se connecter' }).click();
+  await page.getByRole('button', { name: 'Authenticate' }).click();
 
   await expect(page.locator('textarea')).toBeEnabled({ timeout: 20000 });
 
@@ -46,13 +46,13 @@ test('uploaded document survives a reload', async ({ page }) => {
 
   try {
     const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.getByRole('button', { name: 'Ajouter un document' }).click();
+    await page.getByRole('button', { name: 'Add document' }).click();
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(pdfPath);
 
     // The generated filename matches the MATIERE_TYPE_TITRE convention, so the
     // rename modal should not appear; click through it if it ever does.
-    const confirmBtn = page.getByRole('button', { name: 'Confirmer et envoyer' });
+    const confirmBtn = page.getByRole('button', { name: 'Confirm and Upload' });
     if (await confirmBtn.isVisible().catch(() => false)) {
       await confirmBtn.click();
     }
